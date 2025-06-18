@@ -1,0 +1,28 @@
+# Build results
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+
+# Rider files
+.idea/
+
+# VSCode
+.vscode/
+
+# DotNet environment
+*.DotSettings.user
+*.vs/
+
+# EF Core migrations generated cache
+**/Migrations/**/Snapshot.cs
+
+# Logs
+*.log
+
+# Secret
+secrets.json
+appsettings.*.json
+.env
