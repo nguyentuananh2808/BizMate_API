@@ -14,7 +14,8 @@ namespace BizMate.Domain.Entities
 
         public Guid StoreId { get; set; }
         public Store Store { get; set; } = default!;
-
+        public Guid CreatedByUserId { get; set; }  
+        public User CreatedByUser { get; set; } = default!;
         public ICollection<InventoryReceiptDetail> Details { get; set; } = new List<InventoryReceiptDetail>();
     }
 
