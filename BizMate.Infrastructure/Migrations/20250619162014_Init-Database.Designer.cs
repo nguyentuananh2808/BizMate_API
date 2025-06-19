@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BizMate.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250618163629_InitDatabase")]
+    [Migration("20250619162014_Init-Database")]
     partial class InitDatabase
     {
         /// <inheritdoc />
@@ -121,31 +121,45 @@ namespace BizMate.Infrastructure.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("dc09422d-b590-4dae-9aa2-11fc1e5e5b15"),
+                            Id = new Guid("17c94c00-f803-4497-a4d8-b3baf6d9457d"),
                             Key = "Import",
                             Type = "ReceiptType",
                             Value = "Nhập kho"
                         },
                         new
                         {
-                            Id = new Guid("83d6e821-4fff-410c-bf55-837e6a7c6fe2"),
+                            Id = new Guid("d2aa8893-205d-42fa-9da7-02128bd72cd6"),
                             Key = "Export",
                             Type = "ReceiptType",
                             Value = "Xuất kho"
                         },
                         new
                         {
-                            Id = new Guid("b8245529-da16-4a78-a59b-6f65b480900f"),
+                            Id = new Guid("379e938a-5bd6-4926-8748-f1403888185c"),
                             Key = "kg",
                             Type = "Unit",
                             Value = "Kilogram"
                         },
                         new
                         {
-                            Id = new Guid("42f2bfd1-aea0-4739-b0e1-641216dbfad0"),
+                            Id = new Guid("2b812291-1133-4202-aea3-6c615d999b53"),
                             Key = "pcs",
                             Type = "Unit",
                             Value = "Cái"
+                        },
+                        new
+                        {
+                            Id = new Guid("8b29b47b-aafc-490d-ba64-357ef9f0b4a8"),
+                            Key = "box",
+                            Type = "Unit",
+                            Value = "Thùng"
+                        },
+                        new
+                        {
+                            Id = new Guid("62298358-d4bd-4d86-911f-42eac3420135"),
+                            Key = "bag",
+                            Type = "Unit",
+                            Value = "Bao"
                         });
                 });
 
@@ -238,6 +252,14 @@ namespace BizMate.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PasswordSalt")
                         .IsRequired()
                         .HasColumnType("text");
 

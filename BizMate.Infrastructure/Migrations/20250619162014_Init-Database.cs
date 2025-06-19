@@ -106,6 +106,8 @@ namespace BizMate.Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     FullName = table.Column<string>(type: "text", nullable: false),
                     Email = table.Column<string>(type: "text", nullable: false),
+                    PasswordHash = table.Column<string>(type: "text", nullable: false),
+                    PasswordSalt = table.Column<string>(type: "text", nullable: false),
                     Role = table.Column<string>(type: "text", nullable: false),
                     StoreId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
@@ -180,10 +182,12 @@ namespace BizMate.Infrastructure.Migrations
                 columns: new[] { "Id", "Key", "Type", "Value" },
                 values: new object[,]
                 {
-                    { new Guid("42f2bfd1-aea0-4739-b0e1-641216dbfad0"), "pcs", "Unit", "Cái" },
-                    { new Guid("83d6e821-4fff-410c-bf55-837e6a7c6fe2"), "Export", "ReceiptType", "Xuất kho" },
-                    { new Guid("b8245529-da16-4a78-a59b-6f65b480900f"), "kg", "Unit", "Kilogram" },
-                    { new Guid("dc09422d-b590-4dae-9aa2-11fc1e5e5b15"), "Import", "ReceiptType", "Nhập kho" }
+                    { new Guid("17c94c00-f803-4497-a4d8-b3baf6d9457d"), "Import", "ReceiptType", "Nhập kho" },
+                    { new Guid("2b812291-1133-4202-aea3-6c615d999b53"), "pcs", "Unit", "Cái" },
+                    { new Guid("379e938a-5bd6-4926-8748-f1403888185c"), "kg", "Unit", "Kilogram" },
+                    { new Guid("62298358-d4bd-4d86-911f-42eac3420135"), "bag", "Unit", "Bao" },
+                    { new Guid("8b29b47b-aafc-490d-ba64-357ef9f0b4a8"), "box", "Unit", "Thùng" },
+                    { new Guid("d2aa8893-205d-42fa-9da7-02128bd72cd6"), "Export", "ReceiptType", "Xuất kho" }
                 });
 
             migrationBuilder.CreateIndex(

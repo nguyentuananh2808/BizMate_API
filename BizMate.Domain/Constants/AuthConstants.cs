@@ -2,6 +2,7 @@
 {
     public class AuthConstants
     {
+        public const string Bearer = "Bearer";
         public static class JwtClaimIdentifiers
         {
             public const string IdentityId = "iid";
