@@ -8,6 +8,8 @@ namespace BizMate.Application.UserCases.User.Commands.UserRegister
         [Required]
         public string FullName { get; set; } = default!;
         [Required]
+        public string NameStore { get; set; } = default!;
+        [Required]
         public string Email { get; set; } = default!;
     }
 }

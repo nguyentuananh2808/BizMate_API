@@ -19,30 +19,82 @@ namespace BizMate.Application.Common.Extensions
 
         public async Task SendOtpEmailAsync(string toEmail, string otpCode, DateTime expiredAt)
         {
+            var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+            var expiredAtVN = TimeZoneInfo.ConvertTimeFromUtc(expiredAt, vietnamTimeZone);
+
             var subject = "Mã xác thực OTP";
 
-            var body = $"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-            </head>
-            <body style="font-family: Arial, sans-serif; background-color: #f6f9fc; padding: 20px;">
-                <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                    <tr>
-                        <td style="padding: 20px 30px;">
-                            <h2 style="color: #007BFF;">Mã xác thực OTP</h2>
+            var body = $$"""
+                <!DOCTYPE html>
+                <html lang="vi">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <style>
+                        body {
+                            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                            background-color: #f4f6f8;
+                            margin: 0;
+                            padding: 0;
+                        }
+                        .container {
+                            max-width: 600px;
+                            margin: 30px auto;
+                            background-color: #ffffff;
+                            border-radius: 8px;
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                            overflow: hidden;
+                        }
+                        .header {
+                            background-color: #007BFF;
+                            color: #ffffff;
+                            padding: 20px 30px;
+                            text-align: center;
+                        }
+                        .header h1 {
+                            margin: 0;
+                            font-size: 24px;
+                        }
+                        .content {
+                            padding: 30px;
+                            color: #333333;
+                        }
+                        .otp-code {
+                            font-size: 32px;
+                            font-weight: bold;
+                            color: #007BFF;
+                            text-align: center;
+                            margin: 20px 0;
+                        }
+                        .footer {
+                            background-color: #f1f1f1;
+                            padding: 20px 30px;
+                            text-align: center;
+                            font-size: 12px;
+                            color: #888888;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <h1>Mã Xác Thực OTP</h1>
+                        </div>
+                        <div class="content">
                             <p>Xin chào,</p>
-                            <p>Đây là mã OTP <strong style="color: #007BFF;">BizMate</strong> của bạn:</p>
-                            <p style="font-size: 24px; font-weight: bold; color: #007BFF;">{otpCode}</p>
-                            <p>Mã có hiệu lực đến: <strong>{expiredAt:HH:mm:ss dd/MM/yyyy}</strong></p>
-                            <p style="margin-top: 30px;">Trân trọng,<br/>Đội ngũ BizMate</p>
-                        </td>
-                    </tr>
-                </table>
-            </body>
-            </html>
-            """;
+                            <p>Chúng tôi đã nhận được yêu cầu xác thực từ bạn. Dưới đây là mã OTP để tiếp tục:</p>
+                            <div class="otp-code">{{otpCode}}</div>
+                            <p>Mã này sẽ hết hiệu lực vào: <strong>{{expiredAtVN:HH:mm:ss dd/MM/yyyy}}</strong></p>
+                            <p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này.</p>
+                            <p style="margin-top: 30px;">Trân trọng,<br/><strong>Đội ngũ BizMate</strong></p>
+                        </div>
+                        <div class="footer">
+                            Đây là email tự động, vui lòng không phản hồi.
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """;
 
             using var smtpClient = new SmtpClient(_config["Smtp:Host"])
             {

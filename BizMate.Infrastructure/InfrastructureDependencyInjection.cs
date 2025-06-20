@@ -10,6 +10,7 @@ using BizMate.Infrastructure.Security;
 using BizMate.Public.Auth;
 using BizMate.Application.Common.Extensions;
 using BizMate.Application.Common.Interfaces;
+using BizMate.Infrastructure.Services;
 
 namespace BizMate.Infrastructure
 {
@@ -27,6 +28,7 @@ namespace BizMate.Infrastructure
             services.AddScoped<IOtpVerificationRepository, OtpVerificationRepository>();
             services.AddScoped<IUserSession, UserSession>();
             services.AddScoped<IEmailService, SmtpEmailService>();
+            services.AddScoped<IOtpStore, OtpRedisService>();
 
             return services;
         }

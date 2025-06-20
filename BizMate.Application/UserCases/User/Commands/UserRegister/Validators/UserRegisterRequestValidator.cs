@@ -8,8 +8,8 @@ namespace BizMate.Application.UserCases.User.Commands.UserRegister.Validators
     {
         public UserRegisterRequestValidator(IStringLocalizer localizer)
         {
+            RuleFor(x => x.NameStore).NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty]);
             RuleFor(x => x.FullName).NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty]);
-
             RuleFor(x => x.Email)
                     .NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty])
                     .EmailAddress().WithMessage(localizer[ValidationMessage.LocalizedStrings.InvalidEnumValue]);

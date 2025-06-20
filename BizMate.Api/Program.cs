@@ -31,6 +31,12 @@ internal class Program
             .GetSection("JwtOptions")
             .Get<JwtOptions>();
 
+        builder.Services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration = builder.Configuration.GetConnectionString("Redis");
+        });
+
+
         builder.Services.AddAuthentication(options =>
            {
                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
