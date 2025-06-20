@@ -21,8 +21,4 @@
     <PackageReference Include="SqlKata.Execution" Version="2.3.9" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\BizMate.Application\BizMate.Application.csproj" />
-  </ItemGroup>
-
 </Project>

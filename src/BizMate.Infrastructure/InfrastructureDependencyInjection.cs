@@ -7,10 +7,10 @@ using BizMate.Infrastructure.Persistence.Repositories;
 using BizMate.Application.Common.Mappings;
 using BizMate.Application.Common.Security;
 using BizMate.Infrastructure.Security;
-using BizMate.Public.Auth;
 using BizMate.Application.Common.Extensions;
 using BizMate.Application.Common.Interfaces;
 using BizMate.Infrastructure.Services;
+using BizMate.Application.Common.Dto.UserAggregate;
 
 namespace BizMate.Infrastructure
 {

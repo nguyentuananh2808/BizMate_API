@@ -1,6 +1,6 @@
 ﻿using BizMate.Application.Common.Security;
 
-namespace BizMate.Public.Auth
+namespace BizMate.Application.Common.Dto.UserAggregate
 {
     public class UserSession : IUserSession
     {
