@@ -4,12 +4,16 @@ namespace BizMate.Application.UserCases.User.Commands.UserRegister
 {
     public class UserRegisterResponse : BaseResponse
     {
+        public string FullName { get; set; }
+        public string NameStore { get; set; }
         public string Email { get; set; }
         public DateTime OtpExpiredAt { get; set; }
 
-        public UserRegisterResponse(string email, DateTime expiredAt)
+        public UserRegisterResponse(string fullName, string nameStore, string email, DateTime expiredAt)
             : base(success: true, message: "OTP đã được gửi tới email.")
         {
+            FullName = fullName;
+            NameStore = nameStore;
             Email = email;
             OtpExpiredAt = expiredAt;
         }

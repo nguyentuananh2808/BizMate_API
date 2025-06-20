@@ -1,8 +1,6 @@
-﻿using AutoMapper;
-using BizMate.Application.Common.Extensions;
+﻿using BizMate.Application.Common.Extensions;
 using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Interfaces.Repositories;
-using BizMate.Application.Common.Security;
 using BizMate.Public.Message;
 using MediatR;
 using Microsoft.Extensions.Localization;
@@ -11,51 +9,42 @@ using _User = BizMate.Domain.Entities.User;
 
 namespace BizMate.Application.UserCases.User.Commands.UserRegister
 {
-    public class UserRegisterHandler : IRequestHandler<UserRegisterRequest, UserRegisterResponse>
+    public sealed class UserRegisterHandler : IRequestHandler<UserRegisterRequest, UserRegisterResponse>
     {
         private readonly IUserRepository _userRepository;
         private readonly IOtpVerificationRepository _otpVerificationRepository;
-        private readonly IJwtFactory _jwtFactory;
-        private readonly ITokenFactory _tokenFactory;
-        private readonly IUserSession _userSession;
+        private readonly IOtpStore _otpStore;
         private readonly IEmailService _emailService;
-        private readonly IMapper _mapper;
         private readonly ILogger<UserRegisterHandler> _logger;
         private readonly IStringLocalizer<UserRegisterHandler> _localizer;
 
         public UserRegisterHandler(
             IUserRepository userRepository,
             IOtpVerificationRepository otpVerificationRepository,
-            IJwtFactory jwtFactory,
-            ITokenFactory tokenFactory,
-            IUserSession userSession,
             IEmailService emailService,
-            IMapper mapper,
+            IOtpStore otpStore,
             ILogger<UserRegisterHandler> logger,
             IStringLocalizer<UserRegisterHandler> localizer)
         {
+            _otpStore = otpStore;
             _userRepository = userRepository;
             _otpVerificationRepository = otpVerificationRepository;
-            _jwtFactory = jwtFactory;
-            _tokenFactory = tokenFactory;
-            _userSession = userSession;
             _emailService = emailService;
-            _mapper = mapper;
             _logger = logger;
             _localizer = localizer;
         }
 
         public async Task<UserRegisterResponse> Handle(UserRegisterRequest request, CancellationToken cancellationToken)
         {
-            return await UserRegister(request);
+            return await UserRegister(request, cancellationToken);
         }
 
-        private async Task<UserRegisterResponse> UserRegister(UserRegisterRequest request)
+        private async Task<UserRegisterResponse> UserRegister(UserRegisterRequest request, CancellationToken cancellationToken)
         {
             var email = request.Email;
 
             #region Check email exists
-            var emailDb = await _userRepository.GetByEmailAsync(email, cancellationToken: default);
+            var emailDb = await _userRepository.GetByEmailAsync(email, cancellationToken);
             if (emailDb != null)
             {
                 var message = CommonAppMessageUtils.AlreadyExist<_User>(email, _localizer);
@@ -68,7 +57,16 @@ namespace BizMate.Application.UserCases.User.Commands.UserRegister
             var otpCode = OtpGenerator.Generate(6);
             var expiredAt = DateTime.UtcNow.AddMinutes(5);
 
-            await _otpVerificationRepository.AddOtpAsync(email, otpCode, expiredAt);
+            await _otpVerificationRepository.AddOtpAsync(email, otpCode, expiredAt, cancellationToken);
+            var tempData = new TempOtpUserData
+            {
+                Email = request.Email,
+                FullName = request.FullName,
+                StoreName = request.NameStore,
+                Otp = otpCode
+            };
+
+            await _otpStore.SaveOtpAsync(request.Email, tempData, TimeSpan.FromMinutes(5), cancellationToken);
 
             try
             {
@@ -81,7 +79,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserRegister
             }
             #endregion
 
-            return new UserRegisterResponse(email, expiredAt);
+            return new UserRegisterResponse(tempData.FullName, tempData.StoreName, email, expiredAt);
         }
     }
 }
