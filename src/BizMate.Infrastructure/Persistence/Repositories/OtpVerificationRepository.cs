@@ -13,7 +13,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             _context = context;
         }
 
-        public async Task AddOtpAsync(string email, string otpCode, DateTime expiredAt)
+        public async Task AddOtpAsync(string email, string otpCode, DateTime expiredAt, CancellationToken cancellationToken)
         {
             var otp = new OtpVerification
             {
@@ -24,7 +24,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                 IsUsed = false
             };
 
-            await _context.OtpVerifications.AddAsync(otp);
+            await _context.OtpVerifications.AddAsync(otp, cancellationToken);
             await _context.SaveChangesAsync();
         }
 

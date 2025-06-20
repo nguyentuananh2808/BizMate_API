@@ -14,13 +14,13 @@ namespace BizMate.Infrastructure.Services
             _cache = cache;
         }
 
-        public async Task SaveOtpAsync(string email, TempOtpUserData data, TimeSpan expiresIn)
+        public async Task SaveOtpAsync(string email, TempOtpUserData data, TimeSpan expiresIn, CancellationToken cancellationToken)
         {
             var json = JsonConvert.SerializeObject(data);
             await _cache.SetStringAsync($"otp:{email}", json, new DistributedCacheEntryOptions
             {
                 AbsoluteExpirationRelativeToNow = expiresIn
-            });
+            }, cancellationToken);
         }
 
         public async Task<TempOtpUserData?> GetOtpAsync(string email)

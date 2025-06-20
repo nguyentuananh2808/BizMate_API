@@ -19,5 +19,16 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                 .Include(x => x.Store) 
                 .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
         }
+
+        public async Task AddAsync(User user, CancellationToken cancellationToken = default)
+        {
+            if (user.Store != null)
+            {
+                _context.Stores.Add(user.Store); 
+            }
+
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync(cancellationToken); 
+        }
     }
 }
