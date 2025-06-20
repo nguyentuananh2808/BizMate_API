@@ -8,7 +8,12 @@ namespace BizMate.Application.UserCases.User.Commands.UserLogin.Validators
     {
         public UserLoginRequestValidator(IStringLocalizer localizer)
         {
-            RuleFor(x => x.Email).Cascade(CascadeMode.Stop)
+            RuleFor(x => x.Email)
+                .NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty])
+                .EmailAddress().WithMessage(localizer[ValidationMessage.LocalizedStrings.InvalidEnumValue]);
+
+            RuleFor(x => x.Password)
+                .Cascade(CascadeMode.Stop)
                 .NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty])
                 .MinimumLength(8).WithMessage(localizer[ValidationMessage.LocalizedStrings.MustHaveMinLength])
                 .Matches(@"[A-Z]").WithMessage(localizer[ValidationMessage.LocalizedStrings.MustContainUppercase])

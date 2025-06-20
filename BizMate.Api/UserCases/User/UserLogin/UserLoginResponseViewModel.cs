@@ -1,7 +1,7 @@
 ﻿using BizMate.Public.Dto.Identity;
 using BizMate.Public.Dto.UserAggregate;
 
-namespace BizMate.Api.UserCases.User
+namespace BizMate.Api.UserCases.User.UserLogin
 {
     public class UserLoginResponseViewModel
     {

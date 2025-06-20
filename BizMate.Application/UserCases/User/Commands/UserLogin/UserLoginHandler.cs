@@ -20,7 +20,6 @@ namespace BizMate.Application.UserCases.User.Commands.UserLogin
         private readonly IUserSession _userSession;
         private readonly IMapper _mapper;
         private readonly ILogger<UserLoginHandler> _logger;
-        private readonly IDistributedCache _cache;
         private readonly IStringLocalizer<UserLoginHandler> _localizer;
 
 
@@ -33,7 +32,6 @@ namespace BizMate.Application.UserCases.User.Commands.UserLogin
             _userSession = userSession;
             _mapper = mapper;
             _logger = logger;
-            _cache = cache;
             _localizer = localizer;
         }
 

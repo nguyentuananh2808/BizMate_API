@@ -3,7 +3,7 @@ using BizMate.Application.Common.Interfaces;
 using BizMate.Application.UserCases.User.Commands.UserLogin;
 using System.Net;
 
-namespace BizMate.Api.UserCases.User
+namespace BizMate.Api.UserCases.User.UserLogin
 {
     public sealed class UserLoginPresenter : IOutputPort<UserLoginResponse>
     {

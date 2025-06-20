@@ -15,7 +15,7 @@ namespace BizMate.Infrastructure.Persistence
         public DbSet<InventoryReceipt> InventoryReceipts => Set<InventoryReceipt>();
         public DbSet<InventoryReceiptDetail> InventoryReceiptDetails => Set<InventoryReceiptDetail>();
         public DbSet<Lookup> Lookups => Set<Lookup>();
-
+        public DbSet<OtpVerification> OtpVerifications { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

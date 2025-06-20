@@ -8,6 +8,8 @@ using BizMate.Application.Common.Mappings;
 using BizMate.Application.Common.Security;
 using BizMate.Infrastructure.Security;
 using BizMate.Public.Auth;
+using BizMate.Application.Common.Extensions;
+using BizMate.Application.Common.Interfaces;
 
 namespace BizMate.Infrastructure
 {
@@ -22,7 +24,9 @@ namespace BizMate.Infrastructure
             services.AddAutoMapper(typeof(UserMappingProfile));
             services.AddScoped<IJwtFactory, JwtFactory>();
             services.AddScoped<ITokenFactory, TokenFactory>();
+            services.AddScoped<IOtpVerificationRepository, OtpVerificationRepository>();
             services.AddScoped<IUserSession, UserSession>();
+            services.AddScoped<IEmailService, SmtpEmailService>();
 
             return services;
         }

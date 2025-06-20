@@ -1,4 +1,4 @@
-﻿using BizMate.Api.UserCases.User;
+﻿using BizMate.Api.UserCases.User.UserLogin;
 using BizMate.Application.Common.Interfaces;
 using BizMate.Infrastructure;
 using BizMate.Infrastructure.Security;

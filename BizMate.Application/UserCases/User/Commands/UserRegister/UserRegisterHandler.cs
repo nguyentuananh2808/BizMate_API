@@ -1,0 +1,87 @@
+﻿using AutoMapper;
+using BizMate.Application.Common.Extensions;
+using BizMate.Application.Common.Interfaces;
+using BizMate.Application.Common.Interfaces.Repositories;
+using BizMate.Application.Common.Security;
+using BizMate.Public.Message;
+using MediatR;
+using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Logging;
+using _User = BizMate.Domain.Entities.User;
+
+namespace BizMate.Application.UserCases.User.Commands.UserRegister
+{
+    public class UserRegisterHandler : IRequestHandler<UserRegisterRequest, UserRegisterResponse>
+    {
+        private readonly IUserRepository _userRepository;
+        private readonly IOtpVerificationRepository _otpVerificationRepository;
+        private readonly IJwtFactory _jwtFactory;
+        private readonly ITokenFactory _tokenFactory;
+        private readonly IUserSession _userSession;
+        private readonly IEmailService _emailService;
+        private readonly IMapper _mapper;
+        private readonly ILogger<UserRegisterHandler> _logger;
+        private readonly IStringLocalizer<UserRegisterHandler> _localizer;
+
+        public UserRegisterHandler(
+            IUserRepository userRepository,
+            IOtpVerificationRepository otpVerificationRepository,
+            IJwtFactory jwtFactory,
+            ITokenFactory tokenFactory,
+            IUserSession userSession,
+            IEmailService emailService,
+            IMapper mapper,
+            ILogger<UserRegisterHandler> logger,
+            IStringLocalizer<UserRegisterHandler> localizer)
+        {
+            _userRepository = userRepository;
+            _otpVerificationRepository = otpVerificationRepository;
+            _jwtFactory = jwtFactory;
+            _tokenFactory = tokenFactory;
+            _userSession = userSession;
+            _emailService = emailService;
+            _mapper = mapper;
+            _logger = logger;
+            _localizer = localizer;
+        }
+
+        public async Task<UserRegisterResponse> Handle(UserRegisterRequest request, CancellationToken cancellationToken)
+        {
+            return await UserRegister(request);
+        }
+
+        private async Task<UserRegisterResponse> UserRegister(UserRegisterRequest request)
+        {
+            var email = request.Email;
+
+            #region Check email exists
+            var emailDb = await _userRepository.GetByEmailAsync(email, cancellationToken: default);
+            if (emailDb != null)
+            {
+                var message = CommonAppMessageUtils.AlreadyExist<_User>(email, _localizer);
+                _logger.LogWarning(message);
+                return new UserRegisterResponse(success: false, message: message);
+            }
+            #endregion
+
+            #region Create & save OTP
+            var otpCode = OtpGenerator.Generate(6);
+            var expiredAt = DateTime.UtcNow.AddMinutes(5);
+
+            await _otpVerificationRepository.AddOtpAsync(email, otpCode, expiredAt);
+
+            try
+            {
+                await _emailService.SendOtpEmailAsync(email, otpCode, expiredAt);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Gửi OTP thất bại.");
+                return new UserRegisterResponse(success: false, message: "Không thể gửi OTP. Vui lòng thử lại.");
+            }
+            #endregion
+
+            return new UserRegisterResponse(email, expiredAt);
+        }
+    }
+}

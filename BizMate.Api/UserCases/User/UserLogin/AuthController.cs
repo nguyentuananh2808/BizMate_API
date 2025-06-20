@@ -3,7 +3,7 @@ using BizMate.Domain.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
-namespace BizMate.Api.UserCases.User
+namespace BizMate.Api.UserCases.User.UserLogin
 {
     [Route(ApiNameConstants.ApiV1 + ApiNameConstants.Authentication)]
     [ApiController]
