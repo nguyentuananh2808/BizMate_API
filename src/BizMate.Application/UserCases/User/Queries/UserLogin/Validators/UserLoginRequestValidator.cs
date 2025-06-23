@@ -1,8 +1,9 @@
-﻿using BizMate.Public.Message;
+﻿using BizMate.Application.UserCases.User.Queries.UserLogin;
+using BizMate.Public.Message;
 using FluentValidation;
 using Microsoft.Extensions.Localization;
 
-namespace BizMate.Application.UserCases.User.Commands.UserLogin.Validators
+namespace BizMate.Application.UserCases.User.Queries.UserLogin.Validators
 {
     public class UserLoginRequestValidator : AbstractValidator<UserLoginRequest>
     {

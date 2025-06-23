@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BizMate.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250619162014_Init-Database")]
-    partial class InitDatabase
+    [Migration("20250623155949_init-database")]
+    partial class initdatabase
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -39,6 +39,9 @@ namespace BizMate.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<long>("RowVersion")
+                        .HasColumnType("bigint");
+
                     b.Property<Guid>("StoreId")
                         .HasColumnType("uuid");
 
@@ -55,8 +58,14 @@ namespace BizMate.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("Date")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("RowVersion")
+                        .HasColumnType("bigint");
 
                     b.Property<Guid>("StoreId")
                         .HasColumnType("uuid");
@@ -66,6 +75,8 @@ namespace BizMate.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
 
                     b.HasIndex("StoreId");
 
@@ -87,6 +98,9 @@ namespace BizMate.Infrastructure.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
+                    b.Property<long>("RowVersion")
+                        .HasColumnType("bigint");
+
                     b.HasKey("Id");
 
                     b.HasIndex("InventoryReceiptId");
@@ -96,71 +110,32 @@ namespace BizMate.Infrastructure.Migrations
                     b.ToTable("InventoryReceiptDetails");
                 });
 
-            modelBuilder.Entity("BizMate.Domain.Entities.Lookup", b =>
+            modelBuilder.Entity("BizMate.Domain.Entities.OtpVerification", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Key")
+                    b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Type")
+                    b.Property<DateTime>("ExpiredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsUsed")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("OtpCode")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Value")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<long>("RowVersion")
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Lookups");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("17c94c00-f803-4497-a4d8-b3baf6d9457d"),
-                            Key = "Import",
-                            Type = "ReceiptType",
-                            Value = "Nhập kho"
-                        },
-                        new
-                        {
-                            Id = new Guid("d2aa8893-205d-42fa-9da7-02128bd72cd6"),
-                            Key = "Export",
-                            Type = "ReceiptType",
-                            Value = "Xuất kho"
-                        },
-                        new
-                        {
-                            Id = new Guid("379e938a-5bd6-4926-8748-f1403888185c"),
-                            Key = "kg",
-                            Type = "Unit",
-                            Value = "Kilogram"
-                        },
-                        new
-                        {
-                            Id = new Guid("2b812291-1133-4202-aea3-6c615d999b53"),
-                            Key = "pcs",
-                            Type = "Unit",
-                            Value = "Cái"
-                        },
-                        new
-                        {
-                            Id = new Guid("8b29b47b-aafc-490d-ba64-357ef9f0b4a8"),
-                            Key = "box",
-                            Type = "Unit",
-                            Value = "Thùng"
-                        },
-                        new
-                        {
-                            Id = new Guid("62298358-d4bd-4d86-911f-42eac3420135"),
-                            Key = "bag",
-                            Type = "Unit",
-                            Value = "Bao"
-                        });
+                    b.ToTable("OtpVerifications");
                 });
 
             modelBuilder.Entity("BizMate.Domain.Entities.Product", b =>
@@ -168,6 +143,9 @@ namespace BizMate.Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
 
                     b.Property<string>("ImageUrl")
                         .HasColumnType("text");
@@ -179,9 +157,8 @@ namespace BizMate.Infrastructure.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
-                    b.Property<string>("SKU")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<long>("RowVersion")
+                        .HasColumnType("bigint");
 
                     b.Property<Guid>("StoreId")
                         .HasColumnType("uuid");
@@ -189,9 +166,8 @@ namespace BizMate.Infrastructure.Migrations
                     b.Property<Guid?>("SupplierId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Unit")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<int>("Unit")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -212,6 +188,9 @@ namespace BizMate.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<long>("RowVersion")
+                        .HasColumnType("bigint");
+
                     b.HasKey("Id");
 
                     b.ToTable("Stores");
@@ -230,6 +209,9 @@ namespace BizMate.Infrastructure.Migrations
                     b.Property<string>("Phone")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<long>("RowVersion")
+                        .HasColumnType("bigint");
 
                     b.Property<Guid>("StoreId")
                         .HasColumnType("uuid");
@@ -267,6 +249,9 @@ namespace BizMate.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<long>("RowVersion")
+                        .HasColumnType("bigint");
+
                     b.Property<Guid>("StoreId")
                         .HasColumnType("uuid");
 
@@ -290,11 +275,19 @@ namespace BizMate.Infrastructure.Migrations
 
             modelBuilder.Entity("BizMate.Domain.Entities.InventoryReceipt", b =>
                 {
+                    b.HasOne("BizMate.Domain.Entities.User", "CreatedByUser")
+                        .WithMany("CreatedReceipts")
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("BizMate.Domain.Entities.Store", "Store")
                         .WithMany("InventoryReceipts")
                         .HasForeignKey("StoreId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("CreatedByUser");
 
                     b.Navigation("Store");
                 });
@@ -373,6 +366,11 @@ namespace BizMate.Infrastructure.Migrations
                     b.Navigation("Suppliers");
 
                     b.Navigation("Users");
+                });
+
+            modelBuilder.Entity("BizMate.Domain.Entities.User", b =>
+                {
+                    b.Navigation("CreatedReceipts");
                 });
 #pragma warning restore 612, 618
         }

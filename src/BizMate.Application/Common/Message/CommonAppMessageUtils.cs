@@ -61,5 +61,9 @@ namespace BizMate.Public.Message
         {
             return localizer["COMMON.NOT_EMPTY", fieldName];
         }
+        public static string DuplicateData(string fieldName, IStringLocalizer localizer)
+        {
+            return localizer["COMMON.DUPLICATE", fieldName];
+        }
     }
 }

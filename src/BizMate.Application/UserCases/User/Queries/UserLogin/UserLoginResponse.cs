@@ -2,7 +2,7 @@
 using BizMate.Public.Dto.Identity;
 using BizMate.Public.Dto.UserAggregate;
 
-namespace BizMate.Application.UserCases.User.Commands.UserLogin
+namespace BizMate.Application.UserCases.User.Queries.UserLogin
 {
     public class UserLoginResponse : BaseResponse
     {

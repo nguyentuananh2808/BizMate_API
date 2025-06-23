@@ -1,7 +1,7 @@
 ﻿using MediatR;
 using System.ComponentModel.DataAnnotations;
 
-namespace BizMate.Application.UserCases.User.Commands.UserLogin
+namespace BizMate.Application.UserCases.User.Queries.UserLogin
 {
     public class UserLoginRequest : IRequest<UserLoginResponse>
     {

@@ -6,6 +6,7 @@
         public const string ApiV1 = "v1/";
         public const string ApiV2 = "v2/";
         public const string Authentication = "auth";
+        public const string Product = "product";
         public const string User = "user";
 
         // action

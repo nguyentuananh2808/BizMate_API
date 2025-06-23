@@ -10,7 +10,7 @@ using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using _User = BizMate.Domain.Entities.User;
 
-namespace BizMate.Application.UserCases.User.Commands.UserLogin
+namespace BizMate.Application.UserCases.User.Queries.UserLogin
 {
     public sealed class UserLoginHandler : IRequestHandler<UserLoginRequest, UserLoginResponse>
     {
@@ -69,9 +69,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserLogin
             #region Generate token
             var generateToken = _tokenFactory.GenerateToken();
             var accessToken = await _jwtFactory.GenerateEncodedToken(emailDb);
-            _userSession.AccessToken = $"{AuthConstants.Bearer} {accessToken.Token}";
             #endregion
-
             var userDto = _mapper.Map<UserCoreDto>(emailDb);
             return new UserLoginResponse(accessToken, userDto);
         }
