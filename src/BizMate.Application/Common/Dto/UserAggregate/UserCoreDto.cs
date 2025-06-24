@@ -1,8 +1,9 @@
-﻿namespace BizMate.Public.Dto.UserAggregate
+﻿using BizMate.Domain.Entities;
+
+namespace BizMate.Public.Dto.UserAggregate
 {
-    public class UserCoreDto
+    public class UserCoreDto : BaseEntity
     {
-        public Guid Id { get; set; }
         public string FullName { get; set; } = default!;
         public string Email { get; set; } = default!;
         public string Role { get; set; }

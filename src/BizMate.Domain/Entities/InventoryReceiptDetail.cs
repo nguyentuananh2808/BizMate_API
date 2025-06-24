@@ -1,15 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace BizMate.Domain.Entities
+﻿namespace BizMate.Domain.Entities
 {
-    public class InventoryReceiptDetail
+    public class InventoryReceiptDetail : BaseEntity
     {
-        public Guid Id { get; set; }
-
         public Guid InventoryReceiptId { get; set; }
         public InventoryReceipt InventoryReceipt { get; set; } = default!;
 

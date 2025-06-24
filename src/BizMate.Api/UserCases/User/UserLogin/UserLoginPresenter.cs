@@ -1,6 +1,6 @@
 ﻿using BizMate.Api.Serialization;
 using BizMate.Application.Common.Interfaces;
-using BizMate.Application.UserCases.User.Commands.UserLogin;
+using BizMate.Application.UserCases.User.Queries.UserLogin;
 using System.Net;
 
 namespace BizMate.Api.UserCases.User.UserLogin

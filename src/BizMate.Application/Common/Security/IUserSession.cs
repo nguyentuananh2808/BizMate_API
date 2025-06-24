@@ -2,6 +2,11 @@
 {
     public interface IUserSession
     {
-        string? AccessToken { get; set; }
+        Guid UserId { get; }
+        string? UserName { get; }
+        string? Role { get; }
+        Guid StoreId { get; }
+        string? AccessToken { get; }
+        bool IsAuthenticated { get; }
     }
 }

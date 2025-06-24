@@ -26,21 +26,22 @@ namespace BizMate.Infrastructure.Security
                 new Claim(JwtRegisteredClaimNames.Jti, await _jwtOptions.JtiGenerator()),
                 new Claim(JwtRegisteredClaimNames.Iat, ToUnixEpochDate(_jwtOptions.IssuedAt).ToString(), ClaimValueTypes.Integer64),
 
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim("UserId", user.Id.ToString()),
                 new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.Name, user.FullName),
                 new Claim(ClaimTypes.Role, user.Role),
-                new Claim("store", user.Store?.Name ?? string.Empty)
+                new Claim("store_id", user.StoreId.ToString())
             };
 
             var jwt = new JwtSecurityToken(
                 issuer: _jwtOptions.Issuer,
                 audience: _jwtOptions.Audience,
                 claims: claims,
-                notBefore: null,
+                notBefore: DateTime.UtcNow,
                 expires: _jwtOptions.Expiration,
                 signingCredentials: _jwtOptions.SigningCredentials
             );
+
 
             var encodedJwt = _jwtTokenHandler.WriteToken(jwt);
             return new AccessToken(encodedJwt, _jwtOptions.ExpirySeconds);

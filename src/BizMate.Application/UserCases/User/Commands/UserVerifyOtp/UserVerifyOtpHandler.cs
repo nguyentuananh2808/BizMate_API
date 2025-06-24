@@ -91,11 +91,12 @@ namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
                 PasswordHash = hashedPassword,
                 PasswordSalt = salt,
                 Store = store,
-                StoreId = store.Id
+                StoreId = store.Id,
+                RowVersion = 1
             };
+            await _userRepository.AddAsync(user, cancellationToken);
             #endregion
 
-            await _userRepository.AddAsync(user, cancellationToken);
             await _otpStore.RemoveOtpAsync(email);
 
             var userDto = _mapper.Map<UserCoreDto>(user);

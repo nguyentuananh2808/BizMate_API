@@ -1,8 +1,7 @@
 ﻿namespace BizMate.Domain.Entities
 {
-    public class OtpVerification
+    public class OtpVerification : BaseEntity
     {
-        public Guid Id { get; set; }
         public string Email { get; set; }
         public string OtpCode { get; set; }
         public DateTime ExpiredAt { get; set; }

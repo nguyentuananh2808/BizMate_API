@@ -1,7 +1,13 @@
 ﻿using BizMate.Api.UserCases.User.UserLogin;
 using BizMate.Application.Common.Interfaces;
+using BizMate.Application.UserCases.Product.Commands.CreateProduct.Validators;
+using BizMate.Application.UserCases.Product.Commands.UpdateProduct.Validators;
+using BizMate.Application.UserCases.User.Commands.UserRegister.Validators;
+using BizMate.Application.UserCases.User.Commands.UserVerifyOtp.Validators;
 using BizMate.Infrastructure;
 using BizMate.Infrastructure.Security;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -35,6 +41,16 @@ internal class Program
         {
             options.Configuration = builder.Configuration.GetConnectionString("Redis");
         });
+
+        builder.Services.AddFluentValidationAutoValidation(); 
+        builder.Services.AddFluentValidationClientsideAdapters();
+
+        // Register validators
+        builder.Services.AddValidatorsFromAssemblyContaining<UpdateProductRequestValidator>();
+        builder.Services.AddValidatorsFromAssemblyContaining<CreateProductRequestValidator>();
+        builder.Services.AddValidatorsFromAssemblyContaining<UserRegisterRequestValidator>();
+        builder.Services.AddValidatorsFromAssemblyContaining<UserVerifyOtpRequestValidator>();
+
 
 
         builder.Services.AddAuthentication(options =>
