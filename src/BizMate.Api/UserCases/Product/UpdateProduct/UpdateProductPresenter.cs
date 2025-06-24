@@ -1,25 +1,25 @@
 ﻿using BizMate.Api.Serialization;
 using BizMate.Application.Common.Interfaces;
-using BizMate.Application.UserCases.Product.Commands.CreateProduct;
+using BizMate.Application.UserCases.Product.Commands.UpdateProduct;
 using System.Net;
 
-namespace BizMate.Api.UserCases.Product.CreateProduct
+namespace BizMate.Api.UserCases.Product.UpdateProduct
 {
-    public class ProductPresenter : IOutputPort<CreateProductResponse>
+    public class UpdateProductPresenter : IOutputPort<UpdateProductResponse>
     {
         public JsonContentResult ContentResult { get; }
 
-        public ProductPresenter()
+        public UpdateProductPresenter()
         {
             ContentResult = new JsonContentResult();
         }
 
-        public void Handle(CreateProductResponse response)
+        public void Handle(UpdateProductResponse response)
         {
             ContentResult.StatusCode = (int)(response.Success ? HttpStatusCode.OK : HttpStatusCode.Unauthorized);
             ContentResult.Content = response.Success
                 ? CommonJsonSerializer.SerializeObject(
-                    new ProductResponseViewModel(response.Prodduct))
+                    new UpdateProductResponseViewModel(response.Prodduct))
                 : CommonJsonSerializer.SerializeObject(response);
         }
     }

@@ -2,10 +2,10 @@
 
 namespace BizMate.Api.UserCases.Product.CreateProduct
 {
-    public class ProductResponseViewModel
+    public class CreateProductResponseViewModel
     {
         public ProductCoreDto Product { get; set; }
-        public ProductResponseViewModel(ProductCoreDto product)
+        public CreateProductResponseViewModel(ProductCoreDto product)
         {
             Product = product;
         }

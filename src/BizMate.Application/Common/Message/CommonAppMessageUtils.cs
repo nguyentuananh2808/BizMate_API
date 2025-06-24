@@ -65,5 +65,10 @@ namespace BizMate.Public.Message
         {
             return localizer["COMMON.DUPLICATE", fieldName];
         }
+        public static string ConcurrencyConflict(IStringLocalizer localizer)
+        {
+            return localizer["COMMON.CONCURRENCY_CONFLICT"];
+        }
+
     }
 }

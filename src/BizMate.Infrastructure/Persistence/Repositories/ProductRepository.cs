@@ -37,6 +37,33 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             return result.ToList();
         }
 
+        public async Task<(List<Product> Products, int TotalCount)> SearchProductsWithPaging(
+            Guid storeId,
+            string? keyword,
+            int pageIndex,
+            int pageSize,
+            QueryFactory queryFactory)
+        {
+            var baseQuery = queryFactory.Query("Products as p")
+                .Where("p.StoreId", storeId);
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                baseQuery.WhereRaw(@"LOWER(p.""Name"") LIKE ?", $"%{keyword.ToLower()}%");
+            }
+
+            // Clone query to get total count
+            var totalQuery = baseQuery.Clone();
+            var totalCount = await totalQuery.CountAsync<int>();
+
+            // Apply paging
+            var results = await baseQuery
+                .Offset((pageIndex - 1) * pageSize)
+                .Limit(pageSize)
+                .GetAsync<Product>();
+
+            return (results.ToList(), totalCount);
+        }
 
 
         public async Task AddAsync(Product product)
@@ -45,11 +72,11 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateAsync(Product product, uint originalRowVersion)
+        public async Task UpdateAsync(Product product)
         {
             var entry = _context.Entry(product);
 
-            entry.Property(nameof(BaseEntity.RowVersion)).OriginalValue = originalRowVersion;
+            entry.Property(nameof(BaseEntity.RowVersion)).OriginalValue = product.RowVersion;
 
             product.RowVersion++;
 

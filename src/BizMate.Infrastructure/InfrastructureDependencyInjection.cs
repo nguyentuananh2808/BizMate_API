@@ -63,6 +63,7 @@ public static class InfrastructureDependencyInjection
             return new QueryFactory(connection, compiler);
         });
 
+
         return services;
     }
 }

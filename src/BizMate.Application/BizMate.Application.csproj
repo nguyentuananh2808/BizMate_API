@@ -23,4 +23,8 @@
     <ProjectReference Include="..\BizMate.Domain\BizMate.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Resources\" />
+  </ItemGroup>
+
 </Project>

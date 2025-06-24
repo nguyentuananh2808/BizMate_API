@@ -5,9 +5,9 @@ using Microsoft.Extensions.Localization;
 
 namespace BizMate.Application.UserCases.Product.Commands.CreateProduct.Validators
 {
-    public class CreateProductRequestValidatior : AbstractValidator<CreateProductRequest>
+    public class CreateProductRequestValidator : AbstractValidator<CreateProductRequest>
     {
-        public CreateProductRequestValidatior(IStringLocalizer localizer)
+        public CreateProductRequestValidator(IStringLocalizer<CreateProductRequestValidator> localizer)
         {
             RuleFor(x => x.Name).NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty]);
             RuleFor(x => x.Quantity).NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty]);
