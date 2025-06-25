@@ -2,6 +2,7 @@
 {
     public class Product : BaseEntity
     {
+        public string ProductCode { get; set; } = default!;
         public string Name { get; set; } = default!;
         public int Quantity { get; set; }
         public int Unit { get; set; } = default!;

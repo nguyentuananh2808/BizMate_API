@@ -8,20 +8,21 @@ using SqlKata.Execution;
 
 namespace BizMate.Application.UserCases.Product.Queries.Products
 {
-    public class ProductsHandler : IRequestHandler<ProductsRequest, ProductsResponse>
+    public class GetProductsHandler : IRequestHandler<GetProductsRequest, GetProductsResponse>
     {
         private readonly IProductRepository _productRepository;
         private readonly IUserSession _userSession;
         private readonly QueryFactory _queryFactory;
         private readonly IMapper _mapper;
-        private readonly ILogger<ProductsHandler> _logger;
+        private readonly ILogger<GetProductsHandler> _logger;
 
-        public ProductsHandler(
+        #region constructor
+        public GetProductsHandler(
             IProductRepository productRepository,
             IUserSession userSession,
             QueryFactory queryFactory,
             IMapper mapper,
-            ILogger<ProductsHandler> logger)
+            ILogger<GetProductsHandler> logger)
         {
             _productRepository = productRepository;
             _userSession = userSession;
@@ -29,8 +30,9 @@ namespace BizMate.Application.UserCases.Product.Queries.Products
             _mapper = mapper;
             _logger = logger;
         }
+        #endregion
 
-        public async Task<ProductsResponse> Handle(ProductsRequest request, CancellationToken cancellationToken)
+        public async Task<GetProductsResponse> Handle(GetProductsRequest request, CancellationToken cancellationToken)
         {
             try
             {
@@ -45,12 +47,12 @@ namespace BizMate.Application.UserCases.Product.Queries.Products
                     queryFactory: _queryFactory);
 
                 var mappedProducts = _mapper.Map<List<ProductCoreDto>>(products);
-                return new ProductsResponse(mappedProducts, totalCount);
+                return new GetProductsResponse(mappedProducts, totalCount);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Lỗi khi truy vấn danh sách sản phẩm.");
-                return new ProductsResponse(false, "Không thể tải danh sách sản phẩm. Vui lòng thử lại.");
+                return new GetProductsResponse(false, "Không thể tải danh sách sản phẩm. Vui lòng thử lại.");
             }
         }
     }

@@ -4,19 +4,19 @@ using System.Text.Json.Serialization;
 
 namespace BizMate.Application.UserCases.Product.Queries.Products
 {
-    public class ProductsResponse : BaseResponse
+    public class GetProductsResponse : BaseResponse
     {
         public IEnumerable<ProductCoreDto> Products { get; }
         public int TotalCount { get; }
 
         [JsonConstructor]
-        public ProductsResponse(IEnumerable<ProductCoreDto> products, int totalCount, bool success = true) : base(success)
+        public GetProductsResponse(IEnumerable<ProductCoreDto> products, int totalCount, bool success = true) : base(success)
         {
             Products = products;
             TotalCount = totalCount;
         }
 
-        public ProductsResponse(bool success = false, string message = null) : base(success, message)
+        public GetProductsResponse(bool success = false, string message = null) : base(success, message)
         {
         }
     }

@@ -20,6 +20,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
         private readonly IStringLocalizer<UserVerifyOtpHandler> _localizer;
         private readonly IMapper _mapper;
 
+        #region constructor
         public UserVerifyOtpHandler(
             IUserRepository userRepository,
             IOtpStore otpStore,
@@ -33,6 +34,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
             _localizer = localizer;
             _mapper = mapper;
         }
+        #endregion
 
         public async Task<UserVerifyOtpResponse> Handle(UserVerifyOtpRequest request, CancellationToken cancellationToken)
         {

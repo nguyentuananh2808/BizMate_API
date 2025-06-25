@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Security;
-using BizMate.Domain.Constants;
 using BizMate.Public.Dto.UserAggregate;
 using BizMate.Public.Message;
 using MediatR;
@@ -22,7 +21,7 @@ namespace BizMate.Application.UserCases.User.Queries.UserLogin
         private readonly ILogger<UserLoginHandler> _logger;
         private readonly IStringLocalizer<UserLoginHandler> _localizer;
 
-
+        #region constructor
         public UserLoginHandler(IJwtFactory jwtFactory, ITokenFactory tokenFactory, IUserSession userSession,
             IMapper mapper, ILogger<UserLoginHandler> logger, IDistributedCache cache, IStringLocalizer<UserLoginHandler> localizer, IUserRepository userRepository)
         {
@@ -34,6 +33,7 @@ namespace BizMate.Application.UserCases.User.Queries.UserLogin
             _logger = logger;
             _localizer = localizer;
         }
+        #endregion
 
         public async Task<UserLoginResponse> Handle(UserLoginRequest request, CancellationToken cancellationToken)
         {
