@@ -18,6 +18,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserRegister
         private readonly ILogger<UserRegisterHandler> _logger;
         private readonly IStringLocalizer<UserRegisterHandler> _localizer;
 
+        #region constructor
         public UserRegisterHandler(
             IUserRepository userRepository,
             IOtpVerificationRepository otpVerificationRepository,
@@ -33,7 +34,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserRegister
             _logger = logger;
             _localizer = localizer;
         }
-
+        #endregion
         public async Task<UserRegisterResponse> Handle(UserRegisterRequest request, CancellationToken cancellationToken)
         {
             return await UserRegister(request, cancellationToken);

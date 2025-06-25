@@ -8,19 +8,23 @@ using SqlKata.Execution;
 using AutoMapper;
 using _Product = BizMate.Domain.Entities.Product;
 using BizMate.Application.Common.Security;
+using BizMate.Application.Common.Interfaces;
 
 namespace BizMate.Application.UserCases.Product.Commands.CreateProduct
 {
     public class CreateProductHandler : IRequestHandler<CreateProductRequest, CreateProductResponse>
     {
         private readonly IProductRepository _productRepository;
+        private readonly ICodeGeneratorService _codeGeneratorService;
         private readonly IUserSession _userSession;
         private readonly QueryFactory _db;
         private readonly ILogger<CreateProductHandler> _logger;
         private readonly IStringLocalizer<CreateProductHandler> _localizer;
         private readonly IMapper _mapper;
 
+        #region constructor
         public CreateProductHandler(
+            ICodeGeneratorService codeGeneratorService,
             IUserSession userSession,
             IProductRepository productRepository,
             QueryFactory db,
@@ -28,6 +32,7 @@ namespace BizMate.Application.UserCases.Product.Commands.CreateProduct
             IStringLocalizer<CreateProductHandler> localizer,
             IMapper mapper)
         {
+            _codeGeneratorService = codeGeneratorService;
             _userSession = userSession;
             _productRepository = productRepository;
             _db = db;
@@ -35,7 +40,7 @@ namespace BizMate.Application.UserCases.Product.Commands.CreateProduct
             _localizer = localizer;
             _mapper = mapper;
         }
-
+        #endregion
         public async Task<CreateProductResponse> Handle(CreateProductRequest request, CancellationToken cancellationToken)
         {
             try
@@ -57,9 +62,13 @@ namespace BizMate.Application.UserCases.Product.Commands.CreateProduct
                 #endregion
 
                 #region create new product
+                // Generate product code
+                var productCode = await _codeGeneratorService.GenerateCodeAsync("SP");
+
                 var newProduct = new _Product
                 {
                     Id = Guid.NewGuid(),
+                    ProductCode = productCode,
                     Name = request.Name,
                     Quantity = request.Quantity,
                     Unit = request.Unit,

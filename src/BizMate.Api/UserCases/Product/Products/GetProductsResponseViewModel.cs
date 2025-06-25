@@ -2,10 +2,10 @@
 
 namespace BizMate.Api.UserCases.Product.Products
 {
-    public class ProductsResponseViewModel
+    public class GetProductsResponseViewModel
     {
         public IEnumerable<ProductCoreDto> Products { get; set; }
-        public ProductsResponseViewModel(IEnumerable<ProductCoreDto> products)
+        public GetProductsResponseViewModel(IEnumerable<ProductCoreDto> products)
         {
             Products = products;
         }

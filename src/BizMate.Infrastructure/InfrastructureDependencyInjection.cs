@@ -1,5 +1,4 @@
-﻿using BizMate.Application.Common.Dto.UserAggregate;
-using BizMate.Application.Common.Extensions;
+﻿using BizMate.Application.Common.Extensions;
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Mappings;
@@ -30,6 +29,12 @@ public static class InfrastructureDependencyInjection
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IOtpVerificationRepository, OtpVerificationRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
+        services.AddScoped<ICodeGeneratorRepository, CodeGeneratorRepository>();
+        services.AddScoped<ICodeGeneratorService, CodeGeneratorService>();
+        services.AddScoped<IStockRepository, StockRepository>();
+        services.AddScoped<IInventoryReceiptRepository, InventoryReceiptRepository>();
+
+
 
         // AutoMapper
         services.AddAutoMapper(typeof(UserMappingProfile));

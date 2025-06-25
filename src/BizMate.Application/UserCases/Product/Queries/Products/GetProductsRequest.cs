@@ -3,7 +3,7 @@ using MediatR;
 
 namespace BizMate.Application.UserCases.Product.Queries.Products
 {
-    public class ProductsRequest : SearchCore ,  IRequest<ProductsResponse>
+    public class GetProductsRequest : SearchCore ,  IRequest<GetProductsResponse>
     {
     }
 }

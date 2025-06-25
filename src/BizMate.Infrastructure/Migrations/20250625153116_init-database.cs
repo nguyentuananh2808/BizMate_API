@@ -12,6 +12,18 @@ namespace BizMate.Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "CodeSequences",
+                columns: table => new
+                {
+                    Prefix = table.Column<string>(type: "text", nullable: false),
+                    LastNumber = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CodeSequences", x => x.Prefix);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "OtpVerifications",
                 columns: table => new
                 {
@@ -111,6 +123,7 @@ namespace BizMate.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    ProductCode = table.Column<string>(type: "text", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
                     Quantity = table.Column<int>(type: "integer", nullable: false),
                     Unit = table.Column<int>(type: "integer", nullable: false),
@@ -142,9 +155,15 @@ namespace BizMate.Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    Type = table.Column<string>(type: "text", nullable: false),
+                    InventoryCode = table.Column<string>(type: "text", nullable: false),
+                    Type = table.Column<int>(type: "integer", nullable: false),
                     StoreId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedByUserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    SupplierName = table.Column<string>(type: "text", nullable: true),
+                    CustomerName = table.Column<string>(type: "text", nullable: true),
+                    CustomerPhone = table.Column<string>(type: "text", nullable: true),
+                    DeliveryAddress = table.Column<string>(type: "text", nullable: true),
+                    Description = table.Column<string>(type: "text", nullable: true),
                     RowVersion = table.Column<long>(type: "bigint", nullable: false)
                 },
                 constraints: table =>
@@ -171,6 +190,9 @@ namespace BizMate.Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     InventoryReceiptId = table.Column<Guid>(type: "uuid", nullable: false),
                     ProductId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ProductName = table.Column<string>(type: "text", nullable: false),
+                    ProductCode = table.Column<string>(type: "text", nullable: true),
+                    Unit = table.Column<int>(type: "integer", nullable: false),
                     Quantity = table.Column<int>(type: "integer", nullable: false),
                     RowVersion = table.Column<long>(type: "bigint", nullable: false)
                 },
@@ -181,12 +203,6 @@ namespace BizMate.Infrastructure.Migrations
                         name: "FK_InventoryReceiptDetails_InventoryReceipts_InventoryReceiptId",
                         column: x => x.InventoryReceiptId,
                         principalTable: "InventoryReceipts",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_InventoryReceiptDetails_Products_ProductId",
-                        column: x => x.ProductId,
-                        principalTable: "Products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -200,11 +216,6 @@ namespace BizMate.Infrastructure.Migrations
                 name: "IX_InventoryReceiptDetails_InventoryReceiptId",
                 table: "InventoryReceiptDetails",
                 column: "InventoryReceiptId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_InventoryReceiptDetails_ProductId",
-                table: "InventoryReceiptDetails",
-                column: "ProductId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_InventoryReceipts_CreatedByUserId",
@@ -241,6 +252,9 @@ namespace BizMate.Infrastructure.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "CodeSequences");
+
+            migrationBuilder.DropTable(
                 name: "Customers");
 
             migrationBuilder.DropTable(
@@ -250,16 +264,16 @@ namespace BizMate.Infrastructure.Migrations
                 name: "OtpVerifications");
 
             migrationBuilder.DropTable(
-                name: "InventoryReceipts");
-
-            migrationBuilder.DropTable(
                 name: "Products");
 
             migrationBuilder.DropTable(
-                name: "Users");
+                name: "InventoryReceipts");
 
             migrationBuilder.DropTable(
                 name: "Suppliers");
+
+            migrationBuilder.DropTable(
+                name: "Users");
 
             migrationBuilder.DropTable(
                 name: "Stores");

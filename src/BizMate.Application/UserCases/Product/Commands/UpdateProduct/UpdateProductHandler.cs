@@ -20,6 +20,7 @@ namespace BizMate.Application.UserCases.Product.Commands.UpdateProduct
         private readonly IStringLocalizer<UpdateProductHandler> _localizer;
         private readonly IMapper _mapper;
 
+        #region constructor
         public UpdateProductHandler(
             IUserSession userSession,
             IProductRepository productRepository,
@@ -35,7 +36,7 @@ namespace BizMate.Application.UserCases.Product.Commands.UpdateProduct
             _localizer = localizer;
             _mapper = mapper;
         }
-
+        #endregion
         public async Task<UpdateProductResponse> Handle(UpdateProductRequest request, CancellationToken cancellationToken)
         {
             try
