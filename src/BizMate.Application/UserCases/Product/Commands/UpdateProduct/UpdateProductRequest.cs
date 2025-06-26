@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace BizMate.Application.UserCases.Product.Commands.UpdateProduct
 {
-    public class UpdateProductRequest : IRequest<UpdateProductResponse>
+    public class UpdateProductRequest : IRequest<UpdateProductResponse> 
     {
         [Required]
         public Guid Id { get; set; }

@@ -1,35 +1,85 @@
 ﻿using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Domain.Entities;
+using BizMate.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using SqlKata.Execution;
 
-namespace BizMate.Infrastructure.Persistence.Repositories
+public class StockRepository : IStockRepository
 {
-    public class StockRepository : IStockRepository
+    private readonly AppDbContext _context;
+    private readonly QueryFactory _queryFactory;
+
+    public StockRepository(AppDbContext context, QueryFactory queryFactory)
     {
-        private readonly AppDbContext _context;
+        _context = context;
+        _queryFactory = queryFactory;
+    }
 
-        public StockRepository(AppDbContext context)
-        {
-            _context = context;
-        }
+    public async Task<Stock?> GetByStoreAndProductAsync(Guid storeId, Guid productId)
+    {
+        return await _context.Stocks
+            .FirstOrDefaultAsync(s => s.StoreId == storeId && s.ProductId == productId && !s.IsDeleted);
+    }
 
-        public async Task<Stock> GetByStoreAndProductAsync(Guid storeId, Guid productId)
-        {
-            return await _context.Stocks
-                .FirstOrDefaultAsync(s => s.StoreId == storeId && s.ProductId == productId);
-        }
+    public async Task AddAsync(Stock stock)
+    {
+        _context.Stocks.Add(stock);
+        await _context.SaveChangesAsync();
+    }
 
-        public async Task AddAsync(Stock stock)
-        {
-            _context.Stocks.Add(stock);
-            await _context.SaveChangesAsync();
-        }
+    public async Task UpdateAsync(Stock stock)
+    {
+        _context.Stocks.Update(stock);
+        await _context.SaveChangesAsync();
+    }
 
-        public async Task UpdateAsync(Stock stock)
+    public async Task DeleteAsync(Guid id)
+    {
+        var stock = await _context.Stocks.FindAsync(id);
+        if (stock != null)
         {
-            _context.Stocks.Update(stock);
+            stock.IsDeleted = true;
             await _context.SaveChangesAsync();
         }
     }
 
+    public async Task<List<Stock>> SearchStocks(Guid storeId, string? productName)
+    {
+        var query = _queryFactory.Query("Stocks as s")
+            .Join("Products as p", "s.ProductId", "p.Id")
+            .Where("s.StoreId", storeId)
+            .Where("s.IsDeleted", false);
+
+        if (!string.IsNullOrWhiteSpace(productName))
+        {
+            query.WhereRaw(@"LOWER(p.""Name"") LIKE ?", $"%{productName.ToLower()}%");
+        }
+
+        var result = await query.Select("s.*").GetAsync<Stock>();
+        return result.ToList();
+    }
+
+    public async Task<(List<Stock> Stocks, int TotalCount)> SearchStocksWithPaging(Guid storeId, string? productName, int pageIndex, int pageSize)
+    {
+        var query = _queryFactory.Query("Stocks as s")
+            .Join("Products as p", "s.ProductId", "p.Id")
+            .Where("s.StoreId", storeId)
+            .Where("s.IsDeleted", false);
+
+        if (!string.IsNullOrWhiteSpace(productName))
+        {
+            query.WhereRaw(@"LOWER(p.""Name"") LIKE ?", $"%{productName.ToLower()}%");
+        }
+
+        var totalQuery = query.Clone();
+        var totalCount = await totalQuery.CountAsync<int>();
+
+        var results = await query
+            .Select("s.*")
+            .Offset((pageIndex - 1) * pageSize)
+            .Limit(pageSize)
+            .GetAsync<Stock>();
+
+        return (results.ToList(), totalCount);
+    }
 }

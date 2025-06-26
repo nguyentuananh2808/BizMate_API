@@ -1,6 +1,6 @@
 ﻿using BizMate.Application.Common.Dto.UserAggregate;
 
-namespace BizMate.Api.UserCases.Product.Product
+namespace BizMate.Api.UserCases.Product.GetProduct
 {
     public class GetProductResponseViewModel
     {

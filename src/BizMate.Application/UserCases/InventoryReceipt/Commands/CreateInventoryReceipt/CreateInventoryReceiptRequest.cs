@@ -1,5 +1,4 @@
-﻿using BizMate.Domain.Entities;
-using MediatR;
+﻿using MediatR;
 
 namespace BizMate.Application.UserCases.InventoryReceipt.Commands.CreateInventoryReceipt
 {

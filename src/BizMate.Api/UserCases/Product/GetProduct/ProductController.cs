@@ -4,7 +4,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace BizMate.Api.UserCases.Product.Product
+namespace BizMate.Api.UserCases.Product.GetProduct
 {
     [Route(ApiNameConstants.ApiV1 + ApiNameConstants.Product)]
     [ApiController]

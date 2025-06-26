@@ -21,7 +21,8 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                 Email = email,
                 OtpCode = otpCode,
                 ExpiredAt = expiredAt,
-                IsUsed = false
+                IsUsed = false,
+                IsDeleted = false
             };
 
             await _context.OtpVerifications.AddAsync(otp, cancellationToken);
@@ -34,7 +35,8 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                 .Where(x => x.Email == email
                             && x.OtpCode == otpCode
                             && !x.IsUsed
-                            && x.ExpiredAt > DateTime.UtcNow)
+                            && x.ExpiredAt > DateTime.UtcNow
+                            && !x.IsDeleted)
                 .OrderByDescending(x => x.ExpiredAt)
                 .FirstOrDefaultAsync();
         }
@@ -42,11 +44,29 @@ namespace BizMate.Infrastructure.Persistence.Repositories
         public async Task MarkOtpAsUsedAsync(Guid otpId)
         {
             var otp = await _context.OtpVerifications.FindAsync(otpId);
-            if (otp != null)
+            if (otp != null && !otp.IsDeleted)
             {
                 otp.IsUsed = true;
                 await _context.SaveChangesAsync();
             }
+        }
+
+        public async Task SoftDeleteOtpAsync(Guid otpId)
+        {
+            var otp = await _context.OtpVerifications.FindAsync(otpId);
+            if (otp != null && !otp.IsDeleted)
+            {
+                otp.IsDeleted = true;
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task<List<OtpVerification>> GetOtpsByEmailAsync(string email)
+        {
+            return await _context.OtpVerifications
+                .Where(x => x.Email == email && !x.IsDeleted)
+                .OrderByDescending(x => x.ExpiredAt)
+                .ToListAsync();
         }
     }
 }

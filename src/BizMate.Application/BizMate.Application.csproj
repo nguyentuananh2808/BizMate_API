@@ -25,7 +25,6 @@
 
   <ItemGroup>
     <Folder Include="Resources\" />
-    <Folder Include="UserCases\InventoryReceipt\Queries\" />
   </ItemGroup>
 
 </Project>

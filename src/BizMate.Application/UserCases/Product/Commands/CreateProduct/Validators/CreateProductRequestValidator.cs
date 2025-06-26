@@ -1,4 +1,4 @@
-﻿using BizMate.Application.Common.Dto.Identity;
+﻿using BizMate.Application.Common.Enums;
 using BizMate.Public.Message;
 using FluentValidation;
 using Microsoft.Extensions.Localization;

@@ -1,5 +1,4 @@
-﻿using BizMate.Application.Common.Interfaces;
-using BizMate.Application.Common.Interfaces.Repositories;
+﻿using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 

@@ -3,7 +3,7 @@ using BizMate.Application.Common.Interfaces;
 using BizMate.Application.UserCases.Product.Queries.Products;
 using System.Net;
 
-namespace BizMate.Api.UserCases.Product.Products
+namespace BizMate.Api.UserCases.Product.GetProducts
 {
     public class GetProductsPresenter : IOutputPort<GetProductsResponse>
     {
