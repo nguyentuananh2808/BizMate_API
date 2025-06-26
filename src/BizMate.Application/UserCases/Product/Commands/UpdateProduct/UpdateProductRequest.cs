@@ -9,8 +9,7 @@ namespace BizMate.Application.UserCases.Product.Commands.UpdateProduct
         public Guid Id { get; set; }
         [Required]
         public uint RowVersion { get; set; }
-        public string Name { get; set; } 
-        public int Quantity { get; set; }
+        public string Name { get; set; }
         public int Unit { get; set; }
         public string? ImageUrl { get; set; }
         public Guid? SupplierId { get; set; }

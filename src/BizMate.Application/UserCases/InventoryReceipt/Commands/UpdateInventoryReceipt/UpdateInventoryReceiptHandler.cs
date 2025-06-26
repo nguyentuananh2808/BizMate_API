@@ -5,6 +5,7 @@ using BizMate.Domain.Entities;
 using BizMate.Public.Message;
 using MediatR;
 using Microsoft.Extensions.Localization;
+using _InventoryReceipt = BizMate.Domain.Entities.InventoryReceipt;
 using Microsoft.Extensions.Logging;
 
 namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventoryReceipt
@@ -45,9 +46,9 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventor
                 var existingReceipt = await _inventoryReceiptRepository.GetByIdAsync(request.Id);
                 if (existingReceipt == null)
                 {
-                    /*var message = CommonAppMessageUtils.NotExist<InventoryReceipt>(request.Id, _localizer);
+                    var message = CommonAppMessageUtils.NotExist<_InventoryReceipt>(request.Id, _localizer);
                     _logger.LogWarning(message);
-                    return new UpdateInventoryReceiptResponse(false, message);*/
+                    return new UpdateInventoryReceiptResponse(false, message);
                 }
 
                 // Trả lại tồn kho cũ

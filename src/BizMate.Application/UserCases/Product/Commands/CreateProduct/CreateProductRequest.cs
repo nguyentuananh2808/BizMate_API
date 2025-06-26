@@ -8,8 +8,6 @@ namespace BizMate.Application.UserCases.Product.Commands.CreateProduct
         [Required]
         public string Name { get; set; } = default!;
         [Required]
-        public int Quantity { get; set; }
-        [Required]
         public int Unit { get; set; } = default!;
         public string? ImageUrl { get; set; }
         public Guid? SupplierId { get; set; }

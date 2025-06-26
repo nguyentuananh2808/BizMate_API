@@ -19,8 +19,39 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Queries.InventoryReceip
         public string? Description { get; set; }
         public IEnumerable<InventoryReceiptDetailDto> InventoryDetails { get; set; }
 
-        public GetInventoryReceiptResponse(bool success = true, string? message = null) : base(success, message)
+        public GetInventoryReceiptResponse(
+                string inventoryCode,
+                DateTime date,
+                int type,
+                Guid storeId,
+                string storeName,
+                Guid createdByUserId,
+                string createdByUserName,
+                string? supplierName,
+                string? customerName,
+                string? customerPhone,
+                string? deliveryAddress,
+                string? description,
+                IEnumerable<InventoryReceiptDetailDto> inventoryDetails,
+                bool success = true,
+                string? message = null) : base(success, message)
         {
+            InventoryCode = inventoryCode;
+            Date = date;
+            Type = type;
+            StoreId = storeId;
+            StoreName = storeName;
+            CreatedByUserId = createdByUserId;
+            CreatedByUserName = createdByUserName;
+            SupplierName = supplierName;
+            CustomerName = customerName;
+            CustomerPhone = customerPhone;
+            DeliveryAddress = deliveryAddress;
+            Description = description;
+            InventoryDetails = inventoryDetails;
         }
+        public GetInventoryReceiptResponse(bool success = false,
+                string? message = null) : base(success, message)
+        { }
     }
 }

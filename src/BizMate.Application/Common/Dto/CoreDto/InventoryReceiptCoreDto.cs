@@ -20,5 +20,7 @@ namespace BizMate.Application.Common.Dto.CoreDto
         public string? DeliveryAddress { get; set; }
 
         public string? Description { get; set; }
+        public IEnumerable<InventoryReceiptDetailDto> InventoryDetailDtos { get; set; }
+
     }
 }

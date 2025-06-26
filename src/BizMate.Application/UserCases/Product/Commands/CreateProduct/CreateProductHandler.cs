@@ -70,7 +70,6 @@ namespace BizMate.Application.UserCases.Product.Commands.CreateProduct
                     Id = Guid.NewGuid(),
                     ProductCode = productCode,
                     Name = request.Name,
-                    Quantity = request.Quantity,
                     Unit = request.Unit,
                     ImageUrl = request.ImageUrl,
                     StoreId = storeId,

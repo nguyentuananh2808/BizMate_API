@@ -64,7 +64,7 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
                 Date = DateTime.UtcNow,
                 Type = request.Type,
                 StoreId = storeId,
-                CreatedByUserId = userId,
+                CreatedByUserId = Guid.Parse(userId),
                 SupplierName = request.SupplierName,
                 CustomerName = request.CustomerName,
                 CustomerPhone = request.CustomerPhone,
@@ -132,8 +132,6 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
             _logger.LogError(ex, "Lỗi tạo phiếu.");
             return new CreateInventoryReceiptResponse
             {
-                InventoryCode = string.Empty,
-                Description = _localizer["Không thể tạo biên lai. Vui lòng thử lại."]
             };
         }
     }

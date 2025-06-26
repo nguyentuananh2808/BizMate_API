@@ -2,7 +2,7 @@
 {
     public interface IUserSession
     {
-        Guid UserId { get; }
+        string UserId { get; }
         string? UserName { get; }
         string? Role { get; }
         Guid StoreId { get; }

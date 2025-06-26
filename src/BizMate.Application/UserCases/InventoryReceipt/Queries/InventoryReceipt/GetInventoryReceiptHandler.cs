@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using BizMate.Application.Common.Dto.CoreDto;
 using BizMate.Application.Common.Interfaces.Repositories;
 using MediatR;
 using Microsoft.Extensions.Localization;
@@ -36,10 +37,28 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Queries.InventoryReceip
                 return new GetInventoryReceiptResponse(false, message);
             }
 
-            var response = _mapper.Map<GetInventoryReceiptResponse>(receipt);
-            response.Success = true;
-            response.Message = _localizer["Cập nhật sản phẩm thành công."];
-            return response;
+            var mapped = _mapper.Map<InventoryReceiptCoreDto>(receipt);
+
+            var mappedDetails = _mapper.Map<IEnumerable<Commands.CreateInventoryReceipt.InventoryReceiptDetailDto>>(mapped.InventoryDetailDtos);
+
+            return new GetInventoryReceiptResponse(
+                    mapped.InventoryCode,
+                    mapped.Date,
+                    mapped.Type,
+                    mapped.StoreId,
+                    mapped.StoreName,
+                    mapped.CreatedByUserId,
+                    mapped.CreatedByUserName,
+                    mapped.SupplierName,
+                    mapped.CustomerName,
+                    mapped.CustomerPhone,
+                    mapped.DeliveryAddress,
+                    mapped.Description,
+                    mappedDetails,
+                    true,
+                    "Lấy thành công"
+);
+
         }
     }
 }

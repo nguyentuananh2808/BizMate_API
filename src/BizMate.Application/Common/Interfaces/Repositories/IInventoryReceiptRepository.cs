@@ -1,4 +1,5 @@
-﻿using SqlKata.Execution;
+﻿using BizMate.Domain.Entities;
+using SqlKata.Execution;
 
 namespace BizMate.Application.Common.Interfaces.Repositories
 {

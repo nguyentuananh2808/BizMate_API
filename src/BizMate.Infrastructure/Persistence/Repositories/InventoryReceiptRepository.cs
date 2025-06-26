@@ -23,12 +23,32 @@ namespace BizMate.Infrastructure.Persistence.Repositories
 
         public async Task CommitTransactionAsync()
         {
-            await _currentTransaction.CommitAsync();
+            if (_currentTransaction != null)
+            {
+                await _currentTransaction.CommitAsync();
+                await _currentTransaction.DisposeAsync();
+                _currentTransaction = null;
+            }
         }
 
         public async Task RollbackTransactionAsync()
         {
-            await _currentTransaction.RollbackAsync();
+            if (_currentTransaction != null)
+            {
+                try
+                {
+                    await _currentTransaction.RollbackAsync();
+                }
+                catch (InvalidOperationException ex)
+                {
+                    Console.WriteLine("Transaction already completed. Skip rollback.");
+                }
+                finally
+                {
+                    await _currentTransaction.DisposeAsync();
+                    _currentTransaction = null;
+                }
+            }
         }
 
         public async Task AddAsync(InventoryReceipt receipt)

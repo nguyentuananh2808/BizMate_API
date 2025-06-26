@@ -13,10 +13,8 @@ namespace BizMate.Infrastructure.Services
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public Guid UserId =>
-            Guid.TryParse(_httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var id)
-                ? id
-                : throw new UnauthorizedAccessException("UserId not found");
+        public string UserId => _httpContextAccessor.HttpContext?.User?.FindFirst("user_id")?.Value
+         ?? throw new UnauthorizedAccessException("UserId not found");
 
         public string? UserName =>
             _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Name)?.Value;
