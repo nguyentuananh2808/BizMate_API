@@ -1,13 +1,13 @@
 ﻿using BizMate.Public.Message;
 using FluentValidation;
 using Microsoft.Extensions.Localization;
-using BizMate.Application.Common.Dto.Identity;
+using BizMate.Application.Common.Enums;
 
 namespace BizMate.Application.UserCases.InventoryReceipt.Commands.CreateInventoryReceipt.Validators
 {
-    public class CreateInventoryReceiptValidator : AbstractValidator<CreateInventoryReceiptRequest>
+    public class UpdateInventoryReceiptValidator : AbstractValidator<CreateInventoryReceiptRequest>
     {
-        public CreateInventoryReceiptValidator(IStringLocalizer<CreateInventoryReceiptRequest> localizer)
+        public UpdateInventoryReceiptValidator(IStringLocalizer<CreateInventoryReceiptRequest> localizer)
         {
             RuleFor(x => x.Type).NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty])
             .Must(unit => Enum.IsDefined(typeof(InventoryType), unit))

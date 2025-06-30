@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 
 public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryReceiptRequest, CreateInventoryReceiptResponse>
 {
+    private readonly IProductRepository _productRepository;
     private readonly IInventoryReceiptRepository _inventoryReceiptRepository;
     private readonly IStockRepository _stockRepository;
     private readonly ICodeGeneratorService _codeGeneratorService;
@@ -20,6 +21,7 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
 
     #region constructor
     public CreateInventoryReceiptHandler(
+        IProductRepository productRepository,
         IInventoryReceiptRepository inventoryReceiptRepository,
         IStockRepository stockRepository,
         ICodeGeneratorService codeGeneratorService,
@@ -28,6 +30,7 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
         ILogger<CreateInventoryReceiptHandler> logger,
         IStringLocalizer<CreateInventoryReceiptHandler> localizer)
     {
+        _productRepository = productRepository;
         _inventoryReceiptRepository = inventoryReceiptRepository;
         _stockRepository = stockRepository;
         _codeGeneratorService = codeGeneratorService;
@@ -55,6 +58,12 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
             var storeId = _userSession.StoreId;
             var userId = _userSession.UserId;
 
+            var productIds = request.Details.Select(d => d.ProductId).ToList();
+
+            var products = await _productRepository.GetByIdsAsync(productIds);
+
+            var productDict = products.ToDictionary(p => p.Id);
+
             var receiptCode = await _codeGeneratorService.GenerateCodeAsync(request.Type == 1 ? "NK" : "XK");
 
             var receipt = new InventoryReceipt
@@ -64,19 +73,25 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
                 Date = DateTime.UtcNow,
                 Type = request.Type,
                 StoreId = storeId,
-                CreatedByUserId = userId,
+                CreatedByUserId = Guid.Parse(userId),
                 SupplierName = request.SupplierName,
                 CustomerName = request.CustomerName,
                 CustomerPhone = request.CustomerPhone,
                 DeliveryAddress = request.DeliveryAddress,
                 Description = request.Description,
-                Details = request.Details.Select(d => new InventoryReceiptDetail
+                Details = request.Details.Select(d =>
                 {
-                    Id = Guid.NewGuid(),
-                    ProductId = d.ProductId,
-                    Quantity = d.Quantity,
-                    ProductName = d.ProductName,
-                    Unit = d.Unit
+                    var product = productDict[d.ProductId]; 
+
+                    return new InventoryReceiptDetail
+                    {
+                        Id = Guid.NewGuid(),
+                        ProductId = d.ProductId,
+                        Quantity = d.Quantity,
+                        ProductName = product.Name,
+                        ProductCode = product.ProductCode,
+                        Unit = product.Unit,
+                    };
                 }).ToList()
             };
 
@@ -92,7 +107,7 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
                 if (stock == null)
                 {
                     if (receipt.Type == 2)
-                        throw new InvalidOperationException($"Tồn kho sản phẩm không đủ : {detail.ProductName}");
+                        throw new InvalidOperationException($"Tồn kho sản phẩm không đủ : {detail.ProductId}");
 
                     stock = new Stock
                     {
@@ -112,7 +127,7 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
                 else if (receipt.Type == 2) // Export
                 {
                     if (stock.Quantity < detail.Quantity)
-                        throw new InvalidOperationException($"Tồn kho sản phẩm không đủ: {detail.ProductName}");
+                        throw new InvalidOperationException($"Tồn kho sản phẩm không đủ: {detail.ProductId}");
 
                     stock.Quantity -= detail.Quantity;
                 }
@@ -126,15 +141,18 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
             var response = _mapper.Map<CreateInventoryReceiptResponse>(receipt);
             return response;
         }
+        catch (InvalidOperationException ex)
+        {
+            await _inventoryReceiptRepository.RollbackTransactionAsync();
+            _logger.LogWarning(ex, ex.Message);
+            return new CreateInventoryReceiptResponse(false, ex.Message); 
+        }
         catch (Exception ex)
         {
             await _inventoryReceiptRepository.RollbackTransactionAsync();
             _logger.LogError(ex, "Lỗi tạo phiếu.");
-            return new CreateInventoryReceiptResponse
-            {
-                InventoryCode = string.Empty,
-                Description = _localizer["Không thể tạo biên lai. Vui lòng thử lại."]
-            };
+            return new CreateInventoryReceiptResponse(false, _localizer["Không thể tạo phiếu. Vui lòng thử lại."]);
         }
+
     }
 }

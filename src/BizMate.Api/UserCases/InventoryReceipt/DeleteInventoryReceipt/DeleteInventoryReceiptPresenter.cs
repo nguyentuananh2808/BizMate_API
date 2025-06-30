@@ -1,25 +1,25 @@
 ﻿using BizMate.Api.Serialization;
 using BizMate.Application.Common.Interfaces;
-using BizMate.Application.UserCases.Product.Queries.Product;
+using BizMate.Application.UserCases.InventoryReceipt.Commands.DeleteCreateInventoryReceipt;
 using System.Net;
 
-namespace BizMate.Api.UserCases.Product.Product
+namespace BizMate.Api.UserCases.InventoryReceipt.DeleteInventoryReceipt
 {
-    public class GetProductPresenter : IOutputPort<GetProductResponse>
+    public class DeleteInventoryReceiptPresenter : IOutputPort<DeleteInventoryReceiptResponse>
     {
         public JsonContentResult ContentResult { get; }
 
-        public GetProductPresenter()
+        public DeleteInventoryReceiptPresenter()
         {
             ContentResult = new JsonContentResult();
         }
 
-        public void Handle(GetProductResponse response)
+        public void Handle(DeleteInventoryReceiptResponse response)
         {
             ContentResult.StatusCode = (int)(response.Success ? HttpStatusCode.OK : HttpStatusCode.Unauthorized);
             ContentResult.Content = response.Success
                 ? CommonJsonSerializer.SerializeObject(
-                    new GetProductResponseViewModel(response.Product))
+                    new DeleteInventoryReceiptResponseViewModel(false, response.Message))
                 : CommonJsonSerializer.SerializeObject(response);
         }
     }

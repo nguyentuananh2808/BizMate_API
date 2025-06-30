@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace BizMate.Application.Common.Dto.Identity
+namespace BizMate.Application.Common.Enums
 {
     public enum InventoryType
     {

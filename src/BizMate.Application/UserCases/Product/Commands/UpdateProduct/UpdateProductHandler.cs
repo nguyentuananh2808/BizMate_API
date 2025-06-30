@@ -74,7 +74,6 @@ namespace BizMate.Application.UserCases.Product.Commands.UpdateProduct
 
                 #region update data
                 product.Name = request.Name;
-                product.Quantity = request.Quantity;
                 product.Unit = request.Unit;
                 product.ImageUrl = request.ImageUrl;
                 product.Description = request.Description;

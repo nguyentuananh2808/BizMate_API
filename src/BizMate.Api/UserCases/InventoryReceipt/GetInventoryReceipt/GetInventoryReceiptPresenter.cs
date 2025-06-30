@@ -1,25 +1,25 @@
 ﻿using BizMate.Api.Serialization;
 using BizMate.Application.Common.Interfaces;
-using BizMate.Application.UserCases.Product.Queries.Products;
+using BizMate.Application.UserCases.InventoryReceipt.Queries.InventoryReceipt;
 using System.Net;
 
-namespace BizMate.Api.UserCases.Product.Products
+namespace BizMate.Api.UserCases.InventoryReceipt.GetInventoryReceipt
 {
-    public class GetProductsPresenter : IOutputPort<GetProductsResponse>
+    public class GetInventoryReceiptPresenter : IOutputPort<GetInventoryReceiptResponse>
     {
         public JsonContentResult ContentResult { get; }
 
-        public GetProductsPresenter()
+        public GetInventoryReceiptPresenter()
         {
             ContentResult = new JsonContentResult();
         }
 
-        public void Handle(GetProductsResponse response)
+        public void Handle(GetInventoryReceiptResponse response)
         {
             ContentResult.StatusCode = (int)(response.Success ? HttpStatusCode.OK : HttpStatusCode.Unauthorized);
             ContentResult.Content = response.Success
                 ? CommonJsonSerializer.SerializeObject(
-                    new GetProductsResponseViewModel(response.Products))
+                    new GetInventoryReceiptResponseViewModel(response))
                 : CommonJsonSerializer.SerializeObject(response);
         }
     }

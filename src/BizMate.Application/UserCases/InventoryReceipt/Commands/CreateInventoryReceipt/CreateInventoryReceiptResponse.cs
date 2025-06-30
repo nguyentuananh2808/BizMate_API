@@ -4,6 +4,7 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.CreateInventor
 {
     public class CreateInventoryReceiptResponse : BaseResponse
     {
+        public Guid Id { get; set; }
         public string InventoryCode { get; set; } = default!;
         public DateTime Date { get; set; } = DateTime.UtcNow;
 
@@ -27,6 +28,7 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.CreateInventor
         public string? DeliveryAddress { get; set; }
 
         public string? Description { get; set; }
+        public uint RowVersion { get; set; }
 
         // Receipt Details
         public IEnumerable<InventoryReceiptDetailDto> InventoryDetails { get; set; } = new List<InventoryReceiptDetailDto>();
@@ -38,9 +40,12 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.CreateInventor
 
     public class InventoryReceiptDetailDto
     {
+        public Guid InventoryReceiptId { get; set; }
         public Guid ProductId { get; set; }
-        public string ProductName { get; set; } = default!;
+        public string? ProductName { get; set; } 
+        public string? ProductCode { get; set; }
         public int Unit { get; set; }
+
         public int Quantity { get; set; }
     }
 }

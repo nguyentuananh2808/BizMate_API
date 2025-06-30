@@ -32,7 +32,9 @@ namespace BizMate.Infrastructure.Migrations
                     OtpCode = table.Column<string>(type: "text", nullable: false),
                     ExpiredAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsUsed = table.Column<bool>(type: "boolean", nullable: false),
-                    RowVersion = table.Column<long>(type: "bigint", nullable: false)
+                    RowVersion = table.Column<long>(type: "bigint", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -45,7 +47,9 @@ namespace BizMate.Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
-                    RowVersion = table.Column<long>(type: "bigint", nullable: false)
+                    RowVersion = table.Column<long>(type: "bigint", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -60,7 +64,9 @@ namespace BizMate.Infrastructure.Migrations
                     Name = table.Column<string>(type: "text", nullable: false),
                     Phone = table.Column<string>(type: "text", nullable: false),
                     StoreId = table.Column<Guid>(type: "uuid", nullable: false),
-                    RowVersion = table.Column<long>(type: "bigint", nullable: false)
+                    RowVersion = table.Column<long>(type: "bigint", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -81,7 +87,9 @@ namespace BizMate.Infrastructure.Migrations
                     Name = table.Column<string>(type: "text", nullable: false),
                     Phone = table.Column<string>(type: "text", nullable: false),
                     StoreId = table.Column<Guid>(type: "uuid", nullable: false),
-                    RowVersion = table.Column<long>(type: "bigint", nullable: false)
+                    RowVersion = table.Column<long>(type: "bigint", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -105,7 +113,9 @@ namespace BizMate.Infrastructure.Migrations
                     PasswordSalt = table.Column<string>(type: "text", nullable: false),
                     Role = table.Column<string>(type: "text", nullable: false),
                     StoreId = table.Column<Guid>(type: "uuid", nullable: false),
-                    RowVersion = table.Column<long>(type: "bigint", nullable: false)
+                    RowVersion = table.Column<long>(type: "bigint", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -125,13 +135,18 @@ namespace BizMate.Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     ProductCode = table.Column<string>(type: "text", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
-                    Quantity = table.Column<int>(type: "integer", nullable: false),
                     Unit = table.Column<int>(type: "integer", nullable: false),
+                    CostPrice = table.Column<decimal>(type: "numeric", nullable: true),
+                    SalePrice = table.Column<decimal>(type: "numeric", nullable: true),
                     ImageUrl = table.Column<string>(type: "text", nullable: true),
                     Description = table.Column<string>(type: "text", nullable: true),
                     StoreId = table.Column<Guid>(type: "uuid", nullable: false),
                     SupplierId = table.Column<Guid>(type: "uuid", nullable: true),
-                    RowVersion = table.Column<long>(type: "bigint", nullable: false)
+                    IsDiscountable = table.Column<bool>(type: "boolean", nullable: false),
+                    DiscountPercent = table.Column<decimal>(type: "numeric", nullable: true),
+                    RowVersion = table.Column<long>(type: "bigint", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -164,7 +179,13 @@ namespace BizMate.Infrastructure.Migrations
                     CustomerPhone = table.Column<string>(type: "text", nullable: true),
                     DeliveryAddress = table.Column<string>(type: "text", nullable: true),
                     Description = table.Column<string>(type: "text", nullable: true),
-                    RowVersion = table.Column<long>(type: "bigint", nullable: false)
+                    TotalAmount = table.Column<decimal>(type: "numeric", nullable: false),
+                    PaymentStatus = table.Column<int>(type: "integer", nullable: true),
+                    IsDraft = table.Column<bool>(type: "boolean", nullable: false),
+                    IsCancelled = table.Column<bool>(type: "boolean", nullable: false),
+                    RowVersion = table.Column<long>(type: "bigint", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -184,6 +205,36 @@ namespace BizMate.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Stocks",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    StoreId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ProductId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Quantity = table.Column<int>(type: "integer", nullable: false),
+                    LastUpdated = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    RowVersion = table.Column<long>(type: "bigint", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Stocks", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Stocks_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Stocks_Stores_StoreId",
+                        column: x => x.StoreId,
+                        principalTable: "Stores",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "InventoryReceiptDetails",
                 columns: table => new
                 {
@@ -194,7 +245,9 @@ namespace BizMate.Infrastructure.Migrations
                     ProductCode = table.Column<string>(type: "text", nullable: true),
                     Unit = table.Column<int>(type: "integer", nullable: false),
                     Quantity = table.Column<int>(type: "integer", nullable: false),
-                    RowVersion = table.Column<long>(type: "bigint", nullable: false)
+                    RowVersion = table.Column<long>(type: "bigint", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -238,6 +291,16 @@ namespace BizMate.Infrastructure.Migrations
                 column: "SupplierId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Stocks_ProductId",
+                table: "Stocks",
+                column: "ProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Stocks_StoreId",
+                table: "Stocks",
+                column: "StoreId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Suppliers_StoreId",
                 table: "Suppliers",
                 column: "StoreId");
@@ -264,16 +327,19 @@ namespace BizMate.Infrastructure.Migrations
                 name: "OtpVerifications");
 
             migrationBuilder.DropTable(
-                name: "Products");
+                name: "Stocks");
 
             migrationBuilder.DropTable(
                 name: "InventoryReceipts");
 
             migrationBuilder.DropTable(
-                name: "Suppliers");
+                name: "Products");
 
             migrationBuilder.DropTable(
                 name: "Users");
+
+            migrationBuilder.DropTable(
+                name: "Suppliers");
 
             migrationBuilder.DropTable(
                 name: "Stores");

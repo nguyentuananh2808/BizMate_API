@@ -1,5 +1,4 @@
-﻿using BizMate.Application.Common.Interfaces;
-using BizMate.Application.Common.Interfaces.Repositories;
+﻿using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,7 +15,6 @@ namespace BizMate.Infrastructure.Persistence.Repositories
 
         public async Task<int> GetAndIncreaseLastNumberAsync(string prefix)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
 
             var sequence = await _context.CodeSequences
                 .SingleOrDefaultAsync(x => x.Prefix == prefix);
@@ -37,7 +35,6 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             }
 
             await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
 
             return sequence.LastNumber;
         }

@@ -3,6 +3,7 @@ using BizMate.Application.Common.Dto.UserAggregate;
 using BizMate.Application.Common.Interfaces.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using SqlKata.Execution;
 
 namespace BizMate.Application.UserCases.Product.Queries.Product
 {
@@ -10,14 +11,17 @@ namespace BizMate.Application.UserCases.Product.Queries.Product
     {
         private readonly IProductRepository _productRepository;
         private readonly IMapper _mapper;
+        private readonly QueryFactory _queryFactory;
         private readonly ILogger<GetProductHandler> _logger;
 
         #region constructor
         public GetProductHandler(
+            QueryFactory queryFactory,
             IProductRepository productRepository,
             IMapper mapper,
             ILogger<GetProductHandler> logger)
         {
+            _queryFactory = queryFactory;
             _productRepository = productRepository;
             _mapper = mapper;
             _logger = logger;
@@ -27,7 +31,7 @@ namespace BizMate.Application.UserCases.Product.Queries.Product
         {
             try
             {
-                var product = await _productRepository.GetByIdAsync(request.Id);
+                var product = await _productRepository.GetByIdWithQuantityAsync(request.Id, queryFactory: _queryFactory);
 
                 var mappedProduct = _mapper.Map<ProductCoreDto>(product);
                 return new GetProductResponse(mappedProduct);
