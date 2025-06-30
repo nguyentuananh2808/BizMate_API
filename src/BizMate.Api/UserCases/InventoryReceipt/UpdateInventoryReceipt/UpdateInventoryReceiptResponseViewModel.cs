@@ -5,30 +5,45 @@ namespace BizMate.Api.UserCases.InventoryReceipt.UpdateInventoryReceipt
 {
     public class UpdateInventoryReceiptResponseViewModel
     {
-        public string InventoryCode { get; set; }
-        public DateTime Date { get; set; }
+        public Guid Id { get; set; }
+        public string InventoryCode { get; set; } = default!;
+        public DateTime Date { get; set; } = DateTime.UtcNow;
+
         public int Type { get; set; }
-        public string StoreName { get; set; }
-        public string CreatedByUserName { get; set; }
-        public string? SupplierName { get; set; }
-        public string? CustomerName { get; set; }
+
+        public Guid StoreId { get; set; }
+        public string StoreName { get; set; } = default!;
+
+        public Guid CreatedByUserId { get; set; }
+        public string CreatedByUserName { get; set; } = default!;
+
+        public string? SupplierName { get; set; }      // If Import
+        public string? CustomerName { get; set; }      // If Export
         public string? CustomerPhone { get; set; }
         public string? DeliveryAddress { get; set; }
+
         public string? Description { get; set; }
         public IEnumerable<InventoryReceiptDetailDto> InventoryDetails { get; set; }
 
         public UpdateInventoryReceiptResponseViewModel(UpdateInventoryReceiptResponse response)
         {
+            Id = response.Id;
             InventoryCode = response.InventoryCode;
             Date = response.Date;
             Type = response.Type;
+
+            StoreId = response.StoreId;
             StoreName = response.StoreName;
+
+            CreatedByUserId = response.CreatedByUserId;
             CreatedByUserName = response.CreatedByUserName;
+
             SupplierName = response.SupplierName;
             CustomerName = response.CustomerName;
             CustomerPhone = response.CustomerPhone;
             DeliveryAddress = response.DeliveryAddress;
             Description = response.Description;
+
             InventoryDetails = response.InventoryDetails;
         }
     }

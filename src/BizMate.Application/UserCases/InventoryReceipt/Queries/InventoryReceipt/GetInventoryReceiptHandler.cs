@@ -37,28 +37,9 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Queries.InventoryReceip
                 return new GetInventoryReceiptResponse(false, message);
             }
 
-            var mapped = _mapper.Map<InventoryReceiptCoreDto>(receipt);
+            var result = _mapper.Map<GetInventoryReceiptResponse>(receipt);
 
-            var mappedDetails = _mapper.Map<IEnumerable<Commands.CreateInventoryReceipt.InventoryReceiptDetailDto>>(mapped.InventoryDetailDtos);
-
-            return new GetInventoryReceiptResponse(
-                    mapped.InventoryCode,
-                    mapped.Date,
-                    mapped.Type,
-                    mapped.StoreId,
-                    mapped.StoreName,
-                    mapped.CreatedByUserId,
-                    mapped.CreatedByUserName,
-                    mapped.SupplierName,
-                    mapped.CustomerName,
-                    mapped.CustomerPhone,
-                    mapped.DeliveryAddress,
-                    mapped.Description,
-                    mappedDetails,
-                    true,
-                    "Lấy thành công"
-);
-
+            return result;
         }
     }
 }

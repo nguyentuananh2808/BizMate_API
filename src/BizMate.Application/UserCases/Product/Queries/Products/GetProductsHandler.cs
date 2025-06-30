@@ -38,7 +38,6 @@ namespace BizMate.Application.UserCases.Product.Queries.Products
             {
                 var storeId = _userSession.StoreId;
 
-                // Lấy danh sách sản phẩm kèm phân trang
                 var (products, totalCount) = await _productRepository.SearchProductsWithPaging(
                     storeId: storeId,
                     keyword: request.KeySearch,

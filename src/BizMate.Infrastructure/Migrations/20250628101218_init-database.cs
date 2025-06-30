@@ -135,7 +135,6 @@ namespace BizMate.Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     ProductCode = table.Column<string>(type: "text", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
-                    Quantity = table.Column<int>(type: "integer", nullable: false),
                     Unit = table.Column<int>(type: "integer", nullable: false),
                     CostPrice = table.Column<decimal>(type: "numeric", nullable: true),
                     SalePrice = table.Column<decimal>(type: "numeric", nullable: true),

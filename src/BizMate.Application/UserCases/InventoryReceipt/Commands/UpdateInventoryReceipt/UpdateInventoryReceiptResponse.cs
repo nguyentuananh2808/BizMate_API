@@ -5,6 +5,7 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventor
 {
     public class UpdateInventoryReceiptResponse : BaseResponse  
     {
+        public Guid Id { get; set; }
         public string InventoryCode { get; set; } = default!;
         public DateTime Date { get; set; } = DateTime.UtcNow;
 

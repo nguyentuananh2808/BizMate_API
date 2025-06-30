@@ -78,9 +78,7 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventor
                     {
                         Id = Guid.NewGuid(),
                         ProductId = d.ProductId,
-                        Quantity = d.Quantity,
-                        ProductName = d.ProductName,
-                        Unit = d.Unit
+                        Quantity = d.Quantity
                     });
                 }
 
@@ -108,7 +106,7 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventor
                     else
                     {
                         if (stock.Quantity < detail.Quantity)
-                            throw new InvalidOperationException($"Tồn kho sản phẩm không đủ: {detail.ProductName}");
+                            throw new InvalidOperationException($"Tồn kho sản phẩm không đủ: {detail.ProductId}");
                         stock.Quantity -= detail.Quantity;
                     }
 

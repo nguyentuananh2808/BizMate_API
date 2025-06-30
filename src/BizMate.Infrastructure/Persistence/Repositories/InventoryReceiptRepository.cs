@@ -53,6 +53,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
 
         public async Task AddAsync(InventoryReceipt receipt)
         {
+
             await _context.InventoryReceipts.AddAsync(receipt);
             await _context.SaveChangesAsync();
         }

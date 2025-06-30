@@ -4,7 +4,6 @@
     {
         public string ProductCode { get; set; } = default!;
         public string Name { get; set; } = default!;
-        public int Quantity { get; set; }
         public int Unit { get; set; } = default!;
         public decimal? CostPrice { get; set; } // Giá nhập 
         public decimal? SalePrice { get; set; } // Giá bán

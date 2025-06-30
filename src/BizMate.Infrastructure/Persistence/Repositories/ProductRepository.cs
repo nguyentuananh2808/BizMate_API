@@ -1,4 +1,5 @@
-﻿using BizMate.Application.Common.Interfaces.Repositories;
+﻿using BizMate.Application.Common.Dto.UserAggregate;
+using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Domain.Entities;
 using BizMate.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -13,11 +14,32 @@ public class ProductRepository : IProductRepository
         _context = context;
     }
 
-    public async Task<Product> GetByIdAsync(Guid id)
+    public async Task<Product?> GetByIdAsync(Guid id)
     {
         return await _context.Products
             .Where(p => !p.IsDeleted && p.Id == id)
             .FirstOrDefaultAsync();
+    }
+    public async Task<List<Product>> GetByIdsAsync(List<Guid> ids)
+    {
+        return await _context.Products
+            .Where(p => !p.IsDeleted && ids.Contains(p.Id))
+            .ToListAsync();
+    }
+
+    public async Task<ProductCoreDto> GetByIdWithQuantityAsync(Guid id, QueryFactory queryFactory)
+    {
+        var result = await queryFactory.Query("Products as p")
+       .LeftJoin("Stocks as s", j => j
+           .On("p.Id", "s.ProductId")
+           .On("s.StoreId", "p.StoreId"))
+       .Where("p.Id", id)
+       .Where("p.IsDeleted", false)
+       .Select("p.*")
+       .SelectRaw(@"COALESCE(s.""Quantity"", 0) as Quantity")
+       .FirstOrDefaultAsync<ProductCoreDto>();
+
+        return result;
     }
 
     public async Task<List<Product>> SearchProducts(Guid storeId, Guid? supplierId, string? name,
@@ -37,7 +59,7 @@ public class ProductRepository : IProductRepository
         return result.ToList();
     }
 
-    public async Task<(List<Product> Products, int TotalCount)> SearchProductsWithPaging(
+    public async Task<(List<ProductCoreDto> Products, int TotalCount)> SearchProductsWithPaging(
         Guid storeId,
         string? keyword,
         int pageIndex,
@@ -45,8 +67,13 @@ public class ProductRepository : IProductRepository
         QueryFactory queryFactory)
     {
         var baseQuery = queryFactory.Query("Products as p")
-            .Where("p.StoreId", storeId)
-            .Where("p.IsDeleted", false);
+        .LeftJoin("Stocks as s", j => j
+            .On("p.Id", "s.ProductId")
+            .On("s.StoreId", "p.StoreId"))
+        .Where("p.StoreId", storeId)
+        .Where("p.IsDeleted", false)
+        .Select("p.*")
+        .SelectRaw(@"COALESCE(s.""Quantity"", 0) as Quantity");
 
         if (!string.IsNullOrWhiteSpace(keyword))
         {
@@ -59,8 +86,7 @@ public class ProductRepository : IProductRepository
         var results = await baseQuery
             .Offset((pageIndex - 1) * pageSize)
             .Limit(pageSize)
-            .GetAsync<Product>();
-
+            .GetAsync<ProductCoreDto>();
         return (results.ToList(), totalCount);
     }
 
