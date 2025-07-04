@@ -5,6 +5,7 @@ using MediatR;
 using _InventoryReceipt = BizMate.Domain.Entities.InventoryReceipt;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
+using BizMate.Application.Resources;
 
 namespace BizMate.Application.UserCases.InventoryReceipt.Commands.DeleteCreateInventoryReceipt
 {
@@ -13,13 +14,13 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.DeleteCreateIn
         private readonly IInventoryReceiptRepository _inventoryRepository;
         private readonly IUserSession _userSession;
         private readonly ILogger<DeleteInventoryReceiptHandler> _logger;
-        private readonly IStringLocalizer<DeleteInventoryReceiptHandler> _localizer;
+        private readonly IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> _localizer;
 
         public DeleteInventoryReceiptHandler(
             IInventoryReceiptRepository inventoryRepository,
             IUserSession userSession,
             ILogger<DeleteInventoryReceiptHandler> logger,
-            IStringLocalizer<DeleteInventoryReceiptHandler> localizer)
+            IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> localizer)
         {
             _inventoryRepository = inventoryRepository;
             _userSession = userSession;

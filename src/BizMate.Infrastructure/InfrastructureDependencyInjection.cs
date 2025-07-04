@@ -62,6 +62,7 @@ public static class InfrastructureDependencyInjection
             return connection;
         });
 
+
         services.AddScoped<QueryFactory>(sp =>
         {
             var connection = sp.GetRequiredService<IDbConnection>();

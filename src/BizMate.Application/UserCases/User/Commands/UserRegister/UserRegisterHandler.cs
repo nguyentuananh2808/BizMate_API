@@ -1,6 +1,7 @@
 ﻿using BizMate.Application.Common.Extensions;
 using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Interfaces.Repositories;
+using BizMate.Application.Resources;
 using BizMate.Public.Message;
 using MediatR;
 using Microsoft.Extensions.Localization;
@@ -16,7 +17,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserRegister
         private readonly IOtpStore _otpStore;
         private readonly IEmailService _emailService;
         private readonly ILogger<UserRegisterHandler> _logger;
-        private readonly IStringLocalizer<UserRegisterHandler> _localizer;
+        private readonly IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> _localizer;
 
         #region constructor
         public UserRegisterHandler(
@@ -25,7 +26,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserRegister
             IEmailService emailService,
             IOtpStore otpStore,
             ILogger<UserRegisterHandler> logger,
-            IStringLocalizer<UserRegisterHandler> localizer)
+            IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> localizer)
         {
             _otpStore = otpStore;
             _userRepository = userRepository;

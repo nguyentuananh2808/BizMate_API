@@ -2,9 +2,11 @@
 using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Requests.Validators;
 using BizMate.Infrastructure.Security;
+using BizMate.Infrastructure.Services;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Localization;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
@@ -20,7 +22,11 @@ internal class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
 
+        builder.Services.AddHttpClient<IImageUploader, ImageBBUploader>();
+
         builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+        builder.Services.AddSingleton<IStringLocalizerFactory, ResourceManagerStringLocalizerFactory>();
+        builder.Services.AddScoped(typeof(IStringLocalizer<>), typeof(StringLocalizer<>));
 
         builder.Services.AddDistributedMemoryCache();
 

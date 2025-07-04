@@ -9,6 +9,7 @@ using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using AutoMapper;
 using _User = BizMate.Domain.Entities.User;
+using BizMate.Application.Resources;
 
 namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
 {
@@ -17,7 +18,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
         private readonly IUserRepository _userRepository;
         private readonly IOtpStore _otpStore;
         private readonly ILogger<UserVerifyOtpHandler> _logger;
-        private readonly IStringLocalizer<UserVerifyOtpHandler> _localizer;
+        private readonly IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> _localizer;
         private readonly IMapper _mapper;
 
         #region constructor
@@ -25,7 +26,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
             IUserRepository userRepository,
             IOtpStore otpStore,
             ILogger<UserVerifyOtpHandler> logger,
-            IStringLocalizer<UserVerifyOtpHandler> localizer,
+            IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> localizer,
             IMapper mapper)
         {
             _userRepository = userRepository;
