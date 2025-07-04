@@ -7,6 +7,7 @@ using MediatR;
 using Microsoft.Extensions.Localization;
 using _InventoryReceipt = BizMate.Domain.Entities.InventoryReceipt;
 using Microsoft.Extensions.Logging;
+using BizMate.Application.Resources;
 
 namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventoryReceipt
 {
@@ -17,7 +18,7 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventor
         private readonly IUserSession _userSession;
         private readonly IMapper _mapper;
         private readonly ILogger<UpdateInventoryReceiptHandler> _logger;
-        private readonly IStringLocalizer<UpdateInventoryReceiptHandler> _localizer;
+        private readonly IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> _localizer;
 
         public UpdateInventoryReceiptHandler(
             IInventoryReceiptRepository inventoryReceiptRepository,
@@ -25,7 +26,7 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventor
             IUserSession userSession,
             IMapper mapper,
             ILogger<UpdateInventoryReceiptHandler> logger,
-            IStringLocalizer<UpdateInventoryReceiptHandler> localizer)
+            IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> localizer)
         {
             _inventoryReceiptRepository = inventoryReceiptRepository;
             _stockRepository = stockRepository;

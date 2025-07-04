@@ -9,6 +9,7 @@ using AutoMapper;
 using _Product = BizMate.Domain.Entities.Product;
 using BizMate.Application.Common.Security;
 using BizMate.Application.Common.Interfaces;
+using BizMate.Application.Resources;
 
 namespace BizMate.Application.UserCases.Product.Commands.CreateProduct
 {
@@ -19,7 +20,7 @@ namespace BizMate.Application.UserCases.Product.Commands.CreateProduct
         private readonly IUserSession _userSession;
         private readonly QueryFactory _db;
         private readonly ILogger<CreateProductHandler> _logger;
-        private readonly IStringLocalizer<CreateProductHandler> _localizer;
+        private readonly IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> _localizer;
         private readonly IMapper _mapper;
 
         #region constructor
@@ -29,7 +30,7 @@ namespace BizMate.Application.UserCases.Product.Commands.CreateProduct
             IProductRepository productRepository,
             QueryFactory db,
             ILogger<CreateProductHandler> logger,
-            IStringLocalizer<CreateProductHandler> localizer,
+            IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> localizer,
             IMapper mapper)
         {
             _codeGeneratorService = codeGeneratorService;
@@ -42,7 +43,7 @@ namespace BizMate.Application.UserCases.Product.Commands.CreateProduct
         }
         #endregion
         public async Task<CreateProductResponse> Handle(CreateProductRequest request, CancellationToken cancellationToken)
-        {
+        {   
             try
             {
                 var storeId = _userSession.StoreId;

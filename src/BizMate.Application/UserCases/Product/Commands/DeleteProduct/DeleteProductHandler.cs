@@ -7,6 +7,7 @@ using MediatR;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using SqlKata.Execution;
+using BizMate.Application.Resources;
 
 namespace BizMate.Application.UserCases.Product.Commands.DeleteProduct
 {
@@ -16,7 +17,7 @@ namespace BizMate.Application.UserCases.Product.Commands.DeleteProduct
         private readonly IUserSession _userSession;
         private readonly QueryFactory _db;
         private readonly ILogger<DeleteProductHandler> _logger;
-        private readonly IStringLocalizer<DeleteProductHandler> _localizer;
+        private readonly IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> _localizer;
 
         #region constructor
         public DeleteProductHandler(
@@ -24,7 +25,7 @@ namespace BizMate.Application.UserCases.Product.Commands.DeleteProduct
             IProductRepository productRepository,
             QueryFactory db,
             ILogger<DeleteProductHandler> logger,
-            IStringLocalizer<DeleteProductHandler> localizer)
+            IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> localizer)
         {
             _userSession = userSession;
             _productRepository = productRepository;

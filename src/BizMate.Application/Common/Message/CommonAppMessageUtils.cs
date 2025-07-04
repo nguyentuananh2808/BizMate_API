@@ -1,74 +1,76 @@
 ﻿using Microsoft.Extensions.Localization;
+using BizMate.Application.Resources;
 
 namespace BizMate.Public.Message
 {
     public static class CommonAppMessageUtils
     {
-        public static string NotExist<T>(object value, IStringLocalizer localizer)
+        public static string NotExist<T>(object value, IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> localizer)
         {
             var entity = typeof(T).Name;
-            return localizer["COMMON.NOT_EXIST", entity, value?.ToString() ?? "null"];
+            return localizer["COMMON_NOT_EXIST", entity, value?.ToString() ?? "null"];
         }
 
-        public static string AlreadyExist<T>(object value, IStringLocalizer localizer)
+        public static string AlreadyExist<T>(object value, IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> localizer)
         {
             var entity = typeof(T).Name;
-            return localizer["COMMON.ALREADY_EXIST", entity, value?.ToString() ?? "null"];
+            return localizer["COMMON_ALREADY_EXIST", entity, value?.ToString() ?? "null"];
         }
 
-        public static string Invalid<T>(object value, IStringLocalizer localizer)
+        public static string Invalid<T>(object value, IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> localizer)
         {
             var entity = typeof(T).Name;
-            return localizer["COMMON.INVALID", entity, value?.ToString() ?? "null"];
+            return localizer["COMMON_INVALID", entity, value?.ToString() ?? "null"];
         }
 
-        public static string RequiredField(string fieldName, IStringLocalizer localizer)
+        public static string RequiredField(string fieldName, IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> localizer)
         {
-            return localizer["COMMON.REQUIRED_FIELD", fieldName];
+            return localizer["COMMON_REQUIRED_FIELD", fieldName];
         }
 
-        public static string MaxLength(string fieldName, int maxLength, IStringLocalizer localizer)
+        public static string MaxLength(string fieldName, int maxLength, IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> localizer)
         {
-            return localizer["COMMON.MAX_LENGTH", fieldName, maxLength];
+            return localizer["COMMON_MAX_LENGTH", fieldName, maxLength];
         }
 
-        public static string MinLength(string fieldName, int minLength, IStringLocalizer localizer)
+        public static string MinLength(string fieldName, int minLength, IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> localizer)
         {
-            return localizer["COMMON.MIN_LENGTH", fieldName, minLength];
+            return localizer["COMMON_MIN_LENGTH", fieldName, minLength];
         }
 
-        public static string Unauthorized(IStringLocalizer localizer)
+        public static string Unauthorized(IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> localizer)
         {
-            return localizer["COMMON.UNAUTHORIZED"];
+            return localizer["COMMON_UNAUTHORIZED"];
         }
 
-        public static string Forbidden(IStringLocalizer localizer)
+        public static string Forbidden(IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> localizer)
         {
-            return localizer["COMMON.FORBIDDEN"];
+            return localizer["COMMON_FORBIDDEN"];
         }
 
-        public static string UnexpectedError(IStringLocalizer localizer)
+        public static string UnexpectedError(IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> localizer)
         {
-            return localizer["COMMON.UNEXPECTED_ERROR"];
+            return localizer["COMMON_UNEXPECTED_ERROR"];
         }
 
-        public static string Conflict(string message, IStringLocalizer localizer)
+        public static string Conflict(string message, IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> localizer)
         {
-            return localizer["COMMON.CONFLICT", message];
+            return localizer["COMMON_CONFLICT", message];
         }
 
-        public static string NotEmpty(string fieldName, IStringLocalizer localizer)
+        public static string NotEmpty(string fieldName, IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> localizer)
         {
-            return localizer["COMMON.NOT_EMPTY", fieldName];
-        }
-        public static string DuplicateData(string fieldName, IStringLocalizer localizer)
-        {
-            return localizer["COMMON.DUPLICATE", fieldName];
-        }
-        public static string ConcurrencyConflict(IStringLocalizer localizer)
-        {
-            return localizer["COMMON.CONCURRENCY_CONFLICT"];
+            return localizer["COMMON_NOT_EMPTY", fieldName];
         }
 
+        public static string DuplicateData(string fieldName, IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> localizer)
+        {
+            return localizer["COMMON_DUPLICATE", fieldName];
+        }
+
+        public static string ConcurrencyConflict(IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> localizer)
+        {
+            return localizer["COMMON_CONCURRENCY_CONFLICT"];
+        }
     }
 }

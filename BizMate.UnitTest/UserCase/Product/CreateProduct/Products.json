@@ -1,0 +1,12 @@
+[
+  {
+    "id": "ae01fb6c-cf13-4e23-8840-c1222e812499",
+    "product_code": "SP001",
+    "name": "Sản phẩm A",
+    "unit": 1,
+    "store_id": "8f512a08-4c9b-4fd7-85bc-0a87f34b8f4d",
+    "supplier_id": null,
+    "description": "Sản phẩm trùng test",
+    "row_version": 1
+  }
+]

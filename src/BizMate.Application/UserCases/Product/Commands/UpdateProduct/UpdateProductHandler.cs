@@ -2,6 +2,7 @@
 using BizMate.Application.Common.Dto.UserAggregate;
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Security;
+using BizMate.Application.Resources;
 using BizMate.Public.Message;
 using MediatR;
 using Microsoft.Extensions.Localization;
@@ -17,7 +18,7 @@ namespace BizMate.Application.UserCases.Product.Commands.UpdateProduct
         private readonly IUserSession _userSession;
         private readonly QueryFactory _db;
         private readonly ILogger<UpdateProductHandler> _logger;
-        private readonly IStringLocalizer<UpdateProductHandler> _localizer;
+        private readonly IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> _localizer;
         private readonly IMapper _mapper;
 
         #region constructor
@@ -26,7 +27,7 @@ namespace BizMate.Application.UserCases.Product.Commands.UpdateProduct
             IProductRepository productRepository,
             QueryFactory db,
             ILogger<UpdateProductHandler> logger,
-            IStringLocalizer<UpdateProductHandler> localizer,
+            IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> localizer,
             IMapper mapper)
         {
             _userSession = userSession;
