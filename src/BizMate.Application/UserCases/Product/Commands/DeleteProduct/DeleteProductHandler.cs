@@ -8,25 +8,29 @@ using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using SqlKata.Execution;
 using BizMate.Application.Resources;
+using BizMate.Application.Common.Interfaces;
 
 namespace BizMate.Application.UserCases.Product.Commands.DeleteProduct
 {
     public class DeleteProductHandler : IRequestHandler<DeleteProductRequest, DeleteProductResponse>
     {
+        private readonly IAppMessageService _messageService;
         private readonly IProductRepository _productRepository;
         private readonly IUserSession _userSession;
         private readonly QueryFactory _db;
         private readonly ILogger<DeleteProductHandler> _logger;
-        private readonly IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> _localizer;
+        private readonly IStringLocalizer<MessageUtils> _localizer;
 
         #region constructor
         public DeleteProductHandler(
+            IAppMessageService messageService,
             IUserSession userSession,
             IProductRepository productRepository,
             QueryFactory db,
             ILogger<DeleteProductHandler> logger,
-            IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> localizer)
+            IStringLocalizer<MessageUtils> localizer)
         {
+            _messageService = messageService;
             _userSession = userSession;
             _productRepository = productRepository;
             _db = db;
@@ -43,7 +47,7 @@ namespace BizMate.Application.UserCases.Product.Commands.DeleteProduct
                 var product = await _productRepository.GetByIdAsync(request.Id);
                 if (product == null || product.StoreId != storeId)
                 {
-                    var message = CommonAppMessageUtils.NotExist<_Product>(request.Id, _localizer);
+                    var message = _messageService.NotExist(request.Id, _localizer);
                     _logger.LogWarning(message);
                     return new DeleteProductResponse(false, message);
                 }

@@ -6,22 +6,26 @@ using _InventoryReceipt = BizMate.Domain.Entities.InventoryReceipt;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using BizMate.Application.Resources;
+using BizMate.Application.Common.Interfaces;
 
 namespace BizMate.Application.UserCases.InventoryReceipt.Commands.DeleteCreateInventoryReceipt
 {
     public class DeleteInventoryReceiptHandler : IRequestHandler<DeleteInventoryReceiptRequest, DeleteInventoryReceiptResponse>
     {
+        private readonly IAppMessageService _messageService;
         private readonly IInventoryReceiptRepository _inventoryRepository;
         private readonly IUserSession _userSession;
         private readonly ILogger<DeleteInventoryReceiptHandler> _logger;
-        private readonly IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> _localizer;
+        private readonly IStringLocalizer<MessageUtils> _localizer;
 
         public DeleteInventoryReceiptHandler(
+            IAppMessageService messageService,
             IInventoryReceiptRepository inventoryRepository,
             IUserSession userSession,
             ILogger<DeleteInventoryReceiptHandler> logger,
-            IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> localizer)
+            IStringLocalizer<MessageUtils> localizer)
         {
+            _messageService = messageService;
             _inventoryRepository = inventoryRepository;
             _userSession = userSession;
             _logger = logger;
@@ -37,7 +41,7 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.DeleteCreateIn
                 var receipt = await _inventoryRepository.GetByIdAsync(request.Id);
                 if (receipt == null || receipt.StoreId != storeId)
                 {
-                    var message = CommonAppMessageUtils.NotExist<_InventoryReceipt>(request.Id, _localizer);
+                    var message = _messageService.NotExist(request.Id, _localizer);
                     _logger.LogWarning(message);
                     return new DeleteInventoryReceiptResponse(false, message);
                 }

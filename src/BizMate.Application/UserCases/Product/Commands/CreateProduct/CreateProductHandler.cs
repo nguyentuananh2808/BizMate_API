@@ -15,24 +15,27 @@ namespace BizMate.Application.UserCases.Product.Commands.CreateProduct
 {
     public class CreateProductHandler : IRequestHandler<CreateProductRequest, CreateProductResponse>
     {
+        private readonly IAppMessageService _messageService;
         private readonly IProductRepository _productRepository;
         private readonly ICodeGeneratorService _codeGeneratorService;
         private readonly IUserSession _userSession;
         private readonly QueryFactory _db;
         private readonly ILogger<CreateProductHandler> _logger;
-        private readonly IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> _localizer;
+        private readonly IStringLocalizer<MessageUtils> _localizer;
         private readonly IMapper _mapper;
 
         #region constructor
         public CreateProductHandler(
+            IAppMessageService messageService,
             ICodeGeneratorService codeGeneratorService,
             IUserSession userSession,
             IProductRepository productRepository,
             QueryFactory db,
             ILogger<CreateProductHandler> logger,
-            IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> localizer,
+            IStringLocalizer<MessageUtils> localizer,
             IMapper mapper)
         {
+            _messageService = messageService;
             _codeGeneratorService = codeGeneratorService;
             _userSession = userSession;
             _productRepository = productRepository;
@@ -43,7 +46,7 @@ namespace BizMate.Application.UserCases.Product.Commands.CreateProduct
         }
         #endregion
         public async Task<CreateProductResponse> Handle(CreateProductRequest request, CancellationToken cancellationToken)
-        {   
+        {
             try
             {
                 var storeId = _userSession.StoreId;
@@ -56,7 +59,7 @@ namespace BizMate.Application.UserCases.Product.Commands.CreateProduct
 
                 if (existingProduct.Any())
                 {
-                    var message = CommonAppMessageUtils.DuplicateData(request.Name, _localizer);
+                    var message = _messageService.DuplicateData(request.Name, _localizer);
                     _logger.LogWarning(message);
                     return new CreateProductResponse(false, message);
                 }

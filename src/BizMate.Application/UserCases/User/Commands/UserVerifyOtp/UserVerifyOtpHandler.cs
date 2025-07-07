@@ -3,7 +3,6 @@ using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Security;
 using BizMate.Domain.Entities;
 using BizMate.Public.Dto.UserAggregate;
-using BizMate.Public.Message;
 using MediatR;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
@@ -15,20 +14,23 @@ namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
 {
     public class UserVerifyOtpHandler : IRequestHandler<UserVerifyOtpRequest, UserVerifyOtpResponse>
     {
+        private readonly IAppMessageService _messageService;
         private readonly IUserRepository _userRepository;
         private readonly IOtpStore _otpStore;
         private readonly ILogger<UserVerifyOtpHandler> _logger;
-        private readonly IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> _localizer;
+        private readonly IStringLocalizer<MessageUtils> _localizer;
         private readonly IMapper _mapper;
 
         #region constructor
         public UserVerifyOtpHandler(
+            IAppMessageService messageService,
             IUserRepository userRepository,
             IOtpStore otpStore,
             ILogger<UserVerifyOtpHandler> logger,
-            IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> localizer,
+            IStringLocalizer<MessageUtils> localizer,
             IMapper mapper)
         {
+            _messageService = messageService;
             _userRepository = userRepository;
             _otpStore = otpStore;
             _logger = logger;
@@ -68,7 +70,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
             var existingUser = await _userRepository.GetByEmailAsync(email, cancellationToken);
             if (existingUser != null)
             {
-                var msg = CommonAppMessageUtils.AlreadyExist<_User>(email, _localizer);
+                var msg = _messageService.AlreadyExist(existingUser, _localizer);
                 _logger.LogWarning(msg);
                 return new UserVerifyOtpResponse(false, msg);
             }

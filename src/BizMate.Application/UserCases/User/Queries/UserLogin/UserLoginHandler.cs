@@ -1,31 +1,34 @@
 ﻿using AutoMapper;
+using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Security;
 using BizMate.Application.Resources;
 using BizMate.Public.Dto.UserAggregate;
-using BizMate.Public.Message;
 using MediatR;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
-using _User = BizMate.Domain.Entities.User;
 
 namespace BizMate.Application.UserCases.User.Queries.UserLogin
 {
     public sealed class UserLoginHandler : IRequestHandler<UserLoginRequest, UserLoginResponse>
     {
+        private readonly IAppMessageService _messageService;
         private readonly IUserRepository _userRepository;
         private readonly IJwtFactory _jwtFactory;
         private readonly ITokenFactory _tokenFactory;
         private readonly IUserSession _userSession;
         private readonly IMapper _mapper;
         private readonly ILogger<UserLoginHandler> _logger;
-        private readonly IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> _localizer;
+        private readonly IStringLocalizer<MessageUtils> _localizer;
 
         #region constructor
-        public UserLoginHandler(IJwtFactory jwtFactory, ITokenFactory tokenFactory, IUserSession userSession,
-            IMapper mapper, ILogger<UserLoginHandler> logger, IDistributedCache cache, IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> localizer, IUserRepository userRepository)
+        public UserLoginHandler(
+            IAppMessageService messageService,
+            IJwtFactory jwtFactory, ITokenFactory tokenFactory, IUserSession userSession,
+            IMapper mapper, ILogger<UserLoginHandler> logger, IDistributedCache cache, IStringLocalizer<MessageUtils> localizer, IUserRepository userRepository)
         {
+            _messageService = messageService;
             _userRepository = userRepository;
             _jwtFactory = jwtFactory;
             _tokenFactory = tokenFactory;
@@ -51,7 +54,7 @@ namespace BizMate.Application.UserCases.User.Queries.UserLogin
             var emailDb = await _userRepository.GetByEmailAsync(email, default);
             if (emailDb == null)
             {
-                var message = CommonAppMessageUtils.NotExist<_User>(request.Email, _localizer);
+                var message = _messageService.NotExist(request.Email, _localizer);
                 _logger.LogWarning(message);
                 return new UserLoginResponse(success: false, message: message);
             }
@@ -61,7 +64,7 @@ namespace BizMate.Application.UserCases.User.Queries.UserLogin
             var isValidPassword = PasswordHasher.Verify(password, emailDb.PasswordHash, emailDb.PasswordSalt);
             if (!isValidPassword)
             {
-                var message = CommonAppMessageUtils.Invalid<_User>(request.Password, _localizer);
+                var message = _messageService.Invalid(request.Password, _localizer);
                 _logger.LogWarning(message);
                 return new UserLoginResponse(success: false, message: message);
             }
