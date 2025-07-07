@@ -1,6 +1,7 @@
 ﻿using BizMate.Application.Common.Extensions;
 using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Interfaces.Repositories;
+using BizMate.Application.Common.Message;
 using BizMate.Application.Resources;
 using BizMate.Public.Message;
 using MediatR;
@@ -12,22 +13,25 @@ namespace BizMate.Application.UserCases.User.Commands.UserRegister
 {
     public sealed class UserRegisterHandler : IRequestHandler<UserRegisterRequest, UserRegisterResponse>
     {
+        private readonly IAppMessageService _messageService;
         private readonly IUserRepository _userRepository;
         private readonly IOtpVerificationRepository _otpVerificationRepository;
         private readonly IOtpStore _otpStore;
         private readonly IEmailService _emailService;
         private readonly ILogger<UserRegisterHandler> _logger;
-        private readonly IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> _localizer;
+        private readonly IStringLocalizer<MessageUtils> _localizer;
 
         #region constructor
         public UserRegisterHandler(
+            IAppMessageService messageService,
             IUserRepository userRepository,
             IOtpVerificationRepository otpVerificationRepository,
             IEmailService emailService,
             IOtpStore otpStore,
             ILogger<UserRegisterHandler> logger,
-            IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> localizer)
+            IStringLocalizer<MessageUtils> localizer)
         {
+            _messageService = messageService;
             _otpStore = otpStore;
             _userRepository = userRepository;
             _otpVerificationRepository = otpVerificationRepository;
@@ -49,7 +53,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserRegister
             var emailDb = await _userRepository.GetByEmailAsync(email, cancellationToken);
             if (emailDb != null)
             {
-                var message = CommonAppMessageUtils.AlreadyExist<_User>(email, _localizer);
+                var message = _messageService.AlreadyExist(email, _localizer);
                 _logger.LogWarning(message);
                 return new UserRegisterResponse(success: false, message: message);
             }

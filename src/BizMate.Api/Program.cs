@@ -1,5 +1,7 @@
 ﻿using BizMate.Api.UserCases.User.UserLogin;
+using BizMate.Application.Common.Extensions;
 using BizMate.Application.Common.Interfaces;
+using BizMate.Application.Common.Message;
 using BizMate.Application.Common.Requests.Validators;
 using BizMate.Infrastructure.Security;
 using BizMate.Infrastructure.Services;
@@ -24,9 +26,10 @@ internal class Program
 
         builder.Services.AddHttpClient<IImageUploader, ImageBBUploader>();
 
+        builder.Services.AddScoped<IAppMessageService, CommonAppMessageUtils>();
         builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
-        builder.Services.AddSingleton<IStringLocalizerFactory, ResourceManagerStringLocalizerFactory>();
-        builder.Services.AddScoped(typeof(IStringLocalizer<>), typeof(StringLocalizer<>));
+        /*builder.Services.AddSingleton<IStringLocalizerFactory, ResourceManagerStringLocalizerFactory>();
+        builder.Services.AddScoped(typeof(IStringLocalizer<>), typeof(StringLocalizer<>));*/
 
         builder.Services.AddDistributedMemoryCache();
 
@@ -121,12 +124,12 @@ internal class Program
             app.UseSwaggerUI();
         }
 
-        var supportedCultures = new[] { "en", "vi" };
+       /* var supportedCultures = new[] { "en", "vi" };
         var localizationOptions = new RequestLocalizationOptions()
             .SetDefaultCulture("vi")
             .AddSupportedCultures(supportedCultures)
             .AddSupportedUICultures(supportedCultures);
-        app.UseRequestLocalization(localizationOptions);
+        app.UseRequestLocalization(localizationOptions);*/
 
         app.UseHttpsRedirection();
         app.UseAuthentication();

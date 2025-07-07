@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using System.Text.Json;
 
-namespace BizMate.Infrastructure.Services
+namespace BizMate.Application.Common.Extensions
 {
     public class ImageBBUploader : IImageUploader
     {
@@ -28,10 +28,10 @@ namespace BizMate.Infrastructure.Services
             };
 
             var url = $"https://api.imgbb.com/1/upload?key={_apiKey}";
-            var response = await _httpClient.PostAsync(url, content);  
+            var response = await _httpClient.PostAsync(url, content);
             var json = await response.Content.ReadAsStringAsync();
 
-            if (!response.IsSuccessStatusCode) 
+            if (!response.IsSuccessStatusCode)
                 throw new Exception($"ImageBB upload failed: {json}");
 
             var doc = JsonDocument.Parse(json);

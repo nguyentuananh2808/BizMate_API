@@ -2,32 +2,34 @@
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Security;
 using BizMate.Domain.Entities;
-using BizMate.Public.Message;
 using MediatR;
 using Microsoft.Extensions.Localization;
-using _InventoryReceipt = BizMate.Domain.Entities.InventoryReceipt;
 using Microsoft.Extensions.Logging;
 using BizMate.Application.Resources;
+using BizMate.Application.Common.Interfaces;
 
 namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventoryReceipt
 {
     public class UpdateInventoryReceiptHandler : IRequestHandler<UpdateInventoryReceiptRequest, UpdateInventoryReceiptResponse>
     {
+        private readonly IAppMessageService _messageService;
         private readonly IInventoryReceiptRepository _inventoryReceiptRepository;
         private readonly IStockRepository _stockRepository;
         private readonly IUserSession _userSession;
         private readonly IMapper _mapper;
         private readonly ILogger<UpdateInventoryReceiptHandler> _logger;
-        private readonly IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> _localizer;
+        private readonly IStringLocalizer<MessageUtils> _localizer;
 
         public UpdateInventoryReceiptHandler(
+            IAppMessageService messageService,
             IInventoryReceiptRepository inventoryReceiptRepository,
             IStockRepository stockRepository,
             IUserSession userSession,
             IMapper mapper,
             ILogger<UpdateInventoryReceiptHandler> logger,
-            IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> localizer)
+            IStringLocalizer<MessageUtils> localizer)
         {
+            _messageService = messageService;
             _inventoryReceiptRepository = inventoryReceiptRepository;
             _stockRepository = stockRepository;
             _userSession = userSession;
@@ -47,7 +49,7 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventor
                 var existingReceipt = await _inventoryReceiptRepository.GetByIdAsync(request.Id);
                 if (existingReceipt == null)
                 {
-                    var message = CommonAppMessageUtils.NotExist<_InventoryReceipt>(request.Id, _localizer);
+                    var message = _messageService.NotExist(request.Id, _localizer);
                     _logger.LogWarning(message);
                     return new UpdateInventoryReceiptResponse(false, message);
                 }

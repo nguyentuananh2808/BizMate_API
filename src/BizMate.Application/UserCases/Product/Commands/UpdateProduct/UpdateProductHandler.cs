@@ -1,9 +1,10 @@
 ﻿using AutoMapper;
 using BizMate.Application.Common.Dto.UserAggregate;
+using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Interfaces.Repositories;
+using BizMate.Application.Common.Message;
 using BizMate.Application.Common.Security;
 using BizMate.Application.Resources;
-using BizMate.Public.Message;
 using MediatR;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
@@ -14,22 +15,25 @@ namespace BizMate.Application.UserCases.Product.Commands.UpdateProduct
 {
     public class UpdateProductHandler : IRequestHandler<UpdateProductRequest, UpdateProductResponse>
     {
+        private readonly IAppMessageService _messageService;
         private readonly IProductRepository _productRepository;
         private readonly IUserSession _userSession;
         private readonly QueryFactory _db;
         private readonly ILogger<UpdateProductHandler> _logger;
-        private readonly IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> _localizer;
+        private readonly IStringLocalizer<MessageUtils> _localizer;
         private readonly IMapper _mapper;
 
         #region constructor
         public UpdateProductHandler(
+            IAppMessageService messageService,
             IUserSession userSession,
             IProductRepository productRepository,
             QueryFactory db,
             ILogger<UpdateProductHandler> logger,
-            IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys> localizer,
+            IStringLocalizer<MessageUtils> localizer,
             IMapper mapper)
         {
+            _messageService = messageService;
             _userSession = userSession;
             _productRepository = productRepository;
             _db = db;
@@ -48,7 +52,7 @@ namespace BizMate.Application.UserCases.Product.Commands.UpdateProduct
                 var product = await _productRepository.GetByIdAsync(request.Id);
                 if (product == null)
                 {
-                    var message = CommonAppMessageUtils.NotExist<_Product>(request.Id.ToString(), _localizer);
+                    var message = _messageService.NotExist(request.Id.ToString(), _localizer);
                     _logger.LogWarning(message);
                     return new UpdateProductResponse(false, message);
                 }
@@ -57,7 +61,7 @@ namespace BizMate.Application.UserCases.Product.Commands.UpdateProduct
                 #region Check rowversion
                 if (product.RowVersion != request.RowVersion)
                 {
-                    var message = CommonAppMessageUtils.ConcurrencyConflict(_localizer);
+                    var message = _messageService.ConcurrencyConflict(_localizer);
                     _logger.LogWarning("RowVersion conflict: Request={RequestVersion}, DB={DbVersion}", request.RowVersion, product.RowVersion);
                     return new UpdateProductResponse(false, message);
                 }
@@ -67,7 +71,7 @@ namespace BizMate.Application.UserCases.Product.Commands.UpdateProduct
                 var duplicateProducts = await _productRepository.SearchProducts(storeId, request.SupplierId, request.Name, _db);
                 if (duplicateProducts.Any(p => p.Id != request.Id))
                 {
-                    var message = CommonAppMessageUtils.DuplicateData(request.Name, _localizer);
+                    var message = _messageService.DuplicateData(request.Name, _localizer);
                     _logger.LogWarning(message);
                     return new UpdateProductResponse(false, message);
                 }
