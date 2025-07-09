@@ -12,6 +12,7 @@ namespace BizMate.Infrastructure.Persistence
         public DbSet<Store> Stores => Set<Store>();
         public DbSet<Customer> Customers => Set<Customer>();
         public DbSet<Product> Products => Set<Product>();
+        public DbSet<ProductCategory> ProductCategories => Set<ProductCategory>();
         public DbSet<Supplier> Suppliers => Set<Supplier>();
         public DbSet<Stock> Stocks { get; set; } = default!;
         public DbSet<InventoryReceipt> InventoryReceipts => Set<InventoryReceipt>();

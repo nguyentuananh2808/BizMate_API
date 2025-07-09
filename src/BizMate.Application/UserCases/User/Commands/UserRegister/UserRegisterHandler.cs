@@ -1,13 +1,10 @@
 ﻿using BizMate.Application.Common.Extensions;
 using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Interfaces.Repositories;
-using BizMate.Application.Common.Message;
 using BizMate.Application.Resources;
-using BizMate.Public.Message;
 using MediatR;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
-using _User = BizMate.Domain.Entities.User;
 
 namespace BizMate.Application.UserCases.User.Commands.UserRegister
 {

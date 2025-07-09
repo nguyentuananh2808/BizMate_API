@@ -28,17 +28,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="Resources\BizMate.Application.Resources.MessageUtils.Designer.cs">
+    <Compile Update="Resources\BizMate.Application.Resources.CommonAppResourceKeys.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
-      <DependentUpon>MessageUtils.resx</DependentUpon>
+      <DependentUpon>BizMate.Application.Resources.CommonAppResourceKeys.resx</DependentUpon>
     </Compile>
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Update="Resources\BizMate.Application.Resources.MessageUtils.resx">
+    <EmbeddedResource Update="Resources\BizMate.Application.Resources.CommonAppResourceKeys.resx">
       <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>MessageUtils.Designer.cs</LastGenOutput>
+      <LastGenOutput>BizMate.Application.Resources.CommonAppResourceKeys.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
 

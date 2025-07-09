@@ -1,25 +1,25 @@
 ﻿using BizMate.Api.Serialization;
 using BizMate.Application.Common.Interfaces;
-using BizMate.Application.Common.UploadImage;
+using BizMate.Application.UserCases.ProductAggregate.ProductCategory.Commands.UpdateProductCategory;
 using System.Net;
 
-namespace BizMate.Api.Extensions.UploadImage
+namespace BizMate.Api.UserCases.ProductAggregate.ProductCategory.UpdateProductCategory
 {
-    public class UploadImagePresenter : IOutputPort<UploadImageResponse>
+    public class UpdateProductCategoryPresenter : IOutputPort<UpdateProductCategoryResponse>
     {
         public JsonContentResult ContentResult { get; }
 
-        public UploadImagePresenter()
+        public UpdateProductCategoryPresenter()
         {
             ContentResult = new JsonContentResult();
         }
 
-        public void Handle(UploadImageResponse response)
+        public void Handle(UpdateProductCategoryResponse response)
         {
             ContentResult.StatusCode = (int)(response.Success ? HttpStatusCode.OK : HttpStatusCode.Unauthorized);
             ContentResult.Content = response.Success
                 ? CommonJsonSerializer.SerializeObject(
-                    new UploadImageResponseViewModel(response))
+                    new UpdateProductCategoryResponseViewModel(response.ProdductCategory))
                 : CommonJsonSerializer.SerializeObject(response);
         }
     }

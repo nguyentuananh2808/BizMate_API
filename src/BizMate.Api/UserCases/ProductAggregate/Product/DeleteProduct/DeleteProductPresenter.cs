@@ -1,25 +1,25 @@
 ﻿using BizMate.Api.Serialization;
 using BizMate.Application.Common.Interfaces;
-using BizMate.Application.Common.UploadImage;
+using BizMate.Application.UserCases.ProductAggregate.Product.Commands.DeleteProduct;
 using System.Net;
 
-namespace BizMate.Api.Extensions.UploadImage
+namespace BizMate.Api.UserCases.ProductAggregate.Product.DeleteProduct
 {
-    public class UploadImagePresenter : IOutputPort<UploadImageResponse>
+    public class DeleteProductPresenter : IOutputPort<DeleteProductResponse>
     {
         public JsonContentResult ContentResult { get; }
 
-        public UploadImagePresenter()
+        public DeleteProductPresenter()
         {
             ContentResult = new JsonContentResult();
         }
 
-        public void Handle(UploadImageResponse response)
+        public void Handle(DeleteProductResponse response)
         {
             ContentResult.StatusCode = (int)(response.Success ? HttpStatusCode.OK : HttpStatusCode.Unauthorized);
             ContentResult.Content = response.Success
                 ? CommonJsonSerializer.SerializeObject(
-                    new UploadImageResponseViewModel(response))
+                    new DeleteProductResponseViewModel(false, response.Message))
                 : CommonJsonSerializer.SerializeObject(response);
         }
     }
