@@ -241,6 +241,9 @@ namespace BizMate.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("ProductCategoryId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("ProductCode")
                         .IsRequired()
                         .HasColumnType("text");
@@ -262,11 +265,49 @@ namespace BizMate.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ProductCategoryId");
+
                     b.HasIndex("StoreId");
 
                     b.HasIndex("SupplierId");
 
                     b.ToTable("Products");
+                });
+
+            modelBuilder.Entity("BizMate.Domain.Entities.ProductCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProductCategoryCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<long>("RowVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("StoreId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StoreId");
+
+                    b.ToTable("ProductCategories");
                 });
 
             modelBuilder.Entity("BizMate.Domain.Entities.Stock", b =>
@@ -450,6 +491,10 @@ namespace BizMate.Infrastructure.Migrations
 
             modelBuilder.Entity("BizMate.Domain.Entities.Product", b =>
                 {
+                    b.HasOne("BizMate.Domain.Entities.ProductCategory", "ProductCategory")
+                        .WithMany("Products")
+                        .HasForeignKey("ProductCategoryId");
+
                     b.HasOne("BizMate.Domain.Entities.Store", "Store")
                         .WithMany("Products")
                         .HasForeignKey("StoreId")
@@ -460,9 +505,22 @@ namespace BizMate.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("SupplierId");
 
+                    b.Navigation("ProductCategory");
+
                     b.Navigation("Store");
 
                     b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("BizMate.Domain.Entities.ProductCategory", b =>
+                {
+                    b.HasOne("BizMate.Domain.Entities.Store", "Store")
+                        .WithMany()
+                        .HasForeignKey("StoreId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Store");
                 });
 
             modelBuilder.Entity("BizMate.Domain.Entities.Stock", b =>
@@ -509,6 +567,11 @@ namespace BizMate.Infrastructure.Migrations
             modelBuilder.Entity("BizMate.Domain.Entities.InventoryReceipt", b =>
                 {
                     b.Navigation("Details");
+                });
+
+            modelBuilder.Entity("BizMate.Domain.Entities.ProductCategory", b =>
+                {
+                    b.Navigation("Products");
                 });
 
             modelBuilder.Entity("BizMate.Domain.Entities.Store", b =>

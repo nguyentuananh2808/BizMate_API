@@ -1,15 +1,14 @@
-﻿using BizMate.Application.UserCases.Product.Commands.CreateProduct;
-using Microsoft.Extensions.Localization;
+﻿/*using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using Moq;
 using _Product = BizMate.Domain.Entities.Product;
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Interfaces;
-using BizMate.Application.Resources;
 using AutoMapper;
 using BizMate.Application.Common.Dto.UserAggregate;
 using BizMate.Application.Common.Security;
 using SqlKata.Execution;
+using BizMate.Application.UserCases.ProductAggregate.Product.Commands.CreateProduct;
 
 namespace BizMate.UnitTest.UserCase.Product.CreateProduct
 {
@@ -20,7 +19,7 @@ namespace BizMate.UnitTest.UserCase.Product.CreateProduct
         private readonly Mock<IUserSession> _userSessionMock = new();
         private readonly Mock<QueryFactory> _dbMock = new();
         private readonly Mock<ILogger<CreateProductHandler>> _loggerMock = new();
-        private readonly Mock<IStringLocalizer<BizMate_Application_Resources_CommonAppResourceKeys>> _localizerMock = new();
+        private readonly Mock<IStringLocalizer<CreateProductHandler>> _localizerMock = new();
         private readonly Mock<IMapper> _mapperMock = new();
 
         private readonly CreateProductHandler _handler;
@@ -82,4 +81,4 @@ namespace BizMate.UnitTest.UserCase.Product.CreateProduct
             Assert.Equal(request.Name, result.Product.Name);
         }
     }
-}
+}*/

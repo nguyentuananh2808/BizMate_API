@@ -29,6 +29,7 @@ public static class InfrastructureDependencyInjection
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IOtpVerificationRepository, OtpVerificationRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
+        services.AddScoped<IProductCategoryRepository, ProductCategoryRepository>();
         services.AddScoped<ICodeGeneratorRepository, CodeGeneratorRepository>();
         services.AddScoped<ICodeGeneratorService, CodeGeneratorService>();
         services.AddScoped<IStockRepository, StockRepository>();
@@ -39,6 +40,7 @@ public static class InfrastructureDependencyInjection
         // AutoMapper
         services.AddAutoMapper(typeof(UserMappingProfile));
         services.AddAutoMapper(typeof(ProductMappingProfile));
+        services.AddAutoMapper(typeof(ProductCategoryMappingProfile));
         services.AddAutoMapper(typeof(InventoryReceiptMappingProfile));
 
         // Security
@@ -69,7 +71,6 @@ public static class InfrastructureDependencyInjection
             var compiler = new PostgresCompiler();
             return new QueryFactory(connection, compiler);
         });
-
 
         return services;
     }

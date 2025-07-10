@@ -4,6 +4,7 @@ using BizMate.Domain.Entities;
 using BizMate.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using SqlKata.Execution;
+using System.Threading;
 
 public class ProductRepository : IProductRepository
 {
@@ -14,17 +15,17 @@ public class ProductRepository : IProductRepository
         _context = context;
     }
 
-    public async Task<Product?> GetByIdAsync(Guid id)
+    public async Task<Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         return await _context.Products
             .Where(p => !p.IsDeleted && p.Id == id)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
     }
-    public async Task<List<Product>> GetByIdsAsync(List<Guid> ids)
+    public async Task<List<Product>> GetByIdsAsync(List<Guid> ids, CancellationToken cancellationToken)
     {
         return await _context.Products
             .Where(p => !p.IsDeleted && ids.Contains(p.Id))
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<ProductCoreDto> GetByIdWithQuantityAsync(Guid id, QueryFactory queryFactory)
@@ -90,13 +91,13 @@ public class ProductRepository : IProductRepository
         return (results.ToList(), totalCount);
     }
 
-    public async Task AddAsync(Product product)
+    public async Task AddAsync(Product product, CancellationToken cancellationToken)
     {
         await _context.Products.AddAsync(product);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(Product product)
+    public async Task UpdateAsync(Product product, CancellationToken cancellationToken)
     {
         var entry = _context.Entry(product);
         entry.Property(nameof(BaseEntity.RowVersion)).OriginalValue = product.RowVersion;
@@ -105,7 +106,7 @@ public class ProductRepository : IProductRepository
         try
         {
             _context.Products.Update(product);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateConcurrencyException)
         {
@@ -113,7 +114,7 @@ public class ProductRepository : IProductRepository
         }
     }
 
-    public async Task DeleteAsync(Guid id)
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken)
     {
         var product = await _context.Products.FindAsync(id);
         if (product is not null && !product.IsDeleted)
@@ -121,7 +122,7 @@ public class ProductRepository : IProductRepository
             product.IsDeleted = true;
             product.DeletedAt = DateTime.UtcNow;
 
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
         }
     }
 }

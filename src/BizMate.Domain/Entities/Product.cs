@@ -14,6 +14,9 @@
 
         public Guid? SupplierId { get; set; }
         public Supplier? Supplier { get; set; }
+
+        public Guid? ProductCategoryId { get; set; }
+        public ProductCategory ProductCategory { get; set; } = default!;
         // Mở rộng cho tính năng khuyến mãi
         public bool IsDiscountable { get; set; } = true;            // Có được giảm giá không?
         public decimal? DiscountPercent { get; set; }               // % giảm giá mặc định nếu có

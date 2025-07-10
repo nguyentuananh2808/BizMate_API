@@ -1,9 +1,6 @@
 ﻿using BizMate.Api.Serialization;
-using BizMate.Api.UserCases.Product.CreateProduct;
-using BizMate.Application.Common.Dto.Identity;
 using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.UploadImage;
-using BizMate.Application.UserCases.Product.Commands.CreateProduct;
 using System.Net;
 
 namespace BizMate.Api.Extensions.UploadImage
