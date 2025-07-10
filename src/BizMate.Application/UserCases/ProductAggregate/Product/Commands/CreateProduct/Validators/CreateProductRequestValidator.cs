@@ -9,6 +9,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Create
     {
         public CreateProductRequestValidator(IStringLocalizer<CreateProductRequestValidator> localizer)
         {
+            RuleFor(x => x.ProductCategoryId).NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty]);
             RuleFor(x => x.Name).NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty]);
             RuleFor(x => x.Unit).NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty])
             .Must(unit => Enum.IsDefined(typeof(ProductUnit), unit))

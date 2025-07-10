@@ -12,5 +12,6 @@ namespace BizMate.Application.Common.Dto.UserAggregate
         public string? ImageUrl { get; set; }
         public string? Description { get; set; }
         public Guid? SupplierId { get; set; }
+        public Guid ProductCategoryId { get; set; } 
     }
 }

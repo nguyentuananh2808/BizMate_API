@@ -76,6 +76,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Create
                     Unit = request.Unit,
                     ImageUrl = request.ImageUrl,
                     StoreId = storeId,
+                    ProductCategoryId = request.ProductCategoryId,
                     SupplierId = request.SupplierId,
                     Description = request.Description,
                     RowVersion = 1
