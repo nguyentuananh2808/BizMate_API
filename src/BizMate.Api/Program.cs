@@ -47,7 +47,7 @@ internal class Program
             options.Configuration = builder.Configuration.GetConnectionString("Redis");
         });
 
-        builder.Services.AddFluentValidationAutoValidation(); 
+        builder.Services.AddFluentValidationAutoValidation();
         builder.Services.AddFluentValidationClientsideAdapters();
 
         // Register validators
@@ -116,20 +116,34 @@ internal class Program
 
         builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
+        // Cấu hình dịch vụ CORS
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("AllowAngular", builder =>
+            {
+                builder
+                    .WithOrigins("http://localhost:4200")
+                    .AllowAnyHeader()
+                    .AllowAnyMethod();
+            });
+        });
+
+
         var app = builder.Build();
 
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
             app.UseSwaggerUI();
+            app.UseCors("AllowAngular");
         }
 
-       /* var supportedCultures = new[] { "en", "vi" };
-        var localizationOptions = new RequestLocalizationOptions()
-            .SetDefaultCulture("vi")
-            .AddSupportedCultures(supportedCultures)
-            .AddSupportedUICultures(supportedCultures);
-        app.UseRequestLocalization(localizationOptions);*/
+        /* var supportedCultures = new[] { "en", "vi" };
+         var localizationOptions = new RequestLocalizationOptions()
+             .SetDefaultCulture("vi")
+             .AddSupportedCultures(supportedCultures)
+             .AddSupportedUICultures(supportedCultures);
+         app.UseRequestLocalization(localizationOptions);*/
 
         app.UseHttpsRedirection();
         app.UseAuthentication();

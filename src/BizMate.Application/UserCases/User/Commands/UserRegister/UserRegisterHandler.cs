@@ -66,7 +66,8 @@ namespace BizMate.Application.UserCases.User.Commands.UserRegister
                 Email = request.Email,
                 FullName = request.FullName,
                 StoreName = request.NameStore,
-                Otp = otpCode
+                Otp = otpCode,
+                Password =request.Password,
             };
 
             await _otpStore.SaveOtpAsync(request.Email, tempData, TimeSpan.FromMinutes(5), cancellationToken);

@@ -77,7 +77,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
             #endregion
 
             #region Hash password
-            var (hashedPassword, salt) = PasswordHasher.HashWithSalt(request.Password);
+            var (hashedPassword, salt) = PasswordHasher.HashWithSalt(otpData.Password);
             #endregion
 
             #region create store and user

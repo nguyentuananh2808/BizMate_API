@@ -1,13 +1,14 @@
 ﻿using MediatR;
+using System.ComponentModel.DataAnnotations;
 
 namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
 {
     public class UserVerifyOtpRequest : IRequest<UserVerifyOtpResponse>
     {
-        public string FullName { get; set; }
-        public string NameStore { get; set; }
-        public string Email { get; set; }
-        public string Password { get; set; }
-        public string Otp { get; set; }
+        [Required]
+        public string Email { get; set; } = default!;
+
+        [Required]
+        public string Otp { get; set; } = default!;
     }
 }
