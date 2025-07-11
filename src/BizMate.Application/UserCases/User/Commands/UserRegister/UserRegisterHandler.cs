@@ -67,7 +67,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserRegister
                 FullName = request.FullName,
                 StoreName = request.NameStore,
                 Otp = otpCode,
-                Password =request.Password,
+                Password = request.Password,
             };
 
             await _otpStore.SaveOtpAsync(request.Email, tempData, TimeSpan.FromMinutes(5), cancellationToken);
@@ -83,7 +83,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserRegister
             }
             #endregion
 
-            return new UserRegisterResponse(tempData.FullName, tempData.StoreName, email, expiredAt);
+            return new UserRegisterResponse(email, expiredAt);
         }
     }
 }

@@ -6,6 +6,8 @@ namespace BizMate.Application.Common.Interfaces
     {
         string NotExist(object value, IStringLocalizer<Resources.MessageUtils> _localizer);
         string AlreadyExist(object value, IStringLocalizer<Resources.MessageUtils> _localizer);
+        string OtpNotExist(IStringLocalizer<Resources.MessageUtils> _localizer);
+        string OtpInvalid(IStringLocalizer<Resources.MessageUtils> _localizer);
         string Invalid(object value, IStringLocalizer<Resources.MessageUtils> _localizer);
         string RequiredField(string fieldName, IStringLocalizer<Resources.MessageUtils> _localizer);
         string MaxLength(string fieldName, int maxLength, IStringLocalizer<Resources.MessageUtils> _localizer);
