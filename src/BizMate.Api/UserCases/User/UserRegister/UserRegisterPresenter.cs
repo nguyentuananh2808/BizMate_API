@@ -19,7 +19,7 @@ namespace BizMate.Api.UserCases.User.UserRegister
             ContentResult.StatusCode = (int)(response.Success ? HttpStatusCode.OK : HttpStatusCode.Unauthorized);
             ContentResult.Content = response.Success
                 ? CommonJsonSerializer.SerializeObject(
-                    new UserRegisterResponseViewModel(response.FullName, response.NameStore, response.Email, response.OtpExpiredAt))
+                    new UserRegisterResponseViewModel(response.Email, response.OtpExpiredAt))
                 : CommonJsonSerializer.SerializeObject(response);
         }
     }

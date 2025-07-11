@@ -53,14 +53,14 @@ namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
             var otpData = await _otpStore.GetOtpAsync(email);
             if (otpData == null)
             {
-                var msg = _localizer["Mã OTP đã hết hạn hoặc không tồn tại"];
+                var msg = _messageService.OtpNotExist(_localizer);
                 _logger.LogWarning(msg);
                 return new UserVerifyOtpResponse(false, msg);
             }
 
             if (otpData.Otp != inputOtp)
             {
-                var msg = _localizer["Mã OTP không đúng"];
+                var msg = _messageService.OtpInvalid(_localizer);
                 _logger.LogWarning(msg);
                 return new UserVerifyOtpResponse(false, msg);
             }
@@ -77,7 +77,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
             #endregion
 
             #region Hash password
-            var (hashedPassword, salt) = PasswordHasher.HashWithSalt(request.Password);
+            var (hashedPassword, salt) = PasswordHasher.HashWithSalt(otpData.Password);
             #endregion
 
             #region create store and user

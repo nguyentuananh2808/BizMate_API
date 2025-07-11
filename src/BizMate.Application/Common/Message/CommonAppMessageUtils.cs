@@ -68,6 +68,16 @@ namespace BizMate.Application.Common.Message
         public string AlreadyExist(object value, IStringLocalizer<Resources.MessageUtils> _localizer)
         {
             return _localizer["COMMON_ALREADY_EXIST", value?.ToString() ?? "null"];
+        }  
+        
+        public string OtpNotExist(IStringLocalizer<Resources.MessageUtils> _localizer)
+        {
+            return _localizer["COMMON_NOT_EXIST_OTP"];
+        }
+
+        public string OtpInvalid(IStringLocalizer<Resources.MessageUtils> _localizer)
+        {
+            return _localizer["COMMON_INVALID_OTP"];
         }
 
         public string Invalid(object value, IStringLocalizer<Resources.MessageUtils> _localizer)

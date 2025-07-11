@@ -74,8 +74,7 @@ namespace BizMate.Application.UserCases.User.Queries.UserLogin
             var generateToken = _tokenFactory.GenerateToken();
             var accessToken = await _jwtFactory.GenerateEncodedToken(emailDb);
             #endregion
-            var userDto = _mapper.Map<UserCoreDto>(emailDb);
-            return new UserLoginResponse(accessToken, userDto);
+            return new UserLoginResponse(accessToken);
         }
     }
 }

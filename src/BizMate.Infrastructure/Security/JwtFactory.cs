@@ -27,10 +27,10 @@ namespace BizMate.Infrastructure.Security
                 new Claim(JwtRegisteredClaimNames.Iat, ToUnixEpochDate(_jwtOptions.IssuedAt).ToString(), ClaimValueTypes.Integer64),
 
                 new Claim("user_id", user.Id.ToString()),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Name, user.FullName),
-                new Claim(ClaimTypes.Role, user.Role),
-                new Claim("store_id", user.StoreId.ToString())
+                new Claim("name", user.FullName),
+                new Claim("email", user.Email),
+                new Claim("role", user.Role),
+                new Claim("store_name", user.Store.Name)
             };
 
             var jwt = new JwtSecurityToken(
