@@ -44,13 +44,26 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductCategory.Command
         {
             try
             {
+                var name = request.Name.Trim();
+                var description = request.Description?.Trim();
                 var storeId = _userSession.StoreId;
+                var userId = _userSession.UserId;
 
-                #region check product exist
+                #region check product category exist
                 var productCategory = await _productCategoryRepository.GetByIdAsync(storeId, request.Id, cancellationToken);
                 if (productCategory == null)
                 {
                     var message = _messageService.NotExist(request.Id.ToString(), _localizer);
+                    _logger.LogWarning(message);
+                    return new UpdateProductCategoryResponse(false, message);
+                }
+                #endregion
+
+                #region check duplicate name product category 
+                var nameProductCategory = await _productCategoryRepository.IsNameProductCategoryAsync(storeId, name, request.Id, cancellationToken);
+                if (nameProductCategory != null)
+                {
+                    var message = _messageService.NotExist(request.Name.ToString(), _localizer);
                     _logger.LogWarning(message);
                     return new UpdateProductCategoryResponse(false, message);
                 }
@@ -66,9 +79,13 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductCategory.Command
                 #endregion
 
                 #region update data
-                productCategory.Name = request.Name;
-                productCategory.Description = request.Description;
+                productCategory.Name = name;
+                productCategory.Description = description;
                 productCategory.StoreId = storeId;
+                productCategory.UpdatedDate = DateTime.UtcNow;
+                productCategory.UpdatedBy = Guid.Parse(userId);
+                productCategory.IsActive = request.IsActive;
+
 
                 await _productCategoryRepository.UpdateAsync(productCategory, cancellationToken);
                 #endregion

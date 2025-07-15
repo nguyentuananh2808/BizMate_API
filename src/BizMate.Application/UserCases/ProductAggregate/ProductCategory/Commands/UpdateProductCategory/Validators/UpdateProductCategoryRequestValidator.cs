@@ -9,7 +9,6 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductCategory.Command
         public UpdateProductCategoryRequestValidator(IStringLocalizer<UpdateProductCategoryRequestValidator> localizer)
         {
             RuleFor(x => x.Name).NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty]);
-            RuleFor(x => x.RowVersion).NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty]);
         }
     }
 }

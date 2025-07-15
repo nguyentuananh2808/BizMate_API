@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using AutoMapper;
 using _User = BizMate.Domain.Entities.User;
 using BizMate.Application.Resources;
+using BizMate.Application.Common.Extensions;
 
 namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
 {
@@ -18,11 +19,13 @@ namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
         private readonly IUserRepository _userRepository;
         private readonly IOtpStore _otpStore;
         private readonly ILogger<UserVerifyOtpHandler> _logger;
+        private readonly ICodeGeneratorService _codeGeneratorService;
         private readonly IStringLocalizer<MessageUtils> _localizer;
         private readonly IMapper _mapper;
 
         #region constructor
         public UserVerifyOtpHandler(
+            ICodeGeneratorService codeGeneratorService,
             IAppMessageService messageService,
             IUserRepository userRepository,
             IOtpStore otpStore,
@@ -30,6 +33,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
             IStringLocalizer<MessageUtils> localizer,
             IMapper mapper)
         {
+            _codeGeneratorService = codeGeneratorService;
             _messageService = messageService;
             _userRepository = userRepository;
             _otpStore = otpStore;
@@ -81,23 +85,27 @@ namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
             #endregion
 
             #region create store and user
+            string codeStore = await _codeGeneratorService.GenerateCodeAsync("CH", 5);
+
             var store = new Store
             {
                 Id = Guid.NewGuid(),
                 Name = otpData.StoreName
             };
+            string code = await _codeGeneratorService.GenerateCodeAsync("U", 5);
 
             var user = new _User
             {
                 Id = Guid.NewGuid(),
+                CreatedBy = Guid.NewGuid(),
+                Code = code,
                 Email = otpData.Email,
                 FullName = otpData.FullName,
                 Role = "Owner",
                 PasswordHash = hashedPassword,
                 PasswordSalt = salt,
                 Store = store,
-                StoreId = store.Id,
-                RowVersion = 1
+                StoreId = store.Id
             };
             await _userRepository.AddAsync(user, cancellationToken);
             #endregion

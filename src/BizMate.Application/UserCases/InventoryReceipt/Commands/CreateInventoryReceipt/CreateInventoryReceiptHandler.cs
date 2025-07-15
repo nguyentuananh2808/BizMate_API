@@ -69,11 +69,11 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
             var receipt = new InventoryReceipt
             {
                 Id = Guid.NewGuid(),
-                InventoryCode = receiptCode,
+                Code = receiptCode,
                 Date = DateTime.UtcNow,
                 Type = request.Type,
                 StoreId = storeId,
-                CreatedByUserId = Guid.Parse(userId),
+                CreatedBy = Guid.Parse(userId),
                 SupplierName = request.SupplierName,
                 CustomerName = request.CustomerName,
                 CustomerPhone = request.CustomerPhone,
@@ -89,7 +89,7 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
                         ProductId = d.ProductId,
                         Quantity = d.Quantity,
                         ProductName = product.Name,
-                        ProductCode = product.ProductCode,
+                        ProductCode = product.Code,
                         Unit = product.Unit,
                     };
                 }).ToList()
@@ -115,7 +115,7 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
                         StoreId = storeId,
                         ProductId = detail.ProductId,
                         Quantity = 0,
-                        LastUpdated = DateTime.UtcNow
+                        UpdatedDate = DateTime.UtcNow
                     };
                     await _stockRepository.AddAsync(stock);
                 }
@@ -132,7 +132,7 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
                     stock.Quantity -= detail.Quantity;
                 }
 
-                stock.LastUpdated = DateTime.UtcNow;
+                stock.UpdatedDate = DateTime.UtcNow;
                 await _stockRepository.UpdateAsync(stock);
             }
             #endregion

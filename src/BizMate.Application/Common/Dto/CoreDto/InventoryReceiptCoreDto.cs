@@ -8,7 +8,6 @@ namespace BizMate.Application.Common.Dto.CoreDto
         public DateTime Date { get; set; }
         public int Type { get; set; }
 
-        public Guid StoreId { get; set; }
         public string StoreName { get; set; } = default!;
 
         public Guid CreatedByUserId { get; set; }
@@ -19,7 +18,6 @@ namespace BizMate.Application.Common.Dto.CoreDto
         public string? CustomerPhone { get; set; }
         public string? DeliveryAddress { get; set; }
 
-        public string? Description { get; set; }
         public IEnumerable<InventoryReceiptDetailDto> InventoryDetailDtos { get; set; }
 
     }

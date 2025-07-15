@@ -1,8 +1,7 @@
 ﻿namespace BizMate.Domain.Entities
 {
-    public class Store : BaseEntity
+    public class Store : BaseCoreEntity
     {
-        public Guid Id { get; set; }
         public string Name { get; set; } = default!;
         public ICollection<User> Users { get; set; } = new List<User>();
         public ICollection<Customer> Customers { get; set; } = new List<Customer>();

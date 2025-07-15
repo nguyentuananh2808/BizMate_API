@@ -47,6 +47,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Update
             try
             {
                 var storeId = _userSession.StoreId;
+                var userId = _userSession.UserId;
 
                 #region check product exist
                 var product = await _productRepository.GetByIdAsync(request.Id);
@@ -84,6 +85,9 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Update
                 product.Description = request.Description;
                 product.SupplierId = request.SupplierId;
                 product.StoreId = storeId;
+                product.UpdatedBy = Guid.Parse(userId);
+                product.UpdatedDate = DateTime.UtcNow;
+                product.IsActive = request.IsActive;
                 product.RowVersion += 1;
 
                 await _productRepository.UpdateAsync(product);

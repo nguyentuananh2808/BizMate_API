@@ -6,9 +6,11 @@ namespace BizMate.Application.Common.Interfaces.Repositories
     {
         Task<(List<ProductCategory>, int TotalCount)> GetAllAsync(Guid storeId, CancellationToken cancellationToken);
         Task<ProductCategory> GetByIdAsync(Guid storeId, Guid id, CancellationToken cancellationToken);
-        Task<ProductCategory> GetByNameAsync(string name, CancellationToken cancellationToken);
+        Task<ProductCategory> GetByNameAsync(Guid storeId, string name, CancellationToken cancellationToken);
+        Task<ProductCategory?> IsNameProductCategoryAsync(Guid storeId, string name, Guid currentId, CancellationToken cancellationToken);
         Task AddAsync(ProductCategory producCategory, CancellationToken cancellationToken);
         Task UpdateAsync(ProductCategory producCategory, CancellationToken cancellationToken);
         Task DeleteAsync(Guid id, CancellationToken cancellationToken);
+        Task<bool> IsUsedInProduct(Guid productCategoryId);
     }
 }

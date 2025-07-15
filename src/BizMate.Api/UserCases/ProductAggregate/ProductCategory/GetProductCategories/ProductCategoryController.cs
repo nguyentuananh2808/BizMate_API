@@ -21,8 +21,9 @@ namespace BizMate.Api.UserCases.ProductAggregate.ProductCategory.GetProductCateg
         }
 
         [HttpGet("GetAll")]
-        public async Task<IActionResult> GetProductCategories(GetProductCategoriesRequest request)
+        public async Task<IActionResult> GetProductCategories()
         {
+            var request = new GetProductCategoriesRequest();
             var response = await _mediator.Send(request);
             _presenter.Handle(response);
             return _presenter.ContentResult;

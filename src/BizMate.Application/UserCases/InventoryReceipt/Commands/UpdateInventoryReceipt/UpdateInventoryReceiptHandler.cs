@@ -61,7 +61,7 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventor
                     if (stock != null)
                     {
                         stock.Quantity += existingReceipt.Type == 1 ? -oldDetail.Quantity : oldDetail.Quantity;
-                        stock.LastUpdated = DateTime.UtcNow;
+                        stock.UpdatedDate = DateTime.UtcNow;
                         await _stockRepository.UpdateAsync(stock);
                     }
                 }
@@ -99,7 +99,7 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventor
                             StoreId = storeId,
                             ProductId = detail.ProductId,
                             Quantity = 0,
-                            LastUpdated = DateTime.UtcNow
+                            UpdatedDate = DateTime.UtcNow
                         };
                         await _stockRepository.AddAsync(stock);
                     }
@@ -113,7 +113,7 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventor
                         stock.Quantity -= detail.Quantity;
                     }
 
-                    stock.LastUpdated = DateTime.UtcNow;
+                    stock.UpdatedDate = DateTime.UtcNow;
                     await _stockRepository.UpdateAsync(stock);
                 }
 

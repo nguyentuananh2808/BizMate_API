@@ -15,5 +15,6 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Update
         public string? ImageUrl { get; set; }
         public Guid? SupplierId { get; set; }
         public string? Description { get; set; }
+        public bool IsActive { get; set; }
     }
 }
