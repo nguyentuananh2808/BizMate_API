@@ -8,7 +8,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductCategory.Command
         [Required]
         public Guid Id { get; set; }
         [Required]
-        public uint RowVersion { get; set; }
+        public byte[] RowVersion { get; set; } = default!;
         public string Name { get; set; }
         public bool IsActive { get; set; }
         public string? Description { get; set; }

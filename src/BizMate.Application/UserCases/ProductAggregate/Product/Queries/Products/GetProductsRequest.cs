@@ -5,5 +5,6 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Queries.Product
 {
     public class GetProductsRequest : SearchCore, IRequest<GetProductsResponse>
     {
+        public bool? IsActive { get; set; }
     }
 }

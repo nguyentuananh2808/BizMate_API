@@ -1,4 +1,6 @@
-﻿namespace BizMate.Domain.Entities
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace BizMate.Domain.Entities
 {
     public abstract class BaseCoreEntity
     {
@@ -8,16 +10,22 @@
         public Guid? CreatedBy { get; set; }
         public DateTime? UpdatedDate { get; set; } = DateTime.UtcNow;
         public Guid? UpdatedBy { get; set; }
-        public uint RowVersion { get; set; } = 1;
+
+        [Timestamp]
+        public byte[] RowVersion { get; set; } = default!;
         public bool IsDeleted { get; set; } = false;
         public DateTime? DeletedAt { get; set; }
     }
 
-    public abstract class BaseEntity : BaseCoreEntity
+    public abstract class Base : BaseCoreEntity
     {
-        public string Code { get; set; } = default!;
         public Guid StoreId { get; set; }
         public Store Store { get; set; } = default!;
-        public bool IsActive { get; set; } = true;
+    }
+
+    public abstract class BaseEntity : Base
+    {
+        public bool IsActive { get; set; } = false;
+        public string Code { get; set; } = default!;
     }
 }

@@ -4,7 +4,6 @@ namespace BizMate.Application.Common.Dto.CoreDto
 {
     public class InventoryReceiptCoreDto : BaseEntity
     {
-        public string InventoryCode { get; set; } = default!;
         public DateTime Date { get; set; }
         public int Type { get; set; }
 

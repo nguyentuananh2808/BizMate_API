@@ -1,6 +1,6 @@
 ﻿namespace BizMate.Domain.Entities
 {
-    public class Stock : BaseEntity
+    public class Stock : Base
     {
 
         public Guid ProductId { get; set; }

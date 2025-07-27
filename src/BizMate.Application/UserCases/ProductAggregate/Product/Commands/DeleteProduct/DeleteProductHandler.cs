@@ -49,7 +49,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Delete
                     return new DeleteProductResponse(false, message);
                 }
 
-                var isUsedInInventory = await _db.Query("InventoryReceiptDetails")
+                /*var isUsedInInventory = await _db.Query("InventoryReceiptDetails")
                     .Where("ProductId", request.Id)
                     .ExistsAsync();
 
@@ -58,7 +58,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Delete
                     var message = _localizer["Sản phẩm đang được sử dụng trong phiếu nhập kho. Không thể xóa."];
                     _logger.LogWarning("Không thể xóa sản phẩm {ProductId} vì đang được sử dụng", request.Id);
                     return new DeleteProductResponse(false, message);
-                }
+                }*/
 
                 await _productRepository.DeleteAsync(request.Id);
 

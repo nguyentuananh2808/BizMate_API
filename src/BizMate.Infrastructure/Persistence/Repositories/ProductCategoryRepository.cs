@@ -61,7 +61,6 @@ namespace BizMate.Infrastructure.Persistence.Repositories
         {
             var entry = _context.Entry(producCategory);
             entry.Property(nameof(BaseEntity.RowVersion)).OriginalValue = producCategory.RowVersion;
-            producCategory.RowVersion++;
 
             try
             {
@@ -86,7 +85,8 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             return await _context.ProductCategories
                 .Where(pc => pc.StoreId == storeId &&
                              pc.Name == name &&
-                             pc.Id != currentId)
+                             pc.Id != currentId &&
+                             pc.IsDeleted == false)
                 .FirstOrDefaultAsync(cancellationToken);
         }
 

@@ -65,10 +65,10 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
             var productDict = products.ToDictionary(p => p.Id);
 
             var receiptCode = await _codeGeneratorService.GenerateCodeAsync(request.Type == 1 ? "NK" : "XK");
-
+            var idInventoryReceipt = Guid.NewGuid();
             var receipt = new InventoryReceipt
             {
-                Id = Guid.NewGuid(),
+                Id = idInventoryReceipt,
                 Code = receiptCode,
                 Date = DateTime.UtcNow,
                 Type = request.Type,
@@ -86,6 +86,7 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
                     return new InventoryReceiptDetail
                     {
                         Id = Guid.NewGuid(),
+                        InventoryReceiptId = idInventoryReceipt,
                         ProductId = d.ProductId,
                         Quantity = d.Quantity,
                         ProductName = product.Name,

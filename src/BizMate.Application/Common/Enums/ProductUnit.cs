@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Xml.Linq;
 
 namespace BizMate.Application.Common.Enums
 {
@@ -17,7 +18,10 @@ namespace BizMate.Application.Common.Enums
         Kilogram = 4,
 
         [Display(Name = "Lít")]
-        Liter = 5
+        Liter = 5,
+
+        [Display(Name = "Cây")]
+        Tree = 6
     }
 
 }

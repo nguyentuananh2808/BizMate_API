@@ -16,6 +16,12 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.CreateInventor
         public string? CustomerPhone { get; set; }
         public string? DeliveryAddress { get; set; }
         public string? Description { get; set; }
-        public List<InventoryReceiptDetailDto> Details { get; set; } = new();
+        public List<InventoryReceiptDetailRequestDto> Details { get; set; } = new();
+    }
+
+    public class InventoryReceiptDetailRequestDto
+    {
+        public Guid ProductId { get; set; }
+        public int Quantity { get; set; }
     }
 }

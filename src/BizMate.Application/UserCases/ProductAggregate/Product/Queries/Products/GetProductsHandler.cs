@@ -43,6 +43,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Queries.Product
                     keyword: request.KeySearch,
                     pageIndex: request.PageIndex,
                     pageSize: request.PageSize,
+                    isActive: request.IsActive,
                     queryFactory: _queryFactory);
 
                 var mappedProducts = _mapper.Map<List<ProductCoreDto>>(products);

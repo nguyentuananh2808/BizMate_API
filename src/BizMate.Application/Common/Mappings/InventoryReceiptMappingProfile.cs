@@ -36,7 +36,6 @@ namespace BizMate.Application.Common.Mappings
                .ForMember(dest => dest.CreatedByUserId, opt => opt.MapFrom(src => src.CreatedBy))
                .ForMember(dest => dest.InventoryCode, opt => opt.MapFrom(src => src.Code))
                .ForMember(dest => dest.Date, opt => opt.MapFrom(src => src.Date))
-               .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion))
                .ForMember(dest => dest.SupplierName, opt => opt.MapFrom(src => src.SupplierName))
                .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.CustomerName))
                .ForMember(dest => dest.InventoryDetails, opt => opt.MapFrom(src => src.Details))
@@ -51,7 +50,10 @@ namespace BizMate.Application.Common.Mappings
                .ForMember(dest => dest.InventoryCode, opt => opt.MapFrom(src => src.Code))
                .ForMember(dest => dest.Date, opt => opt.MapFrom(src => src.Date))
                .ForMember(dest => dest.SupplierName, opt => opt.MapFrom(src => src.SupplierName))
+               .ForMember(dest => dest.CustomerPhone, opt => opt.MapFrom(src => src.CustomerPhone))
+               .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
                .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.CustomerName))
+               .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion))
                .ForMember(dest => dest.InventoryDetails, opt => opt.MapFrom(src => src.Details))
                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive));
 

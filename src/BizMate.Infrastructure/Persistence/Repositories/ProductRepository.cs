@@ -4,7 +4,6 @@ using BizMate.Domain.Entities;
 using BizMate.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using SqlKata.Execution;
-using System.Threading;
 
 public class ProductRepository : IProductRepository
 {
@@ -24,21 +23,21 @@ public class ProductRepository : IProductRepository
     public async Task<List<Product>> GetByIdsAsync(List<Guid> ids, CancellationToken cancellationToken)
     {
         return await _context.Products
-            .Where(p => !p.IsDeleted && ids.Contains(p.Id))
+            .Where(p => !p.IsDeleted && ids.Contains(p.Id) && !p.IsActive)
             .ToListAsync(cancellationToken);
     }
 
     public async Task<ProductCoreDto> GetByIdWithQuantityAsync(Guid id, QueryFactory queryFactory)
     {
         var result = await queryFactory.Query("Products as p")
-       .LeftJoin("Stocks as s", j => j
-           .On("p.Id", "s.ProductId")
-           .On("s.StoreId", "p.StoreId"))
-       .Where("p.Id", id)
-       .Where("p.IsDeleted", false)
-       .Select("p.*")
-       .SelectRaw(@"COALESCE(s.""Quantity"", 0) as Quantity")
-       .FirstOrDefaultAsync<ProductCoreDto>();
+               .LeftJoin("Stocks as s", j => j
+                   .On("p.Id", "s.ProductId")
+                   .On("s.StoreId", "p.StoreId"))
+               .Where("p.Id", id)
+               .Where("p.IsDeleted", false)
+               .Select("p.*")
+               .SelectRaw(@"COALESCE(s.""Quantity"", 0) as Quantity")
+               .FirstOrDefaultAsync<ProductCoreDto>();
 
         return result;
     }
@@ -57,29 +56,42 @@ public class ProductRepository : IProductRepository
             query.WhereRaw(@"LOWER(p.""Name"") LIKE ?", $"%{name.ToLower()}%");
 
         var result = await query.GetAsync<Product>();
-        return result.ToList();
+        return result.ToList();  
     }
 
     public async Task<(List<ProductCoreDto> Products, int TotalCount)> SearchProductsWithPaging(
-        Guid storeId,
-        string? keyword,
-        int pageIndex,
-        int pageSize,
-        QueryFactory queryFactory)
+    Guid storeId,
+    string? keyword,
+    int pageIndex,
+    int pageSize,
+    bool? isActive,
+    QueryFactory queryFactory)
     {
         var baseQuery = queryFactory.Query("Products as p")
-        .LeftJoin("Stocks as s", j => j
-            .On("p.Id", "s.ProductId")
-            .On("s.StoreId", "p.StoreId"))
-        .Where("p.StoreId", storeId)
-        .Where("p.IsDeleted", false)
-        .Select("p.*")
-        .SelectRaw(@"COALESCE(s.""Quantity"", 0) as Quantity");
+            .LeftJoin("Stocks as s", j => j
+                .On("p.Id", "s.ProductId")
+                .On("s.StoreId", "p.StoreId"))
+            .LeftJoin("ProductCategories as pc", z => z
+                .On("p.ProductCategoryId", "pc.Id"))
+            .Where("p.StoreId", storeId)
+            .Where("p.IsDeleted", false);
+
+        if (isActive.HasValue)
+        {
+            baseQuery.Where("p.IsActive", isActive.Value);
+        }
 
         if (!string.IsNullOrWhiteSpace(keyword))
         {
-            baseQuery.WhereRaw(@"LOWER(p.""Name"") LIKE ?", $"%{keyword.ToLower()}%");
+            var kw = $"%{keyword.ToLower()}%";
+            baseQuery.WhereRaw(@"LOWER(p.""Name"") LIKE ? OR LOWER(p.""Code"") LIKE ?", kw, kw);
         }
+
+
+        baseQuery
+            .Select("p.*")
+            .SelectRaw(@"COALESCE(s.""Quantity"", 0) as Quantity")
+            .Select("pc.Name as ProductCategoryName");
 
         var totalQuery = baseQuery.Clone();
         var totalCount = await totalQuery.CountAsync<int>();
@@ -88,6 +100,7 @@ public class ProductRepository : IProductRepository
             .Offset((pageIndex - 1) * pageSize)
             .Limit(pageSize)
             .GetAsync<ProductCoreDto>();
+
         return (results.ToList(), totalCount);
     }
 
