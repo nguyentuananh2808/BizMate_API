@@ -112,10 +112,6 @@ public class ProductRepository : IProductRepository
 
     public async Task UpdateAsync(Product product, CancellationToken cancellationToken)
     {
-        var entry = _context.Entry(product);
-        entry.Property(nameof(BaseEntity.RowVersion)).OriginalValue = product.RowVersion;
-        product.RowVersion++;
-
         try
         {
             _context.Products.Update(product);

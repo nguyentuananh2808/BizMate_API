@@ -64,7 +64,7 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
 
             var productDict = products.ToDictionary(p => p.Id);
 
-            var receiptCode = await _codeGeneratorService.GenerateCodeAsync(request.Type == 1 ? "NK" : "XK");
+            var receiptCode = await _codeGeneratorService.GenerateCodeAsync(request.Type == 1 ? "#NK" : "#XK");
             var idInventoryReceipt = Guid.NewGuid();
             var receipt = new InventoryReceipt
             {
@@ -79,6 +79,7 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
                 CustomerPhone = request.CustomerPhone,
                 DeliveryAddress = request.DeliveryAddress,
                 Description = request.Description,
+                RowVersion = Guid.NewGuid().ToByteArray(),
                 Details = request.Details.Select(d =>
                 {
                     var product = productDict[d.ProductId]; 
@@ -92,6 +93,7 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
                         ProductName = product.Name,
                         ProductCode = product.Code,
                         Unit = product.Unit,
+                        RowVersion = Guid.NewGuid().ToByteArray()
                     };
                 }).ToList()
             };
@@ -116,7 +118,8 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
                         StoreId = storeId,
                         ProductId = detail.ProductId,
                         Quantity = 0,
-                        UpdatedDate = DateTime.UtcNow
+                        UpdatedDate = DateTime.UtcNow,
+                        RowVersion = Guid.NewGuid().ToByteArray()
                     };
                     await _stockRepository.AddAsync(stock);
                 }

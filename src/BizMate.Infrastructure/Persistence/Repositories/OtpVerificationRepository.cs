@@ -22,7 +22,8 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                 OtpCode = otpCode,
                 ExpiredAt = expiredAt,
                 IsUsed = false,
-                IsDeleted = false
+                IsDeleted = false,
+                RowVersion = Guid.NewGuid().ToByteArray()
             };
 
             await _context.OtpVerifications.AddAsync(otp, cancellationToken);

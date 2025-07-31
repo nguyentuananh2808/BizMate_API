@@ -1,6 +1,7 @@
 ﻿using BizMate.Application.Common.Security;
 using BizMate.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection;
 
 namespace BizMate.Infrastructure.Persistence
 {
@@ -27,5 +28,48 @@ namespace BizMate.Infrastructure.Persistence
         public DbSet<CodeSequence> CodeSequences => Set<CodeSequence>();
         public DbSet<DealerLevel> DealerLevels => Set<DealerLevel>();
         public DbSet<DealerPrice> DealerPrices => Set<DealerPrice>();
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+
+            modelBuilder.Entity<Product>()
+                .Property(p => p.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
+
+            modelBuilder.Entity<ProductCategory>()
+                .Property(p => p.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
+
+            modelBuilder.Entity<InventoryReceipt>()
+                .Property(p => p.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
+
+            modelBuilder.Entity<Stock>()
+                .Property(p => p.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
+
+            modelBuilder.Entity<InventoryReceiptDetail>()
+                .Property(p => p.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
+
+            modelBuilder.Entity<Customer>()
+                .Property(p => p.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
+
+            modelBuilder.Entity<Supplier>()
+                .Property(p => p.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
+
+        }
     }
 }

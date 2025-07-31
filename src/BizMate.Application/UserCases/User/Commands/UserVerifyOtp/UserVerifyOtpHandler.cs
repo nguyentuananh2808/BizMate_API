@@ -85,14 +85,15 @@ namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
             #endregion
 
             #region create store and user
-            string codeStore = await _codeGeneratorService.GenerateCodeAsync("CH", 5);
+            string codeStore = await _codeGeneratorService.GenerateCodeAsync("#CH", 5);
 
             var store = new Store
             {
                 Id = Guid.NewGuid(),
-                Name = otpData.StoreName
+                Name = otpData.StoreName,
+                RowVersion = Guid.NewGuid().ToByteArray()
             };
-            string code = await _codeGeneratorService.GenerateCodeAsync("U", 5);
+            string code = await _codeGeneratorService.GenerateCodeAsync("#U", 5);
 
             var user = new _User
             {
@@ -105,7 +106,8 @@ namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
                 PasswordHash = hashedPassword,
                 PasswordSalt = salt,
                 Store = store,
-                StoreId = store.Id
+                StoreId = store.Id,
+                RowVersion = Guid.NewGuid().ToByteArray()
             };
             await _userRepository.AddAsync(user, cancellationToken);
             #endregion

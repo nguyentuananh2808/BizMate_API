@@ -28,7 +28,7 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.CreateInventor
         public string? DeliveryAddress { get; set; }
 
         public string? Description { get; set; }
-        public uint RowVersion { get; set; }
+        public byte[] RowVersion { get; set; }
         public bool IsActive { get; set; }
 
         // Receipt Details
@@ -46,7 +46,6 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.CreateInventor
         public string? ProductName { get; set; } 
         public string? ProductCode { get; set; }
         public int Unit { get; set; }
-
         public int Quantity { get; set; }
     }
 }

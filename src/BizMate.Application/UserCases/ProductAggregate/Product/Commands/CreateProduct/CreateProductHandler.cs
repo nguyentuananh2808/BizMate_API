@@ -67,7 +67,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Create
 
                 #region create new product
                 // Generate product code
-                var productCode = await _codeGeneratorService.GenerateCodeAsync("SP");
+                var productCode = await _codeGeneratorService.GenerateCodeAsync("#SP");
 
                 var newProduct = new _Product
                 {
@@ -81,7 +81,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Create
                     SupplierId = request.SupplierId,
                     Description = request.Description,
                     CreatedBy = Guid.Parse(userId),
-                    RowVersion = 1
+                    RowVersion = Guid.NewGuid().ToByteArray()
                 };
 
                 await _productRepository.AddAsync(newProduct, cancellationToken);
