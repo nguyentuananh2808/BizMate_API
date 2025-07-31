@@ -9,6 +9,7 @@ using MediatR;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using SqlKata.Execution;
+using System.Linq;
 using _Product = BizMate.Domain.Entities.Product;
 
 namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.UpdateProduct
@@ -47,6 +48,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Update
             try
             {
                 var storeId = _userSession.StoreId;
+                var userId = _userSession.UserId;
 
                 #region check product exist
                 var product = await _productRepository.GetByIdAsync(request.Id);
@@ -59,10 +61,12 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Update
                 #endregion
 
                 #region Check rowversion
-                if (product.RowVersion != request.RowVersion)
+                if (!product.RowVersion.SequenceEqual(request.RowVersion))
                 {
                     var message = _messageService.ConcurrencyConflict(_localizer);
-                    _logger.LogWarning("RowVersion conflict: Request={RequestVersion}, DB={DbVersion}", request.RowVersion, product.RowVersion);
+                    _logger.LogWarning("RowVersion conflict: Request={RequestVersion}, DB={DbVersion}",
+                        Convert.ToBase64String(request.RowVersion),
+                        Convert.ToBase64String(product.RowVersion));
                     return new UpdateProductResponse(false, message);
                 }
                 #endregion
@@ -84,7 +88,9 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Update
                 product.Description = request.Description;
                 product.SupplierId = request.SupplierId;
                 product.StoreId = storeId;
-                product.RowVersion += 1;
+                product.UpdatedBy = Guid.Parse(userId);
+                product.UpdatedDate = DateTime.UtcNow;
+                product.IsActive = request.IsActive;
 
                 await _productRepository.UpdateAsync(product);
                 #endregion

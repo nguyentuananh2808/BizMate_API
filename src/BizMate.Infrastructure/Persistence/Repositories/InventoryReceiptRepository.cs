@@ -1,6 +1,7 @@
 ﻿using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage;
 using SqlKata.Execution;
 
@@ -19,6 +20,10 @@ namespace BizMate.Infrastructure.Persistence.Repositories
         public async Task BeginTransactionAsync()
         {
             _currentTransaction = await _context.Database.BeginTransactionAsync();
+        }
+        public EntityEntry Entry(object entity)
+        {
+            return _context.Entry(entity);
         }
 
         public async Task CommitTransactionAsync()
@@ -60,20 +65,27 @@ namespace BizMate.Infrastructure.Persistence.Repositories
 
         public async Task UpdateAsync(InventoryReceipt receipt)
         {
+            // Attach entity nếu chưa được gắn vào context
             var entry = _context.Entry(receipt);
-            entry.Property(nameof(BaseEntity.RowVersion)).OriginalValue = receipt.RowVersion;
-            receipt.RowVersion++;
+            if (entry.State == EntityState.Detached)
+            {
+                _context.InventoryReceipts.Attach(receipt);
+            }
 
-            try
-            {
-                _context.InventoryReceipts.Update(receipt);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                throw new InvalidOperationException("Dữ liệu đã bị thay đổi bởi người khác. Vui lòng tải lại.");
-            }
+            // Chỉ đánh dấu các thuộc tính chính là Modified (không động đến RowVersion)
+            entry.Property(x => x.SupplierName).IsModified = true;
+            entry.Property(x => x.CustomerName).IsModified = true;
+            entry.Property(x => x.CustomerPhone).IsModified = true;
+            entry.Property(x => x.DeliveryAddress).IsModified = true;
+            entry.Property(x => x.Description).IsModified = true;
+            entry.Property(x => x.UpdatedDate).IsModified = true;
+
+            // ⚠️ Gán OriginalValue cho RowVersion để EF kiểm tra concurrency
+            entry.Property(x => x.RowVersion).OriginalValue = receipt.RowVersion;
+
+            await _context.SaveChangesAsync();
         }
+
 
         public async Task DeleteAsync(Guid id)
         {

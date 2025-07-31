@@ -49,6 +49,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Create
             try
             {
                 var storeId = _userSession.StoreId;
+                var userId = _userSession.UserId;
                 #region check product duplicate
                 var existingProduct = await _productRepository.SearchProducts(
                     storeId,
@@ -66,12 +67,12 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Create
 
                 #region create new product
                 // Generate product code
-                var productCode = await _codeGeneratorService.GenerateCodeAsync("SP");
+                var productCode = await _codeGeneratorService.GenerateCodeAsync("#SP");
 
                 var newProduct = new _Product
                 {
                     Id = Guid.NewGuid(),
-                    ProductCode = productCode,
+                    Code = productCode,
                     Name = request.Name,
                     Unit = request.Unit,
                     ImageUrl = request.ImageUrl,
@@ -79,7 +80,8 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Create
                     ProductCategoryId = request.ProductCategoryId,
                     SupplierId = request.SupplierId,
                     Description = request.Description,
-                    RowVersion = 1
+                    CreatedBy = Guid.Parse(userId),
+                    RowVersion = Guid.NewGuid().ToByteArray()
                 };
 
                 await _productRepository.AddAsync(newProduct, cancellationToken);

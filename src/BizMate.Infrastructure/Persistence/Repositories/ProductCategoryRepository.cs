@@ -1,17 +1,18 @@
 ﻿using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using SqlKata;
+using SqlKata.Execution;
 
 namespace BizMate.Infrastructure.Persistence.Repositories
 {
     public class ProductCategoryRepository : IProductCategoryRepository
     {
         private readonly AppDbContext _context;
-
-        public ProductCategoryRepository(AppDbContext context)
+        private readonly QueryFactory _db;
+        public ProductCategoryRepository(AppDbContext context,QueryFactory db)
         {
             _context = context;
+            _db = db;
         }
         public async Task AddAsync(ProductCategory producCategory, CancellationToken cancellationToken = default)
         {
@@ -49,10 +50,10 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             .FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task<ProductCategory> GetByNameAsync(string name, CancellationToken cancellationToken)
+        public async Task<ProductCategory> GetByNameAsync(Guid storeId, string name, CancellationToken cancellationToken)
         {
             return await _context.ProductCategories
-                .Where(p => !p.IsDeleted && p.Name == name)
+                .Where(p => !p.IsDeleted && p.Name == name && p.StoreId == storeId)
                 .FirstOrDefaultAsync(cancellationToken);
         }
 
@@ -60,7 +61,6 @@ namespace BizMate.Infrastructure.Persistence.Repositories
         {
             var entry = _context.Entry(producCategory);
             entry.Property(nameof(BaseEntity.RowVersion)).OriginalValue = producCategory.RowVersion;
-            producCategory.RowVersion++;
 
             try
             {
@@ -72,5 +72,23 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                 throw new InvalidOperationException("Dữ liệu đã bị thay đổi bởi người khác. Vui lòng tải lại.");
             }
         }
+
+        public async Task<bool> IsUsedInProduct(Guid productCategoryId)
+        {
+            return await _db.Query("Products")
+                .Where("ProductCategoryId", productCategoryId)
+                .ExistsAsync();
+        }
+
+        public async Task<ProductCategory?> IsNameProductCategoryAsync(Guid storeId, string name, Guid currentId, CancellationToken cancellationToken)
+        {
+            return await _context.ProductCategories
+                .Where(pc => pc.StoreId == storeId &&
+                             pc.Name == name &&
+                             pc.Id != currentId &&
+                             pc.IsDeleted == false)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
     }
 }

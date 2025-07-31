@@ -1,4 +1,5 @@
 ﻿using BizMate.Domain.Entities;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using SqlKata.Execution;
 
 namespace BizMate.Application.Common.Interfaces.Repositories
@@ -14,5 +15,6 @@ namespace BizMate.Application.Common.Interfaces.Repositories
         Task<(List<InventoryReceipt> Receipts, int TotalCount)> SearchReceiptsWithPaging(Guid storeId, int? type, string? keyword, int pageIndex, int pageSize, QueryFactory queryFactory);
         Task AddAsync(InventoryReceipt receipt);
         Task<InventoryReceipt?> GetByIdAsync(Guid id);
+        EntityEntry Entry(object entity);
     }
 }

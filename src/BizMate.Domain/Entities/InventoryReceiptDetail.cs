@@ -1,6 +1,6 @@
 ﻿namespace BizMate.Domain.Entities
 {
-    public class InventoryReceiptDetail : BaseEntity
+    public class InventoryReceiptDetail : BaseCoreEntity
     {
         public Guid InventoryReceiptId { get; set; }
         public InventoryReceipt InventoryReceipt { get; set; } = default!;

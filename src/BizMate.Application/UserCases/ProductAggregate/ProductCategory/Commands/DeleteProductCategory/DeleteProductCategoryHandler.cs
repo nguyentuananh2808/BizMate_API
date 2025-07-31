@@ -13,7 +13,7 @@ namespace BizMate.Application.UserCases.ProductCategoryAggregate.ProductCategory
     public class DeleteProductCategoryHandler : IRequestHandler<DeleteProductCategoryRequest, DeleteProductCategoryResponse>
     {
         private readonly IAppMessageService _messageService;
-        private readonly IProductCategoryRepository _ProductCategoryRepository;
+        private readonly IProductCategoryRepository _productCategoryRepository;
         private readonly IUserSession _userSession;
         private readonly QueryFactory _db;
         private readonly ILogger<DeleteProductCategoryHandler> _logger;
@@ -30,7 +30,7 @@ namespace BizMate.Application.UserCases.ProductCategoryAggregate.ProductCategory
         {
             _messageService = messageService;
             _userSession = userSession;
-            _ProductCategoryRepository = ProductCategoryRepository;
+            _productCategoryRepository = ProductCategoryRepository;
             _db = db;
             _logger = logger;
             _localizer = localizer;
@@ -42,7 +42,7 @@ namespace BizMate.Application.UserCases.ProductCategoryAggregate.ProductCategory
             {
                 var storeId = _userSession.StoreId;
 
-                var ProductCategory = await _ProductCategoryRepository.GetByIdAsync(storeId, request.Id, cancellationToken);
+                var ProductCategory = await _productCategoryRepository.GetByIdAsync(storeId, request.Id, cancellationToken);
                 if (ProductCategory == null || ProductCategory.StoreId != storeId)
                 {
                     var message = _messageService.NotExist(request.Id, _localizer);
@@ -50,9 +50,7 @@ namespace BizMate.Application.UserCases.ProductCategoryAggregate.ProductCategory
                     return new DeleteProductCategoryResponse(false, message);
                 }
 
-                var isUsedInInventory = await _db.Query("InventoryReceiptDetails")
-                    .Where("ProductCategoryId", request.Id)
-                    .ExistsAsync();
+                var isUsedInInventory = await _productCategoryRepository.IsUsedInProduct(request.Id);
 
                 if (isUsedInInventory)
                 {
@@ -61,7 +59,7 @@ namespace BizMate.Application.UserCases.ProductCategoryAggregate.ProductCategory
                     return new DeleteProductCategoryResponse(false, message);
                 }
 
-                await _ProductCategoryRepository.DeleteAsync(request.Id, cancellationToken);
+                await _productCategoryRepository.DeleteAsync(request.Id, cancellationToken);
 
                 return new DeleteProductCategoryResponse(true, _localizer["Xóa loại sản phẩm thành công."]);
             }

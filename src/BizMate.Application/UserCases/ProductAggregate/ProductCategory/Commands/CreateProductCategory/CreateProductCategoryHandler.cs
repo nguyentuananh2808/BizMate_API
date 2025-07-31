@@ -1,11 +1,9 @@
 ﻿using AutoMapper;
 using BizMate.Application.Common.Dto.CoreDto;
-using BizMate.Application.Common.Dto.UserAggregate;
 using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Security;
 using BizMate.Application.Resources;
-using BizMate.Application.UserCases.ProductAggregate.Product.Commands.CreateProduct;
 using MediatR;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
@@ -48,26 +46,28 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductCategory.Command
             try
             {
                 var nameProductCategory = request.Name.Trim();
+                var description = request.Description?.Trim();
                 var storeId = _userSession.StoreId;
 
                 #region check product category duplicate
-                var categoryDb = _productCategoryRepository.GetByNameAsync(nameProductCategory, cancellationToken);
+                var categoryDb = await _productCategoryRepository.GetByNameAsync(storeId, nameProductCategory, cancellationToken);
 
                 if (categoryDb != null)
                 {
-                    var message = _messageService.DuplicateData(request.Name, _localizer);
+                    var message = _messageService.DuplicateData(nameProductCategory, _localizer);
                     _logger.LogWarning(message);
                     return new CreateProductCategoryResponse(null, false, message);
                 }
                 #endregion
                 #region create product category
-                string codeProductCategory = await _codeGeneratorService.GenerateCodeAsync("NSP", 5);
+                string codeProductCategory = await _codeGeneratorService.GenerateCodeAsync("#NSP", 5);
                 var productCategory = new _ProductCategory
                 {
-                    ProductCategoryCode = codeProductCategory,
-                    Name = request.Name,
-                    Description = request.Description,
-                    StoreId = storeId
+                    Code = codeProductCategory,
+                    Name = nameProductCategory,
+                    Description = description,
+                    StoreId = storeId,
+                    RowVersion = Guid.NewGuid().ToByteArray()
                 };
                 await _productCategoryRepository.AddAsync(productCategory, cancellationToken);
                 #endregion

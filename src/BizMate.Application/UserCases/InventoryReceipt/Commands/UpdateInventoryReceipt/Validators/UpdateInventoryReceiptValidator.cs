@@ -9,7 +9,6 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventor
         public UpdateInventoryReceiptValidator(IStringLocalizer<UpdateInventoryReceiptRequest> localizer)
         {
             RuleFor(x => x.Id).NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty]);
-            RuleFor(x => x.RowVersion).NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty]);
         }
     }
 }

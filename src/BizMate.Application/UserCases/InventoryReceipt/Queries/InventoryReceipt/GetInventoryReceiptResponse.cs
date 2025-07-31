@@ -29,7 +29,8 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Queries.InventoryReceip
         public string? DeliveryAddress { get; set; }
 
         public string? Description { get; set; }
-        public uint RowVersion { get; set; }
+        public byte[] RowVersion { get; set; }
+        public bool IsActive { get; set; }
 
         // Receipt Details
         public IEnumerable<InventoryReceiptDetailDto> InventoryDetails { get; set; } = new List<InventoryReceiptDetailDto>();

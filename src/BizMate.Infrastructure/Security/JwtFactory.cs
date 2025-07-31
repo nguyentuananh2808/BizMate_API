@@ -30,7 +30,8 @@ namespace BizMate.Infrastructure.Security
                 new Claim("name", user.FullName),
                 new Claim("email", user.Email),
                 new Claim("role", user.Role),
-                new Claim("store_name", user.Store.Name)
+                new Claim("store_name", user.Store.Name),
+                new Claim("store_id", user.StoreId.ToString()),
             };
 
             var jwt = new JwtSecurityToken(

@@ -23,7 +23,7 @@ namespace BizMate.Api.UserCases.InventoryReceipt.GetInventoryReceipt
         public string? DeliveryAddress { get; set; }
 
         public string? Description { get; set; }
-        public uint RowVersion { get; set; }
+        public byte[] RowVersion { get; set; }
         public IEnumerable<InventoryReceiptDetailDto> InventoryDetails { get; set; }
 
         public GetInventoryReceiptResponseViewModel(GetInventoryReceiptResponse response)
@@ -44,7 +44,7 @@ namespace BizMate.Api.UserCases.InventoryReceipt.GetInventoryReceipt
             CustomerPhone = response.CustomerPhone;
             DeliveryAddress = response.DeliveryAddress;
             Description = response.Description;
-
+            RowVersion = response.RowVersion;
             InventoryDetails = response.InventoryDetails;
         }
     }

@@ -8,12 +8,13 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Update
         [Required]
         public Guid Id { get; set; }
         [Required]
-        public uint RowVersion { get; set; }
+        public byte[] RowVersion { get; set; }  =default!;
         public Guid? ProductCategoryId { get; set; }
         public string Name { get; set; }
         public int Unit { get; set; }
         public string? ImageUrl { get; set; }
         public Guid? SupplierId { get; set; }
         public string? Description { get; set; }
+        public bool IsActive { get; set; }
     }
 }

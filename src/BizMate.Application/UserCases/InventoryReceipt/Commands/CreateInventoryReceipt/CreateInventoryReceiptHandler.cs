@@ -64,21 +64,22 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
 
             var productDict = products.ToDictionary(p => p.Id);
 
-            var receiptCode = await _codeGeneratorService.GenerateCodeAsync(request.Type == 1 ? "NK" : "XK");
-
+            var receiptCode = await _codeGeneratorService.GenerateCodeAsync(request.Type == 1 ? "#NK" : "#XK");
+            var idInventoryReceipt = Guid.NewGuid();
             var receipt = new InventoryReceipt
             {
-                Id = Guid.NewGuid(),
-                InventoryCode = receiptCode,
+                Id = idInventoryReceipt,
+                Code = receiptCode,
                 Date = DateTime.UtcNow,
                 Type = request.Type,
                 StoreId = storeId,
-                CreatedByUserId = Guid.Parse(userId),
+                CreatedBy = Guid.Parse(userId),
                 SupplierName = request.SupplierName,
                 CustomerName = request.CustomerName,
                 CustomerPhone = request.CustomerPhone,
                 DeliveryAddress = request.DeliveryAddress,
                 Description = request.Description,
+                RowVersion = Guid.NewGuid().ToByteArray(),
                 Details = request.Details.Select(d =>
                 {
                     var product = productDict[d.ProductId]; 
@@ -86,11 +87,13 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
                     return new InventoryReceiptDetail
                     {
                         Id = Guid.NewGuid(),
+                        InventoryReceiptId = idInventoryReceipt,
                         ProductId = d.ProductId,
                         Quantity = d.Quantity,
                         ProductName = product.Name,
-                        ProductCode = product.ProductCode,
+                        ProductCode = product.Code,
                         Unit = product.Unit,
+                        RowVersion = Guid.NewGuid().ToByteArray()
                     };
                 }).ToList()
             };
@@ -115,7 +118,8 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
                         StoreId = storeId,
                         ProductId = detail.ProductId,
                         Quantity = 0,
-                        LastUpdated = DateTime.UtcNow
+                        UpdatedDate = DateTime.UtcNow,
+                        RowVersion = Guid.NewGuid().ToByteArray()
                     };
                     await _stockRepository.AddAsync(stock);
                 }
@@ -132,7 +136,7 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
                     stock.Quantity -= detail.Quantity;
                 }
 
-                stock.LastUpdated = DateTime.UtcNow;
+                stock.UpdatedDate = DateTime.UtcNow;
                 await _stockRepository.UpdateAsync(stock);
             }
             #endregion

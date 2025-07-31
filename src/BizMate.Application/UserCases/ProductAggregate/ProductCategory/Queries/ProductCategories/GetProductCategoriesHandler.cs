@@ -14,7 +14,6 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Queries.Product
     {
         private readonly IProductCategoryRepository _productCategoryRepository;
         private readonly IUserSession _userSession;
-        private readonly QueryFactory _queryFactory;
         private readonly IMapper _mapper;
         private readonly ILogger<GetProductCategoriesHandler> _logger;
 
@@ -22,13 +21,11 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Queries.Product
         public GetProductCategoriesHandler(
             IProductCategoryRepository productCategoryRepository,
             IUserSession userSession,
-            QueryFactory queryFactory,
             IMapper mapper,
             ILogger<GetProductCategoriesHandler> logger)
         {
             _productCategoryRepository = productCategoryRepository;
             _userSession = userSession;
-            _queryFactory = queryFactory;
             _mapper = mapper;
             _logger = logger;
         }
@@ -41,8 +38,9 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Queries.Product
                 var storeId = _userSession.StoreId;
 
                 var (productCategories, totalCount) = await _productCategoryRepository.GetAllAsync(storeId, cancellationToken);
-
+        
                 var mappedProductCategories = _mapper.Map<List<ProductCategoryCoreDto>>(productCategories);
+
                 return new GetProductCategoriesResponse(mappedProductCategories, totalCount,true);
             }
             catch (Exception ex)

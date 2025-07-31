@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Localization;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 
 internal class Program
@@ -18,6 +19,8 @@ internal class Program
     private static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+
+        JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
         builder.Services.AddControllers();
 
@@ -52,6 +55,7 @@ internal class Program
 
         // Register validators
         builder.Services.AddValidatorsFromAssemblyContaining<SearchCoreValidator>();
+
 
         builder.Services.AddAuthentication(options =>
            {
