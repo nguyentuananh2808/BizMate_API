@@ -159,7 +159,7 @@ internal class Program
         using (var scope = app.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            db.Database.Migrate();
+            db.Database.EnsureCreated();
         }
         app.Run();
     }

@@ -16,8 +16,6 @@ obj/
 *.DotSettings.user
 *.vs/
 
-# EF Core migrations generated cache
-**/Migrations/**/Snapshot.cs
 
 # Logs
 *.log
