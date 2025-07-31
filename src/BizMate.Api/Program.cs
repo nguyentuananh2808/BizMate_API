@@ -153,6 +153,12 @@ internal class Program
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
+        // TỰ ĐỘNG APPLY MIGRATION KHI KHỞI ĐỘNG
+        using (var scope = app.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Database.Migrate();
+        }
         app.Run();
     }
 }
