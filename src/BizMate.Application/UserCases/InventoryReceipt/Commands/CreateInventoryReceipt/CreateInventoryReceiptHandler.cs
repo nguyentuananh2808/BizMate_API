@@ -79,7 +79,6 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
                 CustomerPhone = request.CustomerPhone,
                 DeliveryAddress = request.DeliveryAddress,
                 Description = request.Description,
-                RowVersion = Guid.NewGuid().ToByteArray(),
                 Details = request.Details.Select(d =>
                 {
                     var product = productDict[d.ProductId]; 
@@ -93,7 +92,6 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
                         ProductName = product.Name,
                         ProductCode = product.Code,
                         Unit = product.Unit,
-                        RowVersion = Guid.NewGuid().ToByteArray()
                     };
                 }).ToList()
             };

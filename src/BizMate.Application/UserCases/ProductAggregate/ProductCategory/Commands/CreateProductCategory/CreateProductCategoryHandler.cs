@@ -67,7 +67,6 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductCategory.Command
                     Name = nameProductCategory,
                     Description = description,
                     StoreId = storeId,
-                    RowVersion = Guid.NewGuid().ToByteArray()
                 };
                 await _productCategoryRepository.AddAsync(productCategory, cancellationToken);
                 #endregion

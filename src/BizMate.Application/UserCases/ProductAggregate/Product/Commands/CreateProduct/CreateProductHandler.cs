@@ -81,7 +81,6 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Create
                     SupplierId = request.SupplierId,
                     Description = request.Description,
                     CreatedBy = Guid.Parse(userId),
-                    RowVersion = Guid.NewGuid().ToByteArray()
                 };
 
                 await _productRepository.AddAsync(newProduct, cancellationToken);

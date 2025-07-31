@@ -12,7 +12,7 @@ namespace BizMate.Domain.Entities
         public Guid? UpdatedBy { get; set; }
 
         [Timestamp]
-        public byte[] RowVersion { get; set; } = default!;
+        public byte[] RowVersion { get; set; } = Array.Empty<byte>();
         public bool IsDeleted { get; set; } = false;
         public DateTime? DeletedAt { get; set; }
     }

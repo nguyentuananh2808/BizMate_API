@@ -91,7 +91,6 @@ namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
             {
                 Id = Guid.NewGuid(),
                 Name = otpData.StoreName,
-                RowVersion = Guid.NewGuid().ToByteArray()
             };
             string code = await _codeGeneratorService.GenerateCodeAsync("#U", 5);
 
@@ -107,7 +106,6 @@ namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
                 PasswordSalt = salt,
                 Store = store,
                 StoreId = store.Id,
-                RowVersion = Guid.NewGuid().ToByteArray()
             };
             await _userRepository.AddAsync(user, cancellationToken);
             #endregion
