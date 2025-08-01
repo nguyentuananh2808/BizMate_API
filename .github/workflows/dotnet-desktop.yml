@@ -1,4 +1,4 @@
-name: Build & Deploy Backend (.NET)
+name: Build & Deploy Backend (.NET 9)
 
 on:
   push:
@@ -14,36 +14,34 @@ jobs:
       DOCKER_IMAGE_NAME: bizmate-backend
       DOCKERFILE_PATH: ./src/BizMate.Api/Dockerfile
       CONTEXT_PATH: ./src
-      REMOTE_USER: ubuntu
-      REMOTE_HOST: 103.163.118.225
-      REMOTE_APP_DIR: /home/ubuntu/bizmate-backend
+      REMOTE_APP_DIR: /home/${{ secrets.VPS_USER }}/bizmate-backend
 
     steps:
-    - name: Checkout source
+    - name:  Checkout source
       uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
+    - name:  Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
-    - name: Build Docker image
+    - name:  Build Docker image & export to tar.gz
       run: |
         docker build -t $DOCKER_IMAGE_NAME -f $DOCKERFILE_PATH $CONTEXT_PATH
         docker save $DOCKER_IMAGE_NAME | gzip > backend-image.tar.gz
 
-    - name: Copy Docker image to VPS via SCP (username/password)
+    - name: 📤 Copy image to VPS via SCP (password-based)
       uses: appleboy/scp-action@v0.1.7
       with:
-        host: ${{ env.REMOTE_HOST }}
-        username: ${{ env.REMOTE_USER }}
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USER }}
         password: ${{ secrets.VPS_PASSWORD }}
         source: backend-image.tar.gz
         target: ${{ env.REMOTE_APP_DIR }}
 
-    - name: Run SSH commands on VPS
+    - name: 🚀 Deploy backend container on VPS
       uses: appleboy/ssh-action@v1.0.3
       with:
-        host: ${{ env.REMOTE_HOST }}
-        username: ${{ env.REMOTE_USER }}
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USER }}
         password: ${{ secrets.VPS_PASSWORD }}
         script: |
           cd ${{ env.REMOTE_APP_DIR }}
