@@ -13,14 +13,14 @@ jobs:
     env:
       DOCKER_IMAGE_NAME: bizmate-backend
       DOCKERFILE_PATH: ./src/BizMate.Api/Dockerfile
-      CONTEXT_PATH: ./src
-      REMOTE_APP_DIR: /home/${{ secrets.VPS_USER }}/bizmate-backend
+      CONTEXT_PATH: .                                # ← nơi chứa BizMate.sln
+      REMOTE_APP_DIR: /var/www/BizMate_API           # ← thư mục VPS chứa mã nguồn backend
 
     steps:
     - name:  Checkout source
       uses: actions/checkout@v4
 
-    - name:  Set up Docker Buildx
+    - name: 🛠 Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
     - name:  Build Docker image & export to tar.gz
@@ -28,7 +28,7 @@ jobs:
         docker build -t $DOCKER_IMAGE_NAME -f $DOCKERFILE_PATH $CONTEXT_PATH
         docker save $DOCKER_IMAGE_NAME | gzip > backend-image.tar.gz
 
-    - name: 📤 Copy image to VPS via SCP (password-based)
+    - name:  Copy image to VPS via SCP (password-based)
       uses: appleboy/scp-action@v0.1.7
       with:
         host: ${{ secrets.VPS_HOST }}
@@ -37,7 +37,7 @@ jobs:
         source: backend-image.tar.gz
         target: ${{ env.REMOTE_APP_DIR }}
 
-    - name: 🚀 Deploy backend container on VPS
+    - name:  Deploy backend container on VPS
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.VPS_HOST }}
