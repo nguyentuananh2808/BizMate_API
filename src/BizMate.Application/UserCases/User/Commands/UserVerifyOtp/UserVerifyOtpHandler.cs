@@ -10,6 +10,7 @@ using AutoMapper;
 using _User = BizMate.Domain.Entities.User;
 using BizMate.Application.Resources;
 using BizMate.Application.Common.Extensions;
+using Microsoft.EntityFrameworkCore;
 
 namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
 {
@@ -92,6 +93,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
                 Id = Guid.NewGuid(),
                 Name = otpData.StoreName,
             };
+
             string code = await _codeGeneratorService.GenerateCodeAsync("#U", 5);
 
             var user = new _User
@@ -107,7 +109,23 @@ namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
                 Store = store,
                 StoreId = store.Id,
             };
-            await _userRepository.AddAsync(user, cancellationToken);
+
+            try
+            {
+                await _userRepository.AddAsync(user, cancellationToken);
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                var msg = _localizer["Lỗi xung đột dữ liệu (RowVersion). Vui lòng thử lại."];
+                _logger.LogError(ex, "DbUpdateConcurrencyException khi tạo người dùng mới: {Email}", user.Email);
+                return new UserVerifyOtpResponse(false, msg);
+            }
+            catch (Exception ex)
+            {
+                var msg = _localizer["Đã xảy ra lỗi khi tạo người dùng. Vui lòng thử lại sau."];
+                _logger.LogError(ex, "Lỗi không xác định khi tạo người dùng: {Email}", user.Email);
+                return new UserVerifyOtpResponse(false, msg);
+            }
             #endregion
 
             await _otpStore.RemoveOtpAsync(email);
@@ -115,5 +133,6 @@ namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
             var userDto = _mapper.Map<UserCoreDto>(user);
             return new UserVerifyOtpResponse(userDto, true, _localizer["Xác thực OTP thành công"]);
         }
+
     }
 }

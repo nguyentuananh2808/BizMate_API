@@ -6,6 +6,7 @@ using BizMate.Application.Common.Message;
 using BizMate.Application.Common.Security;
 using BizMate.Application.Resources;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using SqlKata.Execution;
@@ -98,6 +99,12 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Update
                 var productDto = _mapper.Map<ProductCoreDto>(product);
 
                 return new UpdateProductResponse(productDto, true, _localizer["Cập nhật sản phẩm thành công."]);
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                var msg = _messageService.ConcurrencyConflict(_localizer);
+                _logger.LogWarning(ex, "DbUpdateConcurrencyException: Có xung đột khi cập nhật sản phẩm {ProductId}", request.Id);
+                return new UpdateProductResponse(false, msg);
             }
             catch (Exception ex)
             {
