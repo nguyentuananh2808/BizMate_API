@@ -61,16 +61,16 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Update
                 }
                 #endregion
 
-                #region Check rowversion
-                if (!product.RowVersion.SequenceEqual(request.RowVersion))
-                {
-                    var message = _messageService.ConcurrencyConflict(_localizer);
-                    _logger.LogWarning("RowVersion conflict: Request={RequestVersion}, DB={DbVersion}",
-                        Convert.ToBase64String(request.RowVersion),
-                        Convert.ToBase64String(product.RowVersion));
-                    return new UpdateProductResponse(false, message);
-                }
-                #endregion
+                //#region Check rowversion
+                //if (!product.RowVersion.SequenceEqual(request.RowVersion))
+                //{
+                //    var message = _messageService.ConcurrencyConflict(_localizer);
+                //    _logger.LogWarning("RowVersion conflict: Request={RequestVersion}, DB={DbVersion}",
+                //        Convert.ToBase64String(request.RowVersion),
+                //        Convert.ToBase64String(product.RowVersion));
+                //    return new UpdateProductResponse(false, message);
+                //}
+                //#endregion
 
                 #region Check for duplicate product names in the same store and supplier (except yourself)
                 var duplicateProducts = await _productRepository.SearchProducts(storeId, request.SupplierId, request.Name, _db);
