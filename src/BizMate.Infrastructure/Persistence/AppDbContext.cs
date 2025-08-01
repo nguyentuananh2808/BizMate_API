@@ -35,41 +35,20 @@ namespace BizMate.Infrastructure.Persistence
 
             modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
 
-            modelBuilder.Entity<Product>()
-                .Property(p => p.RowVersion)
-                .IsRowVersion()
-                .IsConcurrencyToken();
+            // Cấu hình RowVersion tự động cho tất cả entity có thuộc tính RowVersion
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                var rowVersionProperty = entityType
+                    .GetProperties()
+                    .FirstOrDefault(p => p.Name == "RowVersion" && p.ClrType == typeof(byte[]));
 
-            modelBuilder.Entity<ProductCategory>()
-                .Property(p => p.RowVersion)
-                .IsRowVersion()
-                .IsConcurrencyToken();
-
-            modelBuilder.Entity<InventoryReceipt>()
-                .Property(p => p.RowVersion)
-                .IsRowVersion()
-                .IsConcurrencyToken();
-
-            modelBuilder.Entity<Stock>()
-                .Property(p => p.RowVersion)
-                .IsRowVersion()
-                .IsConcurrencyToken();
-
-            modelBuilder.Entity<InventoryReceiptDetail>()
-                .Property(p => p.RowVersion)
-                .IsRowVersion()
-                .IsConcurrencyToken();
-
-            modelBuilder.Entity<Customer>()
-                .Property(p => p.RowVersion)
-                .IsRowVersion()
-                .IsConcurrencyToken();
-
-            modelBuilder.Entity<Supplier>()
-                .Property(p => p.RowVersion)
-                .IsRowVersion()
-                .IsConcurrencyToken();
-
+                if (rowVersionProperty != null)
+                {
+                    rowVersionProperty.IsConcurrencyToken = true;
+                    rowVersionProperty.SetColumnType("bytea"); // PostgreSQL dùng bytea
+                }
+            }
         }
+
     }
 }

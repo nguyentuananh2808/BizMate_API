@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BizMate.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250731162406_init-database")]
+    [Migration("20250801033834_init-database")]
     partial class initdatabase
     {
         /// <inheritdoc />
@@ -397,12 +397,6 @@ namespace BizMate.Infrastructure.Migrations
                     b.Property<string>("OtpCode")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("bytea");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uuid");

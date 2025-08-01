@@ -4,7 +4,9 @@ using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Security;
 using BizMate.Application.Resources;
+using BizMate.Application.UserCases.ProductAggregate.Product.Commands.UpdateProduct;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using SqlKata.Execution;
@@ -69,14 +71,14 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductCategory.Command
                 }
                 #endregion
 
-                #region Check rowversion
-                if (productCategory.RowVersion != request.RowVersion)
-                {
-                    var message = _messageService.ConcurrencyConflict(_localizer);
-                    _logger.LogWarning("RowVersion conflict: Request={RequestVersion}, DB={DbVersion}", request.RowVersion, productCategory.RowVersion);
-                    return new UpdateProductCategoryResponse(false, message);
-                }
-                #endregion
+                //#region Check rowversion
+                //if (productCategory.RowVersion != request.RowVersion)
+                //{
+                //    var message = _messageService.ConcurrencyConflict(_localizer);
+                //    _logger.LogWarning("RowVersion conflict: Request={RequestVersion}, DB={DbVersion}", request.RowVersion, productCategory.RowVersion);
+                //    return new UpdateProductCategoryResponse(false, message);
+                //}
+                //#endregion
 
                 #region update data
                 productCategory.Name = name;
@@ -93,6 +95,12 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductCategory.Command
                 var productCategoryDto = _mapper.Map<ProductCategoryCoreDto>(productCategory);
 
                 return new UpdateProductCategoryResponse(productCategoryDto, true, _localizer["Cập nhật loại sản phẩm thành công."]);
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                var msg = _messageService.ConcurrencyConflict(_localizer);
+                _logger.LogWarning(ex, "DbUpdateConcurrencyException: Có xung đột khi cập nhật sản phẩm {ProductId}", request.Id);
+                return new UpdateProductCategoryResponse(false, msg);
             }
             catch (Exception ex)
             {
