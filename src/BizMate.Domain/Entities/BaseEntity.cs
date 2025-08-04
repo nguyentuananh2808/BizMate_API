@@ -6,9 +6,9 @@ namespace BizMate.Domain.Entities
     {
         public Guid Id { get; set; }
         public string? Description { get; set; }
-        public DateTime CreatedDate { get; set; } = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"));
+        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
         public Guid? CreatedBy { get; set; }
-        public DateTime? UpdatedDate { get; set; } = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"));
+        public DateTime? UpdatedDate { get; set; } = DateTime.UtcNow;
         public Guid? UpdatedBy { get; set; }
 
         [Timestamp]

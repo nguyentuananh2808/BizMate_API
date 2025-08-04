@@ -58,7 +58,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserRegister
 
             #region Create & save OTP
             var otpCode = OtpGenerator.Generate(6);
-            var expiredAt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")).AddMinutes(5);
+            var expiredAt = DateTime.UtcNow.AddMinutes(5);
 
             await _otpVerificationRepository.AddOtpAsync(email, otpCode, expiredAt, cancellationToken);
             var tempData = new TempOtpUserData
