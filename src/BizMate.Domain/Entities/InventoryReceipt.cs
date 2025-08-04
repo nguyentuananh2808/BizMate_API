@@ -19,6 +19,9 @@
         // Tổng tiền của phiếu
         public decimal TotalAmount { get; set; }
 
+        //Trạng thái phiếu <
+        public Guid? StatusId { get; set; }
+
         // Trạng thái thanh toán (cho phiếu xuất)
         public int? PaymentStatus { get; set; }
 
@@ -26,5 +29,6 @@
         public bool IsDraft { get; set; } = false;
         public bool IsCancelled { get; set; } = false;
         public ICollection<InventoryReceiptDetail> Details { get; set; } = new List<InventoryReceiptDetail>();
+        public Status? Statuses { get; set; } = new Status();
     }
 }

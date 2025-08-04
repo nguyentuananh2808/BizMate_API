@@ -5,12 +5,9 @@ using BizMate.Application.Common.Message;
 using BizMate.Application.Common.Requests.Validators;
 using BizMate.Infrastructure.Persistence;
 using BizMate.Infrastructure.Security;
-using BizMate.Infrastructure.Services;
-using FluentValidation;
 using FluentValidation.AspNetCore;
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Localization;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.IdentityModel.Tokens.Jwt;
@@ -18,20 +15,19 @@ using System.Text;
 
 internal class Program
 {
-    private static void Main(string[] args)
+    private static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
         builder.WebHost.UseUrls("http://+:80");
         JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
         builder.Services.AddControllers();
-        builder.Services.AddEndpointsApiExplorer(); // Cho Swagger hoạt động
+        builder.Services.AddEndpointsApiExplorer();
 
-        // Đăng ký Swagger
+        // Đăng ký Swagger, JWT, Redis, FluentValidation... như cũ
         builder.Services.AddSwaggerGen(c =>
         {
             c.SwaggerDoc("v1", new OpenApiInfo { Title = "BizMate API", Version = "v1" });
-
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
                 Name = "Authorization",
@@ -41,7 +37,6 @@ internal class Program
                 In = ParameterLocation.Header,
                 Description = "Nhập token vào đây: Bearer {your token}"
             });
-
             c.AddSecurityRequirement(new OpenApiSecurityRequirement
             {
                 {
@@ -61,7 +56,6 @@ internal class Program
         builder.Services.AddHttpClient<IImageUploader, ImageBBUploader>();
         builder.Services.AddScoped<IAppMessageService, CommonAppMessageUtils>();
         builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
-
         builder.Services.AddDistributedMemoryCache();
         builder.Services.AddInfrastructure(builder.Configuration);
 
@@ -101,7 +95,6 @@ internal class Program
             };
         });
 
-        // Đăng ký các lớp trình xử lý đầu ra
         builder.Services.Scan(scan => scan
             .FromAssemblyOf<UserLoginPresenter>()
             .AddClasses(classes => classes.AssignableTo(typeof(IOutputPort<>)))
@@ -115,7 +108,6 @@ internal class Program
 
         builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
-        // Cấu hình CORS: Cho phép mọi nguồn để client Angular gọi
         builder.Services.AddCors(options =>
         {
             options.AddPolicy("AllowAngular", policy =>
@@ -129,7 +121,15 @@ internal class Program
 
         var app = builder.Build();
 
-        // Kích hoạt Swagger ở mọi môi trường
+        // Apply migration và seed data
+        using (var scope = app.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Database.EnsureCreated();
+            await AppDbContextSeed.SeedAsync(db);
+        }
+
+        // Middleware
         app.UseSwagger();
         app.UseSwaggerUI(c =>
         {
@@ -137,18 +137,10 @@ internal class Program
         });
 
         app.UseCors("AllowAngular");
-
         app.UseHttpsRedirection();
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
-
-        // Auto apply migration
-        using (var scope = app.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            db.Database.EnsureCreated();
-        }
 
         app.Run();
     }

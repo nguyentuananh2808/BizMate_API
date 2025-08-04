@@ -28,6 +28,7 @@ namespace BizMate.Infrastructure.Persistence
         public DbSet<CodeSequence> CodeSequences => Set<CodeSequence>();
         public DbSet<DealerLevel> DealerLevels => Set<DealerLevel>();
         public DbSet<DealerPrice> DealerPrices => Set<DealerPrice>();
+        public DbSet<Status> Statuses => Set<Status>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

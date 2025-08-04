@@ -103,6 +103,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
         {
             return await _context.InventoryReceipts
                 .Include(r => r.Details)
+                .Include(r => r.Statuses)
                 .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
         }
 
@@ -129,9 +130,10 @@ namespace BizMate.Infrastructure.Persistence.Repositories
         }
 
         public async Task<(List<InventoryReceipt> Receipts, int TotalCount)> SearchReceiptsWithPaging(
-            Guid storeId, int? type, string? keyword, int pageIndex, int pageSize, QueryFactory queryFactory)
+    Guid storeId, DateTime? dateFrom, DateTime? dateTo, string? statusCode, int? type, string? keyword, int pageIndex, int pageSize, QueryFactory queryFactory)
         {
             var baseQuery = queryFactory.Query("InventoryReceipts as r")
+                .LeftJoin("Statuses as s", "r.StatusId", "s.Id")
                 .Where("r.StoreId", storeId)
                 .WhereFalse("r.IsDeleted");
 
@@ -147,14 +149,57 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                      .OrWhereRaw(@"LOWER(r.""SupplierName"") LIKE ?", $"%{keywordLower}%"));
             }
 
+            if (dateFrom.HasValue)
+                baseQuery.Where("r.Date", ">=", dateFrom.Value);
+
+            if (dateTo.HasValue)
+                baseQuery.Where("r.Date", "<=", dateTo.Value);
+
+            if (!string.IsNullOrWhiteSpace(statusCode))
+                baseQuery.Where("s.Code", statusCode);
+
             var totalCount = await baseQuery.Clone().CountAsync<int>();
 
-            var results = await baseQuery
+            var rows = await baseQuery
+                .Select("r.*", "s.Id as Status_Id", "s.Name as Status_Name", "s.Code as Status_Code")
                 .Offset((pageIndex - 1) * pageSize)
                 .Limit(pageSize)
-                .GetAsync<InventoryReceipt>();
+                .GetAsync();
 
-            return (results.ToList(), totalCount);
+            var results = rows.Select(row =>
+            {
+                var receipt = new InventoryReceipt
+                {
+                    Id = row.Id,
+                    StoreId = row.StoreId,
+                    Type = row.Type,
+                    Date = row.Date,
+                    Code = row.InventoryCode,
+                    CustomerName = row.CustomerName,
+                    SupplierName = row.SupplierName,
+                    CustomerPhone = row.CustomerPhone,
+                    DeliveryAddress = row.DeliveryAddress,
+                    TotalAmount = row.TotalAmount,
+                    StatusId = row.StatusId,
+                    IsDraft = row.IsDraft,
+                    IsCancelled = row.IsCancelled,
+
+                    Statuses = row.Status_Id != null
+                        ? new Status
+                        {
+                            Id = row.Status_Id,
+                            Code = row.Status_Code,
+                            Name = row.Status_Name
+                        }
+                        : null
+                };
+                return receipt;
+            }).ToList();
+
+            return (results, totalCount);
         }
+
+
+
     }
 }

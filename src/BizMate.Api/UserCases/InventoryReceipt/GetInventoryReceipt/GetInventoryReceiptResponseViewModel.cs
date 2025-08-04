@@ -24,6 +24,9 @@ namespace BizMate.Api.UserCases.InventoryReceipt.GetInventoryReceipt
 
         public string? Description { get; set; }
         public byte[] RowVersion { get; set; }
+        public Guid? StatusId { get; set; }
+        public string? StatusName { get; set; }
+        public string? StatusCode { get; set; }
         public IEnumerable<InventoryReceiptDetailDto> InventoryDetails { get; set; }
 
         public GetInventoryReceiptResponseViewModel(GetInventoryReceiptResponse response)
@@ -46,6 +49,9 @@ namespace BizMate.Api.UserCases.InventoryReceipt.GetInventoryReceipt
             Description = response.Description;
             RowVersion = response.RowVersion;
             InventoryDetails = response.InventoryDetails;
+            StatusCode = response.StatusCode;
+            StatusName = response.StatusName;
+            StatusId = response.StatusId;
         }
     }
 }
