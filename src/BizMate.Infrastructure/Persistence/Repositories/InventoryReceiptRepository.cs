@@ -174,7 +174,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                     StoreId = row.StoreId,
                     Type = row.Type,
                     Date = row.Date,
-                    Code = row.InventoryCode,
+                    Code = row.Code,
                     CustomerName = row.CustomerName,
                     SupplierName = row.SupplierName,
                     CustomerPhone = row.CustomerPhone,
