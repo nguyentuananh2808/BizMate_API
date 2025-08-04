@@ -271,6 +271,9 @@ namespace BizMate.Infrastructure.Migrations
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bytea");
 
+                    b.Property<Guid?>("StatusId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("StoreId")
                         .HasColumnType("uuid");
 
@@ -293,6 +296,8 @@ namespace BizMate.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("StatusId");
 
                     b.HasIndex("StoreId");
 
@@ -540,6 +545,53 @@ namespace BizMate.Infrastructure.Migrations
                     b.HasIndex("StoreId");
 
                     b.ToTable("ProductCategories");
+                });
+
+            modelBuilder.Entity("BizMate.Domain.Entities.Status", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Group")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Statuses");
                 });
 
             modelBuilder.Entity("BizMate.Domain.Entities.Stock", b =>
@@ -817,6 +869,10 @@ namespace BizMate.Infrastructure.Migrations
 
             modelBuilder.Entity("BizMate.Domain.Entities.InventoryReceipt", b =>
                 {
+                    b.HasOne("BizMate.Domain.Entities.Status", "Statuses")
+                        .WithMany()
+                        .HasForeignKey("StatusId");
+
                     b.HasOne("BizMate.Domain.Entities.Store", "Store")
                         .WithMany("InventoryReceipts")
                         .HasForeignKey("StoreId")
@@ -826,6 +882,8 @@ namespace BizMate.Infrastructure.Migrations
                     b.HasOne("BizMate.Domain.Entities.User", null)
                         .WithMany("CreatedReceipts")
                         .HasForeignKey("UserId");
+
+                    b.Navigation("Statuses");
 
                     b.Navigation("Store");
                 });

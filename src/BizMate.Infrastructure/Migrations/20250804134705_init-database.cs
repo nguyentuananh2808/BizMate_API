@@ -46,6 +46,28 @@ namespace BizMate.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Statuses",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    Group = table.Column<string>(type: "text", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    UpdatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    Code = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Statuses", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Stores",
                 columns: table => new
                 {
@@ -278,6 +300,7 @@ namespace BizMate.Infrastructure.Migrations
                     CustomerPhone = table.Column<string>(type: "text", nullable: true),
                     DeliveryAddress = table.Column<string>(type: "text", nullable: true),
                     TotalAmount = table.Column<decimal>(type: "numeric", nullable: false),
+                    StatusId = table.Column<Guid>(type: "uuid", nullable: true),
                     PaymentStatus = table.Column<int>(type: "integer", nullable: true),
                     IsDraft = table.Column<bool>(type: "boolean", nullable: false),
                     IsCancelled = table.Column<bool>(type: "boolean", nullable: false),
@@ -297,6 +320,11 @@ namespace BizMate.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_InventoryReceipts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_InventoryReceipts_Statuses_StatusId",
+                        column: x => x.StatusId,
+                        principalTable: "Statuses",
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_InventoryReceipts_Stores_StoreId",
                         column: x => x.StoreId,
@@ -449,6 +477,11 @@ namespace BizMate.Infrastructure.Migrations
                 column: "InventoryReceiptId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_InventoryReceipts_StatusId",
+                table: "InventoryReceipts",
+                column: "StatusId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_InventoryReceipts_StoreId",
                 table: "InventoryReceipts",
                 column: "StoreId");
@@ -528,6 +561,9 @@ namespace BizMate.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "Products");
+
+            migrationBuilder.DropTable(
+                name: "Statuses");
 
             migrationBuilder.DropTable(
                 name: "Users");

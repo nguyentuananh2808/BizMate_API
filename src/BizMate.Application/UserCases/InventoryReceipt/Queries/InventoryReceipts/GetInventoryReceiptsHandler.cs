@@ -38,6 +38,9 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Queries.InventoryReceip
 
                 var (receipts, totalCount) = await _inventoryReceiptRepository.SearchReceiptsWithPaging(
                     storeId: storeId,
+                    dateFrom: request.DateFrom,
+                    dateTo: request.DateTo,
+                    statusCode: request.StatusCode,
                     type: request.Type,
                     keyword: request.KeySearch,
                     pageIndex: request.PageIndex,

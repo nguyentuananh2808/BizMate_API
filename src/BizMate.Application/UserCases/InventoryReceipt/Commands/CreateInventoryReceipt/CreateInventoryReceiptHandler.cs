@@ -108,7 +108,7 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
                 if (stock == null)
                 {
                     if (receipt.Type == 2)
-                        throw new InvalidOperationException($"Tồn kho sản phẩm không đủ : {detail.ProductId}");
+                        throw new InvalidOperationException($"Tồn kho sản phẩm không đủ : {detail.ProductName}");
 
                     stock = new Stock
                     {
@@ -129,7 +129,7 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
                 else if (receipt.Type == 2) // Export
                 {
                     if (stock.Quantity < detail.Quantity)
-                        throw new InvalidOperationException($"Tồn kho sản phẩm không đủ: {detail.ProductId}");
+                        throw new InvalidOperationException($"Tồn kho sản phẩm không đủ: {detail.ProductName}");
 
                     stock.Quantity -= detail.Quantity;
                 }

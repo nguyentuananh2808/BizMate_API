@@ -30,6 +30,9 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.CreateInventor
         public string? Description { get; set; }
         public byte[] RowVersion { get; set; }
         public bool IsActive { get; set; }
+        public Guid? StatusId { get; set; }
+        public string? StatusName { get; set; }
+        public string? StatusCode { get; set; }
 
         // Receipt Details
         public IEnumerable<InventoryReceiptDetailDto> InventoryDetails { get; set; } = new List<InventoryReceiptDetailDto>();

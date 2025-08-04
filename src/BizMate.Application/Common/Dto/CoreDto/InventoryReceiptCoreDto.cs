@@ -16,6 +16,9 @@ namespace BizMate.Application.Common.Dto.CoreDto
         public string? CustomerName { get; set; }
         public string? CustomerPhone { get; set; }
         public string? DeliveryAddress { get; set; }
+        public Guid? StatusId { get; set; }
+        public string? StatusName { get; set; }
+        public string? StatusCode { get; set; }
 
         public IEnumerable<InventoryReceiptDetailDto> InventoryDetailDtos { get; set; }
 
