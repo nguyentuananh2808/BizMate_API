@@ -70,7 +70,7 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
             {
                 Id = idInventoryReceipt,
                 Code = receiptCode,
-                Date = DateTime.UtcNow,
+                Date = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")),
                 Type = request.Type,
                 StoreId = storeId,
                 CreatedBy = Guid.Parse(userId),
@@ -116,7 +116,7 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
                         StoreId = storeId,
                         ProductId = detail.ProductId,
                         Quantity = 0,
-                        UpdatedDate = DateTime.UtcNow,
+                        UpdatedDate = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")),
                         RowVersion = Guid.NewGuid().ToByteArray()
                     };
                     await _stockRepository.AddAsync(stock);
@@ -134,7 +134,7 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
                     stock.Quantity -= detail.Quantity;
                 }
 
-                stock.UpdatedDate = DateTime.UtcNow;
+                stock.UpdatedDate = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"));
                 await _stockRepository.UpdateAsync(stock);
             }
             #endregion
