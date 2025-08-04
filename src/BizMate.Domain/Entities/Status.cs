@@ -3,8 +3,8 @@
     public class Status
     {
         public Guid Id { get; set; }
-        public string Name { get; set; } = default!;
-        public string Group { get; set; } = default!;
+        public string? Name { get; set; } 
+        public string? Group { get; set; } 
         public string? Description { get; set; }
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
         public Guid? CreatedBy { get; set; }
@@ -13,6 +13,6 @@
         public bool IsDeleted { get; set; } = false;
         public DateTime? DeletedAt { get; set; }
         public bool IsActive { get; set; } = false;
-        public string Code { get; set; } = default!;
+        public string? Code { get; set; }
     }
 }
