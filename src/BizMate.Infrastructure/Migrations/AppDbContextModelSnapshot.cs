@@ -554,7 +554,6 @@ namespace BizMate.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("Code")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<Guid?>("CreatedBy")
@@ -570,7 +569,6 @@ namespace BizMate.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Group")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<bool>("IsActive")
@@ -580,7 +578,6 @@ namespace BizMate.Infrastructure.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<Guid?>("UpdatedBy")
