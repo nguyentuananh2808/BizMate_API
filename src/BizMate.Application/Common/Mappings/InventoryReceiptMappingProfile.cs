@@ -40,13 +40,14 @@ namespace BizMate.Application.Common.Mappings
                .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion))
                .ForMember(dest => dest.InventoryCode, opt => opt.MapFrom(src => src.Code))
                .ForMember(dest => dest.Date, opt => opt.MapFrom(src => src.Date))
+               .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
                .ForMember(dest => dest.SupplierName, opt => opt.MapFrom(src => src.SupplierName))
                .ForMember(dest => dest.StatusId, opt => opt.MapFrom(src => src.StatusId))
-                .ForMember(dest => dest.StatusCode, opt => opt.MapFrom(src => src.Statuses.Code))
-                .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.Statuses.Name))
+               .ForMember(dest => dest.StatusCode, opt => opt.MapFrom(src => src.Statuses.Code))
+               .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.Statuses.Name))
                .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.CustomerName))
                .ForMember(dest => dest.InventoryDetails, opt => opt.MapFrom(src => src.Details))
-                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive));
+               .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive));
 
 
             CreateMap<InventoryReceipt, GetInventoryReceiptResponse>().IgnoreAllMembers()
