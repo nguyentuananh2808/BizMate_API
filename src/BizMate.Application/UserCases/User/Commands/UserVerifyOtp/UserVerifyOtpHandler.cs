@@ -4,12 +4,9 @@ using BizMate.Application.Common.Security;
 using BizMate.Domain.Entities;
 using BizMate.Public.Dto.UserAggregate;
 using MediatR;
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using AutoMapper;
 using _User = BizMate.Domain.Entities.User;
-using BizMate.Application.Resources;
-using BizMate.Application.Common.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
@@ -21,7 +18,6 @@ namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
         private readonly IOtpStore _otpStore;
         private readonly ILogger<UserVerifyOtpHandler> _logger;
         private readonly ICodeGeneratorService _codeGeneratorService;
-        private readonly IStringLocalizer<MessageUtils> _localizer;
         private readonly IMapper _mapper;
 
         #region constructor
@@ -31,7 +27,6 @@ namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
             IUserRepository userRepository,
             IOtpStore otpStore,
             ILogger<UserVerifyOtpHandler> logger,
-            IStringLocalizer<MessageUtils> localizer,
             IMapper mapper)
         {
             _codeGeneratorService = codeGeneratorService;
@@ -39,7 +34,6 @@ namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
             _userRepository = userRepository;
             _otpStore = otpStore;
             _logger = logger;
-            _localizer = localizer;
             _mapper = mapper;
         }
         #endregion
@@ -58,14 +52,14 @@ namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
             var otpData = await _otpStore.GetOtpAsync(email);
             if (otpData == null)
             {
-                var msg = _messageService.OtpNotExist(_localizer);
+                var msg = _messageService.OtpNotExist();
                 _logger.LogWarning(msg);
                 return new UserVerifyOtpResponse(false, msg);
             }
 
             if (otpData.Otp != inputOtp)
             {
-                var msg = _messageService.OtpInvalid(_localizer);
+                var msg = _messageService.OtpInvalid();
                 _logger.LogWarning(msg);
                 return new UserVerifyOtpResponse(false, msg);
             }
@@ -75,7 +69,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
             var existingUser = await _userRepository.GetByEmailAsync(email, cancellationToken);
             if (existingUser != null)
             {
-                var msg = _messageService.AlreadyExist(existingUser, _localizer);
+                var msg = _messageService.AlreadyExist(existingUser);
                 _logger.LogWarning(msg);
                 return new UserVerifyOtpResponse(false, msg);
             }
@@ -114,15 +108,15 @@ namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
             {
                 await _userRepository.AddAsync(user, cancellationToken);
             }
-            catch (DbUpdateConcurrencyException ex)
-            {
-                var msg = _localizer["Lỗi xung đột dữ liệu (RowVersion). Vui lòng thử lại."];
-                _logger.LogError(ex, "DbUpdateConcurrencyException khi tạo người dùng mới: {Email}", user.Email);
-                return new UserVerifyOtpResponse(false, msg);
-            }
+            //catch (DbUpdateConcurrencyException ex)
+            //{
+            //    var msg = _localizer["Lỗi xung đột dữ liệu (RowVersion). Vui lòng thử lại."];
+            //    _logger.LogError(ex, "DbUpdateConcurrencyException khi tạo người dùng mới: {Email}", user.Email);
+            //    return new UserVerifyOtpResponse(false, msg);
+            //}
             catch (Exception ex)
             {
-                var msg = _localizer["Đã xảy ra lỗi khi tạo người dùng. Vui lòng thử lại sau."];
+                var msg = "Đã xảy ra lỗi khi tạo người dùng. Vui lòng thử lại sau.";
                 _logger.LogError(ex, "Lỗi không xác định khi tạo người dùng: {Email}", user.Email);
                 return new UserVerifyOtpResponse(false, msg);
             }
@@ -131,7 +125,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
             await _otpStore.RemoveOtpAsync(email);
 
             var userDto = _mapper.Map<UserCoreDto>(user);
-            return new UserVerifyOtpResponse(userDto, true, _localizer["Xác thực OTP thành công"]);
+            return new UserVerifyOtpResponse(userDto, true, "Xác thực OTP thành công");
         }
 
     }

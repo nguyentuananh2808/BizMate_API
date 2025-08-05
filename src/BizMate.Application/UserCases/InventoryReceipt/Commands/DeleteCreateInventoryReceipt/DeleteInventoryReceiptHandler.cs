@@ -41,7 +41,7 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.DeleteCreateIn
                 var receipt = await _inventoryRepository.GetByIdAsync(request.Id);
                 if (receipt == null || receipt.StoreId != storeId)
                 {
-                    var message = _messageService.NotExist(request.Id, _localizer);
+                    var message = _messageService.NotExist(request.Id);
                     _logger.LogWarning(message);
                     return new DeleteInventoryReceiptResponse(false, message);
                 }

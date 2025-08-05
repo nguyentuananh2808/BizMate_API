@@ -2,16 +2,11 @@
 using BizMate.Application.Common.Dto.UserAggregate;
 using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Interfaces.Repositories;
-using BizMate.Application.Common.Message;
 using BizMate.Application.Common.Security;
-using BizMate.Application.Resources;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using SqlKata.Execution;
-using System.Linq;
-using _Product = BizMate.Domain.Entities.Product;
 
 namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.UpdateProduct
 {
@@ -22,7 +17,6 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Update
         private readonly IUserSession _userSession;
         private readonly QueryFactory _db;
         private readonly ILogger<UpdateProductHandler> _logger;
-        private readonly IStringLocalizer<MessageUtils> _localizer;
         private readonly IMapper _mapper;
 
         #region constructor
@@ -32,7 +26,6 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Update
             IProductRepository productRepository,
             QueryFactory db,
             ILogger<UpdateProductHandler> logger,
-            IStringLocalizer<MessageUtils> localizer,
             IMapper mapper)
         {
             _messageService = messageService;
@@ -40,7 +33,6 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Update
             _productRepository = productRepository;
             _db = db;
             _logger = logger;
-            _localizer = localizer;
             _mapper = mapper;
         }
         #endregion
@@ -55,7 +47,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Update
                 var product = await _productRepository.GetByIdAsync(request.Id);
                 if (product == null)
                 {
-                    var message = _messageService.NotExist(request.Id.ToString(), _localizer);
+                    var message = _messageService.NotExist(request.Id.ToString());
                     _logger.LogWarning(message);
                     return new UpdateProductResponse(false, message);
                 }
@@ -76,7 +68,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Update
                 var duplicateProducts = await _productRepository.SearchProducts(storeId, request.SupplierId, request.Name, _db);
                 if (duplicateProducts.Any(p => p.Id != request.Id))
                 {
-                    var message = _messageService.DuplicateData(request.Name, _localizer);
+                    var message = _messageService.DuplicateData(request.Name);
                     _logger.LogWarning(message);
                     return new UpdateProductResponse(false, message);
                 }
@@ -98,18 +90,18 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Update
 
                 var productDto = _mapper.Map<ProductCoreDto>(product);
 
-                return new UpdateProductResponse(productDto, true, _localizer["Cập nhật sản phẩm thành công."]);
+                return new UpdateProductResponse(productDto, true, "Cập nhật sản phẩm thành công.");
             }
             catch (DbUpdateConcurrencyException ex)
             {
-                var msg = _messageService.ConcurrencyConflict(_localizer);
+                var msg = _messageService.ConcurrencyConflict();
                 _logger.LogWarning(ex, "DbUpdateConcurrencyException: Có xung đột khi cập nhật sản phẩm {ProductId}", request.Id);
                 return new UpdateProductResponse(false, msg);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Lỗi khi cập nhật sản phẩm.");
-                return new UpdateProductResponse(false, _localizer["Không thể cập nhật sản phẩm. Vui lòng thử lại."]);
+                return new UpdateProductResponse(false, "Không thể cập nhật sản phẩm. Vui lòng thử lại.");
             }
         }
     }

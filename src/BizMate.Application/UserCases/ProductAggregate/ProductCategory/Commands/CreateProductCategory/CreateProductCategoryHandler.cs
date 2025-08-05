@@ -3,9 +3,7 @@ using BizMate.Application.Common.Dto.CoreDto;
 using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Security;
-using BizMate.Application.Resources;
 using MediatR;
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using _ProductCategory = BizMate.Domain.Entities.ProductCategory;
 
@@ -18,10 +16,9 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductCategory.Command
         private readonly IMapper _mapper;
         private readonly ILogger<CreateProductCategoryHandler> _logger;
         private readonly IUserSession _userSession;
-        private readonly IStringLocalizer<MessageUtils> _localizer;
         private readonly ICodeGeneratorService _codeGeneratorService;
         #region constructor
-        public CreateProductCategoryHandler(IMapper mapper, IProductCategoryRepository productCategoryRepository, IStringLocalizer<MessageUtils> localizer,
+        public CreateProductCategoryHandler(IMapper mapper, IProductCategoryRepository productCategoryRepository,
           ILogger<CreateProductCategoryHandler> logger, IUserSession userSession, ICodeGeneratorService codeGeneratorService, IAppMessageService messageService)
         {
             _mapper = mapper;
@@ -30,7 +27,6 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductCategory.Command
             _userSession = userSession;
             _productCategoryRepository = productCategoryRepository;
             _messageService = messageService;
-            _localizer = localizer;
             _logger = logger;
         }
 
@@ -54,7 +50,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductCategory.Command
 
                 if (categoryDb != null)
                 {
-                    var message = _messageService.DuplicateData(nameProductCategory, _localizer);
+                    var message = _messageService.DuplicateData(nameProductCategory);
                     _logger.LogWarning(message);
                     return new CreateProductCategoryResponse(null, false, message);
                 }
@@ -78,7 +74,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductCategory.Command
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Lỗi khi tạo loại sản phẩm.");
-                return new CreateProductCategoryResponse(null, false, _localizer["Không thể tạo loại sản phẩm. Vui lòng thử lại."]);
+                return new CreateProductCategoryResponse(null, false, "Không thể tạo loại sản phẩm. Vui lòng thử lại.");
             }
         }
     }

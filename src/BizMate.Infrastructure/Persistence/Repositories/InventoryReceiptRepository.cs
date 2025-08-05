@@ -144,7 +144,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             {
                 var keywordLower = keyword.ToLower();
                 baseQuery.Where(q =>
-                    q.WhereRaw(@"LOWER(r.""InventoryCode"") LIKE ?", $"%{keywordLower}%")
+                    q.WhereRaw(@"LOWER(r.""Code"") LIKE ?", $"%{keywordLower}%")
                      .OrWhereRaw(@"LOWER(r.""CustomerName"") LIKE ?", $"%{keywordLower}%")
                      .OrWhereRaw(@"LOWER(r.""SupplierName"") LIKE ?", $"%{keywordLower}%"));
             }

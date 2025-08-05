@@ -1,89 +1,70 @@
-﻿using Microsoft.Extensions.Localization;
-using BizMate.Application.Common.Interfaces;
+﻿using BizMate.Application.Common.Interfaces;
 
 namespace BizMate.Application.Common.Message
 {
     public class CommonAppMessageUtils : IAppMessageService
     {
-        private readonly IStringLocalizer _localizer;
-
-        public CommonAppMessageUtils(IStringLocalizerFactory factory)
-        {
-            _localizer = factory.Create("MessageUtils", "BizMate.Application");
-        }
-
-        public string NotExist<T>(object value, IStringLocalizer<Resources.MessageUtils> _localizer)
+        public string NotExist<T>(object value)
         {
             var entity = typeof(T).Name;
-            return _localizer["COMMON_NOT_EXIST", entity, value?.ToString() ?? "null"];
+            return $"{entity} với giá trị [{value?.ToString() ?? "null"}] không tồn tại.";
         }
 
-        public string AlreadyExist<T>(object value, IStringLocalizer<Resources.MessageUtils> _localizer)
+        public string AlreadyExist<T>(object value)
         {
             var entity = typeof(T).Name;
-            return _localizer["COMMON_ALREADY_EXIST", entity, value?.ToString() ?? "null"];
+            return $"{entity} với giá trị [{value?.ToString() ?? "null"}] đã tồn tại.";
         }
 
-        public string Invalid<T>(object value, IStringLocalizer<Resources.MessageUtils> _localizer)
+        public string Invalid<T>(object value)
         {
             var entity = typeof(T).Name;
-            return _localizer["COMMON_INVALID", entity, value?.ToString() ?? "null"];
+            return $"{entity} với giá trị [{value?.ToString() ?? "null"}] không hợp lệ.";
         }
 
-        public string RequiredField(string fieldName, IStringLocalizer<Resources.MessageUtils> _localizer)
-            => _localizer["COMMON_REQUIRED_FIELD", fieldName];
+        public string RequiredField(string fieldName)
+            => $"Trường '{fieldName}' là bắt buộc.";
 
-        public string MaxLength(string fieldName, int maxLength, IStringLocalizer<Resources.MessageUtils> _localizer)
-            => _localizer["COMMON_MAX_LENGTH", fieldName, maxLength];
+        public string MaxLength(string fieldName, int maxLength)
+            => $"Trường '{fieldName}' không được vượt quá {maxLength} ký tự.";
 
-        public string MinLength(string fieldName, int minLength, IStringLocalizer<Resources.MessageUtils> _localizer)
-            => _localizer["COMMON_MIN_LENGTH", fieldName, minLength];
+        public string MinLength(string fieldName, int minLength)
+            => $"Trường '{fieldName}' phải có ít nhất {minLength} ký tự.";
 
-        public string Unauthorized(IStringLocalizer<Resources.MessageUtils> _localizer)
-            => _localizer["COMMON_UNAUTHORIZED"];
+        public string Unauthorized()
+            => "Bạn chưa được xác thực. Vui lòng đăng nhập lại.";
 
-        public string Forbidden(IStringLocalizer<Resources.MessageUtils> _localizer)
-            => _localizer["COMMON_FORBIDDEN"];
+        public string Forbidden()
+            => "Bạn không có quyền truy cập chức năng này.";
 
-        public string UnexpectedError(IStringLocalizer<Resources.MessageUtils> _localizer)
-            => _localizer["COMMON_UNEXPECTED_ERROR"];
+        public string UnexpectedError()
+            => "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.";
 
-        public string Conflict(string message, IStringLocalizer<Resources.MessageUtils> _localizer)
-            => _localizer["COMMON_CONFLICT", message];
+        public string Conflict(string message)
+            => $"Xung đột dữ liệu: {message}";
 
-        public string NotEmpty(string fieldName, IStringLocalizer<Resources.MessageUtils> _localizer)
-            => _localizer["COMMON_NOT_EMPTY", fieldName];
+        public string NotEmpty(string fieldName)
+            => $"Trường '{fieldName}' không được để trống.";
 
-        public string DuplicateData(string fieldName, IStringLocalizer<Resources.MessageUtils> _localizer)
-            => _localizer["COMMON_DUPLICATE", fieldName];
+        public string DuplicateData(string fieldName)
+            => $"Giá trị trong trường '{fieldName}' đã bị trùng.";
 
-        public string ConcurrencyConflict(IStringLocalizer<Resources.MessageUtils> _localizer)
-            => _localizer["COMMON_CONCURRENCY_CONFLICT"];
+        public string ConcurrencyConflict()
+            => "Dữ liệu đã bị thay đổi bởi người dùng khác. Vui lòng tải lại và thử lại.";
 
-        public string NotExist(object value, IStringLocalizer<Resources.MessageUtils> _localizer)
-        {
-            return _localizer["COMMON_NOT_EXIST", value?.ToString() ?? "null"];
-        }
+        public string NotExist(object value)
+            => $"Dữ liệu với giá trị [{value?.ToString() ?? "null"}] không tồn tại.";
 
-        public string AlreadyExist(object value, IStringLocalizer<Resources.MessageUtils> _localizer)
-        {
-            return _localizer["COMMON_ALREADY_EXIST", value?.ToString() ?? "null"];
-        }  
-        
-        public string OtpNotExist(IStringLocalizer<Resources.MessageUtils> _localizer)
-        {
-            return _localizer["COMMON_NOT_EXIST_OTP"];
-        }
+        public string AlreadyExist(object value)
+            => $"Dữ liệu với giá trị [{value?.ToString() ?? "null"}] đã tồn tại.";
 
-        public string OtpInvalid(IStringLocalizer<Resources.MessageUtils> _localizer)
-        {
-            return _localizer["COMMON_INVALID_OTP"];
-        }
+        public string OtpNotExist()
+            => "Mã OTP không tồn tại hoặc đã hết hạn.";
 
-        public string Invalid(object value, IStringLocalizer<Resources.MessageUtils> _localizer)
-        {
-            return _localizer["COMMON_INVALID", value?.ToString() ?? "null"];
-        }
+        public string OtpInvalid()
+            => "Mã OTP không hợp lệ.";
 
+        public string Invalid(object value)
+            => $"Giá trị [{value?.ToString() ?? "null"}] không hợp lệ.";
     }
 }

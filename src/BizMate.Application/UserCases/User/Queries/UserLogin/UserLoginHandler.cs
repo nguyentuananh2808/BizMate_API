@@ -20,13 +20,12 @@ namespace BizMate.Application.UserCases.User.Queries.UserLogin
         private readonly IUserSession _userSession;
         private readonly IMapper _mapper;
         private readonly ILogger<UserLoginHandler> _logger;
-        private readonly IStringLocalizer<MessageUtils> _localizer;
 
         #region constructor
         public UserLoginHandler(
             IAppMessageService messageService,
             IJwtFactory jwtFactory, ITokenFactory tokenFactory, IUserSession userSession,
-            IMapper mapper, ILogger<UserLoginHandler> logger, IDistributedCache cache, IStringLocalizer<MessageUtils> localizer, IUserRepository userRepository)
+            IMapper mapper, ILogger<UserLoginHandler> logger, IDistributedCache cache, IUserRepository userRepository)
         {
             _messageService = messageService;
             _userRepository = userRepository;
@@ -35,7 +34,6 @@ namespace BizMate.Application.UserCases.User.Queries.UserLogin
             _userSession = userSession;
             _mapper = mapper;
             _logger = logger;
-            _localizer = localizer;
         }
         #endregion
 
@@ -54,7 +52,7 @@ namespace BizMate.Application.UserCases.User.Queries.UserLogin
             var emailDb = await _userRepository.GetByEmailAsync(email, default);
             if (emailDb == null)
             {
-                var message = _messageService.NotExist(request.Email, _localizer);
+                var message = _messageService.NotExist(request.Email);
                 _logger.LogWarning(message);
                 return new UserLoginResponse(success: false, message: message);
             }
@@ -64,7 +62,7 @@ namespace BizMate.Application.UserCases.User.Queries.UserLogin
             var isValidPassword = PasswordHasher.Verify(password, emailDb.PasswordHash, emailDb.PasswordSalt);
             if (!isValidPassword)
             {
-                var message = _messageService.Invalid(request.Password, _localizer);
+                var message = _messageService.Invalid(request.Password);
                 _logger.LogWarning(message);
                 return new UserLoginResponse(success: false, message: message);
             }
