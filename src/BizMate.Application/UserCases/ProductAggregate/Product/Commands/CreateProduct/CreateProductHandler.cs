@@ -1,14 +1,12 @@
 ﻿using BizMate.Application.Common.Dto.UserAggregate;
 using BizMate.Application.Common.Interfaces.Repositories;
 using MediatR;
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using SqlKata.Execution;
 using AutoMapper;
 using _Product = BizMate.Domain.Entities.Product;
 using BizMate.Application.Common.Security;
 using BizMate.Application.Common.Interfaces;
-using BizMate.Application.Resources;
 
 namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.CreateProduct
 {
@@ -20,7 +18,6 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Create
         private readonly IUserSession _userSession;
         private readonly QueryFactory _db;
         private readonly ILogger<CreateProductHandler> _logger;
-        private readonly IStringLocalizer<MessageUtils> _localizer;
         private readonly IMapper _mapper;
 
         #region constructor
@@ -31,7 +28,6 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Create
             IProductRepository productRepository,
             QueryFactory db,
             ILogger<CreateProductHandler> logger,
-            IStringLocalizer<MessageUtils> localizer,
             IMapper mapper)
         {
             _messageService = messageService;
@@ -40,7 +36,6 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Create
             _productRepository = productRepository;
             _db = db;
             _logger = logger;
-            _localizer = localizer;
             _mapper = mapper;
         }
         #endregion
@@ -59,7 +54,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Create
 
                 if (existingProduct.Any())
                 {
-                    var message = _messageService.DuplicateData(request.Name, _localizer);
+                    var message = _messageService.DuplicateData(request.Name);
                     _logger.LogWarning(message);
                     return new CreateProductResponse(false, message);
                 }
@@ -88,12 +83,12 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Create
 
                 var productDto = _mapper.Map<ProductCoreDto>(newProduct);
 
-                return new CreateProductResponse(productDto, true, _localizer["Tạo sản phẩm thành công."]);
+                return new CreateProductResponse(productDto, true, "Tạo sản phẩm thành công.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Lỗi khi tạo sản phẩm.");
-                return new CreateProductResponse(false, _localizer["Không thể tạo sản phẩm. Vui lòng thử lại."]);
+                return new CreateProductResponse(false, "Không thể tạo sản phẩm. Vui lòng thử lại.");
             }
         }
     }

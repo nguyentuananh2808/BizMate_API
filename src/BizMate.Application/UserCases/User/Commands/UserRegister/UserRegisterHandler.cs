@@ -3,7 +3,6 @@ using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Resources;
 using MediatR;
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 
 namespace BizMate.Application.UserCases.User.Commands.UserRegister
@@ -16,7 +15,6 @@ namespace BizMate.Application.UserCases.User.Commands.UserRegister
         private readonly IOtpStore _otpStore;
         private readonly IEmailService _emailService;
         private readonly ILogger<UserRegisterHandler> _logger;
-        private readonly IStringLocalizer<MessageUtils> _localizer;
 
         #region constructor
         public UserRegisterHandler(
@@ -25,8 +23,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserRegister
             IOtpVerificationRepository otpVerificationRepository,
             IEmailService emailService,
             IOtpStore otpStore,
-            ILogger<UserRegisterHandler> logger,
-            IStringLocalizer<MessageUtils> localizer)
+            ILogger<UserRegisterHandler> logger)
         {
             _messageService = messageService;
             _otpStore = otpStore;
@@ -34,7 +31,6 @@ namespace BizMate.Application.UserCases.User.Commands.UserRegister
             _otpVerificationRepository = otpVerificationRepository;
             _emailService = emailService;
             _logger = logger;
-            _localizer = localizer;
         }
         #endregion
         public async Task<UserRegisterResponse> Handle(UserRegisterRequest request, CancellationToken cancellationToken)
@@ -50,7 +46,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserRegister
             var emailDb = await _userRepository.GetByEmailAsync(email, cancellationToken);
             if (emailDb != null)
             {
-                var message = _messageService.AlreadyExist(email, _localizer);
+                var message = _messageService.AlreadyExist(email);
                 _logger.LogWarning(message);
                 return new UserRegisterResponse(success: false, message: message);
             }

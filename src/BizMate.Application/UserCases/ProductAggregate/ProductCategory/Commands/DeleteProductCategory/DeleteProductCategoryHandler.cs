@@ -45,7 +45,7 @@ namespace BizMate.Application.UserCases.ProductCategoryAggregate.ProductCategory
                 var ProductCategory = await _productCategoryRepository.GetByIdAsync(storeId, request.Id, cancellationToken);
                 if (ProductCategory == null || ProductCategory.StoreId != storeId)
                 {
-                    var message = _messageService.NotExist(request.Id, _localizer);
+                    var message = _messageService.NotExist(request.Id);
                     _logger.LogWarning(message);
                     return new DeleteProductCategoryResponse(false, message);
                 }

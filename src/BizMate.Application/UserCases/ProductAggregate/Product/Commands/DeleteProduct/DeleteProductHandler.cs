@@ -1,13 +1,9 @@
 ﻿using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Security;
 using MediatR;
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using SqlKata.Execution;
-using BizMate.Application.Resources;
 using BizMate.Application.Common.Interfaces;
-using BizMate.Application.UserCases.InventoryReceipt.Commands.DeleteCreateInventoryReceipt;
-using BizMate.Domain.Entities;
 
 namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.DeleteProduct
 {
@@ -19,7 +15,6 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Delete
         private readonly IStockRepository _stockRepository;
         private readonly QueryFactory _db;
         private readonly ILogger<DeleteProductHandler> _logger;
-        private readonly IStringLocalizer<MessageUtils> _localizer;
 
         #region constructor
         public DeleteProductHandler(
@@ -28,8 +23,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Delete
             IUserSession userSession,
             IProductRepository productRepository,
             QueryFactory db,
-            ILogger<DeleteProductHandler> logger,
-            IStringLocalizer<MessageUtils> localizer)
+            ILogger<DeleteProductHandler> logger)
         {
             _stockRepository = stockRepository;
             _messageService = messageService;
@@ -37,7 +31,6 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Delete
             _productRepository = productRepository;
             _db = db;
             _logger = logger;
-            _localizer = localizer;
         }
         #endregion
         public async Task<DeleteProductResponse> Handle(DeleteProductRequest request, CancellationToken cancellationToken)
@@ -49,7 +42,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Delete
                 var product = await _productRepository.GetByIdAsync(request.Id);
                 if (product == null || product.StoreId != storeId)
                 {
-                    var message = _messageService.NotExist(request.Id, _localizer);
+                    var message = _messageService.NotExist(request.Id);
                     _logger.LogWarning(message);
                     return new DeleteProductResponse(false, message);
                 }
@@ -75,12 +68,12 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Delete
 
                 await _productRepository.DeleteAsync(request.Id);
 
-                return new DeleteProductResponse(true, _localizer["Xóa sản phẩm thành công."]);
+                return new DeleteProductResponse(true, "Xóa sản phẩm thành công.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Lỗi khi xóa sản phẩm.");
-                return new DeleteProductResponse(false, _localizer["Không thể xóa sản phẩm. Vui lòng thử lại."]);
+                return new DeleteProductResponse(false, "Không thể xóa sản phẩm. Vui lòng thử lại.");
             }
         }
     }

@@ -19,7 +19,6 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventor
         private readonly IUserSession _userSession;
         private readonly IMapper _mapper;
         private readonly ILogger<UpdateInventoryReceiptHandler> _logger;
-        private readonly IStringLocalizer<MessageUtils> _localizer;
 
         public UpdateInventoryReceiptHandler(
             IAppMessageService messageService,
@@ -27,8 +26,7 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventor
             IStockRepository stockRepository,
             IUserSession userSession,
             IMapper mapper,
-            ILogger<UpdateInventoryReceiptHandler> logger,
-            IStringLocalizer<MessageUtils> localizer)
+            ILogger<UpdateInventoryReceiptHandler> logger)
         {
             _messageService = messageService;
             _inventoryReceiptRepository = inventoryReceiptRepository;
@@ -36,7 +34,6 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventor
             _userSession = userSession;
             _mapper = mapper;
             _logger = logger;
-            _localizer = localizer;
         }
 
         public async Task<UpdateInventoryReceiptResponse> Handle(UpdateInventoryReceiptRequest request, CancellationToken cancellationToken)
@@ -51,14 +48,14 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventor
                 var existingReceipt = await _inventoryReceiptRepository.GetByIdAsync(request.Id);
                 if (existingReceipt == null)
                 {
-                    var message = _messageService.NotExist(request.Id, _localizer);
+                    var message = _messageService.NotExist(request.Id);
                     _logger.LogWarning(message);
                     return new UpdateInventoryReceiptResponse(false, message);
                 }
 
                 // 2. Thiết lập OriginalValue của RowVersion để kiểm tra concurrency
                 var entry = _inventoryReceiptRepository.Entry(existingReceipt);
-                entry.Property("RowVersion").OriginalValue = request.RowVersion; 
+                entry.Property("RowVersion").OriginalValue = request.RowVersion;
 
 
                 // 3. Trả lại tồn kho cũ
@@ -121,13 +118,13 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventor
                 // 8. Trả response
                 var response = _mapper.Map<UpdateInventoryReceiptResponse>(existingReceipt);
                 response.Success = true;
-                response.Message = _localizer["Cập nhật phiếu thành công."];
+                response.Message = "Cập nhật phiếu thành công.";
                 return response;
             }
             catch (DbUpdateConcurrencyException)
             {
                 await _inventoryReceiptRepository.RollbackTransactionAsync();
-                var message = _localizer["Dữ liệu đã bị thay đổi bởi người khác. Vui lòng tải lại trước khi chỉnh sửa."];
+                var message = "Dữ liệu đã bị thay đổi bởi người khác. Vui lòng tải lại trước khi chỉnh sửa.";
                 _logger.LogWarning(message);
                 return new UpdateInventoryReceiptResponse(false, message);
             }
@@ -135,10 +132,10 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventor
             {
                 await _inventoryReceiptRepository.RollbackTransactionAsync();
                 _logger.LogError(ex, "Lỗi khi cập nhật phiếu.");
-                return new UpdateInventoryReceiptResponse
+                return new UpdateInventoryReceiptResponse 
                 {
                     Success = false,
-                    Message = _localizer["Không thể cập nhật phiếu. Vui lòng thử lại."]
+                    Message = "Không thể cập nhật phiếu. Vui lòng thử lại."
                 };
             }
         }
