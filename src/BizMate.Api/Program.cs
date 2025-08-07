@@ -125,11 +125,9 @@ internal class Program
         // Apply migration và seed data
         using (var scope = app.Services.CreateScope())
         {
-            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-            context.Database.Migrate();
-
-            await AppDbContextSeed.SeedAsync(context);
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Database.EnsureCreated();
+            await AppDbContextSeed.SeedAsync(db);
         }
 
 
