@@ -56,7 +56,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Create
                 {
                     var message = _messageService.DuplicateData(request.Name);
                     _logger.LogWarning(message);
-                    return new CreateProductResponse(false, message);
+                    return new CreateProductResponse(false, $"Sản phẩm {request.Name} đã tồn tại.");
                 }
                 #endregion
 

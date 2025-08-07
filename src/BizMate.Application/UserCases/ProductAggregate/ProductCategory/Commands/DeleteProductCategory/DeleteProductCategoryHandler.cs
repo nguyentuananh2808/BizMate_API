@@ -47,7 +47,7 @@ namespace BizMate.Application.UserCases.ProductCategoryAggregate.ProductCategory
                 {
                     var message = _messageService.NotExist(request.Id);
                     _logger.LogWarning(message);
-                    return new DeleteProductCategoryResponse(false, message);
+                    return new DeleteProductCategoryResponse(false, "Loại sản phẩm không tồn tại.");
                 }
 
                 var isUsedInInventory = await _productCategoryRepository.IsUsedInProduct(request.Id);

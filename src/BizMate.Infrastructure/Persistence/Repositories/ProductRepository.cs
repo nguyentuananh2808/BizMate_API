@@ -56,7 +56,7 @@ public class ProductRepository : IProductRepository
             query.WhereRaw(@"LOWER(p.""Name"") LIKE ?", $"%{name.ToLower()}%");
 
         var result = await query.GetAsync<Product>();
-        return result.ToList();  
+        return result.ToList();
     }
 
     public async Task<(List<ProductCoreDto> Products, int TotalCount)> SearchProductsWithPaging(
@@ -112,15 +112,9 @@ public class ProductRepository : IProductRepository
 
     public async Task UpdateAsync(Product product, CancellationToken cancellationToken)
     {
-        try
-        {
-            _context.Products.Update(product);
-            await _context.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            throw new InvalidOperationException("Dữ liệu đã bị thay đổi bởi người khác. Vui lòng tải lại.");
-        }
+        _context.Products.Update(product);
+        await _context.SaveChangesAsync(cancellationToken);
+
     }
 
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken)

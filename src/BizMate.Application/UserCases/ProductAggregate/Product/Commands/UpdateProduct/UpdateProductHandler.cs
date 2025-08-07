@@ -3,6 +3,7 @@ using BizMate.Application.Common.Dto.UserAggregate;
 using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Security;
+using BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventoryReceipt;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -49,20 +50,14 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Update
                 {
                     var message = _messageService.NotExist(request.Id.ToString());
                     _logger.LogWarning(message);
-                    return new UpdateProductResponse(false, message);
+                    return new UpdateProductResponse(false, "Sản phẩm không tồn tại.");
                 }
                 #endregion
 
-                //#region Check rowversion
-                //if (!product.RowVersion.SequenceEqual(request.RowVersion))
-                //{
-                //    var message = _messageService.ConcurrencyConflict(_localizer);
-                //    _logger.LogWarning("RowVersion conflict: Request={RequestVersion}, DB={DbVersion}",
-                //        Convert.ToBase64String(request.RowVersion),
-                //        Convert.ToBase64String(product.RowVersion));
-                //    return new UpdateProductResponse(false, message);
-                //}
-                //#endregion
+                #region Check rowversion
+                if (product.RowVersion != request.RowVersion)
+                    return new UpdateProductResponse(false, "Dữ liệu đã bị thay đổi bởi người khác. Vui lòng tải lại.");
+                #endregion
 
                 #region Check for duplicate product names in the same store and supplier (except yourself)
                 var duplicateProducts = await _productRepository.SearchProducts(storeId, request.SupplierId, request.Name, _db);
@@ -70,7 +65,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Update
                 {
                     var message = _messageService.DuplicateData(request.Name);
                     _logger.LogWarning(message);
-                    return new UpdateProductResponse(false, message);
+                    return new UpdateProductResponse(false, $"Sản phẩm {request.Name} đã tồn tại.");
                 }
                 #endregion
 
@@ -84,6 +79,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Update
                 product.UpdatedBy = Guid.Parse(userId);
                 product.UpdatedDate = DateTime.UtcNow;
                 product.IsActive = request.IsActive;
+                product.RowVersion = Guid.NewGuid();
 
                 await _productRepository.UpdateAsync(product);
                 #endregion
@@ -91,12 +87,6 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Update
                 var productDto = _mapper.Map<ProductCoreDto>(product);
 
                 return new UpdateProductResponse(productDto, true, "Cập nhật sản phẩm thành công.");
-            }
-            catch (DbUpdateConcurrencyException ex)
-            {
-                var msg = _messageService.ConcurrencyConflict();
-                _logger.LogWarning(ex, "DbUpdateConcurrencyException: Có xung đột khi cập nhật sản phẩm {ProductId}", request.Id);
-                return new UpdateProductResponse(false, msg);
             }
             catch (Exception ex)
             {

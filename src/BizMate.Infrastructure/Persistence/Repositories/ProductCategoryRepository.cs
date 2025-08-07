@@ -59,19 +59,11 @@ namespace BizMate.Infrastructure.Persistence.Repositories
 
         public async Task UpdateAsync(ProductCategory producCategory, CancellationToken cancellationToken = default)
         {
-            var entry = _context.Entry(producCategory);
-            entry.Property(nameof(BaseEntity.RowVersion)).OriginalValue = producCategory.RowVersion;
+            _context.ProductCategories.Update(producCategory);
 
-            try
-            {
-                _context.ProductCategories.Update(producCategory);
-                await _context.SaveChangesAsync(cancellationToken);
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                throw new InvalidOperationException("Dữ liệu đã bị thay đổi bởi người khác. Vui lòng tải lại.");
-            }
+            await _context.SaveChangesAsync(cancellationToken);
         }
+
 
         public async Task<bool> IsUsedInProduct(Guid productCategoryId)
         {

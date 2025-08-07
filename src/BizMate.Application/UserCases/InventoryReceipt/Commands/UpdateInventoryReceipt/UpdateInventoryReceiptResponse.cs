@@ -8,7 +8,7 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventor
         public Guid Id { get; set; }
         public string InventoryCode { get; set; } = default!;
         public DateTime Date { get; set; } = DateTime.UtcNow;
-        public byte[] RowVersion { get; set; }
+        public Guid RowVersion { get; set; }
 
 
         /// <summary>

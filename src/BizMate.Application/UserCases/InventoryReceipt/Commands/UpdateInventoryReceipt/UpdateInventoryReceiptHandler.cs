@@ -3,11 +3,11 @@ using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Security;
 using BizMate.Domain.Entities;
 using MediatR;
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
-using BizMate.Application.Resources;
-using Microsoft.EntityFrameworkCore;
 using BizMate.Application.Common.Interfaces;
+using _InventoryReceipt = BizMate.Domain.Entities.InventoryReceipt;
+using BizMate.Application.UserCases.InventoryReceipt.Commands.CreateInventoryReceipt;
+using Microsoft.EntityFrameworkCore;
 
 namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventoryReceipt
 {
@@ -19,6 +19,7 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventor
         private readonly IUserSession _userSession;
         private readonly IMapper _mapper;
         private readonly ILogger<UpdateInventoryReceiptHandler> _logger;
+        private readonly IProductRepository _productRepository;
 
         public UpdateInventoryReceiptHandler(
             IAppMessageService messageService,
@@ -26,7 +27,8 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventor
             IStockRepository stockRepository,
             IUserSession userSession,
             IMapper mapper,
-            ILogger<UpdateInventoryReceiptHandler> logger)
+            ILogger<UpdateInventoryReceiptHandler> logger,
+            IProductRepository productRepository)
         {
             _messageService = messageService;
             _inventoryReceiptRepository = inventoryReceiptRepository;
@@ -34,6 +36,7 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventor
             _userSession = userSession;
             _mapper = mapper;
             _logger = logger;
+            _productRepository = productRepository;
         }
 
         public async Task<UpdateInventoryReceiptResponse> Handle(UpdateInventoryReceiptRequest request, CancellationToken cancellationToken)
@@ -44,7 +47,6 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventor
             {
                 var storeId = _userSession.StoreId;
 
-                // 1. Lấy phiếu hiện tại
                 var existingReceipt = await _inventoryReceiptRepository.GetByIdAsync(request.Id);
                 if (existingReceipt == null)
                 {
@@ -53,18 +55,24 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventor
                     return new UpdateInventoryReceiptResponse(false, message);
                 }
 
-                // 2. Thiết lập OriginalValue của RowVersion để kiểm tra concurrency
-                var entry = _inventoryReceiptRepository.Entry(existingReceipt);
-                entry.Property("RowVersion").OriginalValue = request.RowVersion;
+                if (existingReceipt.RowVersion != request.RowVersion)
+                {
+                    return new UpdateInventoryReceiptResponse(false, "Dữ liệu đã bị thay đổi bởi người khác. Vui lòng tải lại.");
+                }
 
+                var validationMessage = await ValidateStockBeforeUpdateAsync(existingReceipt, request.Details, storeId);
+                if (validationMessage != null)
+                {
+                    return new UpdateInventoryReceiptResponse(false, validationMessage);
+                }
 
-                // 3. Trả lại tồn kho cũ
+                // Hoàn tồn kho cũ
                 foreach (var oldDetail in existingReceipt.Details.ToList())
                 {
                     await RevertStockAsync(storeId, oldDetail.ProductId, oldDetail.Quantity, existingReceipt.Type);
                 }
 
-                // 4. Cập nhật thông tin chính của phiếu
+                // Cập nhật phiếu
                 existingReceipt.SupplierName = request.SupplierName;
                 existingReceipt.CustomerName = request.CustomerName;
                 existingReceipt.CustomerPhone = request.CustomerPhone;
@@ -72,42 +80,31 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventor
                 existingReceipt.Description = request.Description;
                 existingReceipt.Date = DateTime.UtcNow;
                 existingReceipt.UpdatedDate = DateTime.UtcNow;
+                existingReceipt.RowVersion = Guid.NewGuid();
 
-                // 5. Cập nhật chi tiết phiếu (xóa - thêm - cập nhật)
-                var requestDetails = request.Details;
+                // Xóa và thêm lại chi tiết
+               
 
-                // Xóa những chi tiết không còn tồn tại
-                var toRemove = existingReceipt.Details
-                    .Where(d => !requestDetails.Any(x => x.ProductId == d.ProductId))
-                    .ToList();
-                foreach (var d in toRemove)
-                {
-                    existingReceipt.Details.Remove(d);
-                }
+                //// Thêm lại chi tiết:
+                //foreach (var item in request.Details)
+                //{
+                //    var product = await _productRepository.GetByIdAsync(item.ProductId);
+                //    existingReceipt.Details.Add(new InventoryReceiptDetail
+                //    {
+                //        Id = Guid.NewGuid(),
+                //        ProductId = item.ProductId,
+                //        Quantity = item.Quantity,
+                //        InventoryReceiptId = existingReceipt.Id,
+                //        ProductName = product.Name,
+                //        ProductCode = product.Code,
+                //        Unit = product.Unit
+                //    });
+                //}
 
-                // Cập nhật hoặc thêm mới
-                foreach (var item in requestDetails)
-                {
-                    var existing = existingReceipt.Details.FirstOrDefault(d => d.ProductId == item.ProductId);
-                    if (existing != null)
-                    {
-                        existing.Quantity = item.Quantity;
-                    }
-                    else
-                    {
-                        existingReceipt.Details.Add(new InventoryReceiptDetail
-                        {
-                            Id = Guid.NewGuid(),
-                            ProductId = item.ProductId,
-                            Quantity = item.Quantity
-                        });
-                    }
-                }
 
-                // 6. Lưu phiếu cập nhật
                 await _inventoryReceiptRepository.UpdateAsync(existingReceipt);
 
-                // 7. Cập nhật tồn kho mới
+                // Cập nhật tồn kho mới
                 foreach (var detail in existingReceipt.Details)
                 {
                     await ApplyStockChangeAsync(storeId, detail.ProductId, detail.Quantity, existingReceipt.Type);
@@ -115,29 +112,51 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventor
 
                 await _inventoryReceiptRepository.CommitTransactionAsync();
 
-                // 8. Trả response
                 var response = _mapper.Map<UpdateInventoryReceiptResponse>(existingReceipt);
                 response.Success = true;
                 response.Message = "Cập nhật phiếu thành công.";
                 return response;
             }
-            catch (DbUpdateConcurrencyException)
-            {
-                await _inventoryReceiptRepository.RollbackTransactionAsync();
-                var message = "Dữ liệu đã bị thay đổi bởi người khác. Vui lòng tải lại trước khi chỉnh sửa.";
-                _logger.LogWarning(message);
-                return new UpdateInventoryReceiptResponse(false, message);
-            }
             catch (Exception ex)
             {
                 await _inventoryReceiptRepository.RollbackTransactionAsync();
                 _logger.LogError(ex, "Lỗi khi cập nhật phiếu.");
-                return new UpdateInventoryReceiptResponse 
-                {
-                    Success = false,
-                    Message = "Không thể cập nhật phiếu. Vui lòng thử lại."
-                };
+                return new UpdateInventoryReceiptResponse(false, "Không thể cập nhật phiếu. Vui lòng thử lại.");
             }
+        }
+
+        private async Task<string?> ValidateStockBeforeUpdateAsync(
+            _InventoryReceipt existingReceipt,
+            List<InventoryReceiptDetailRequestDto> newDetails,
+            Guid storeId)
+        {
+            var stockMap = new Dictionary<Guid, int>();
+
+            foreach (var oldDetail in existingReceipt.Details)
+            {
+                int delta = existingReceipt.Type == 1 ? -oldDetail.Quantity : oldDetail.Quantity;
+                stockMap[oldDetail.ProductId] = stockMap.GetValueOrDefault(oldDetail.ProductId) + delta;
+            }
+
+            foreach (var newDetail in newDetails)
+            {
+                int delta = existingReceipt.Type == 1 ? newDetail.Quantity : -newDetail.Quantity;
+                stockMap[newDetail.ProductId] = stockMap.GetValueOrDefault(newDetail.ProductId) + delta;
+            }
+
+            foreach (var kvp in stockMap)
+            {
+                var stock = await _stockRepository.GetByStoreAndProductAsync(storeId, kvp.Key);
+                var currentQty = stock?.Quantity ?? 0;
+                var newQty = currentQty + kvp.Value;
+
+                if (newQty < 0)
+                {
+                    return $"Không thể cập nhật phiếu. Sản phẩm ID {kvp.Key} không đủ tồn kho.";
+                }
+            }
+
+            return null;
         }
 
         private async Task RevertStockAsync(Guid storeId, Guid productId, int quantity, int type)
@@ -145,7 +164,7 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventor
             var stock = await _stockRepository.GetByStoreAndProductAsync(storeId, productId);
             if (stock != null)
             {
-                stock.Quantity += (type == 1) ? -quantity : quantity;
+                stock.Quantity += type == 1 ? -quantity : quantity;
                 stock.UpdatedDate = DateTime.UtcNow;
                 await _stockRepository.UpdateAsync(stock);
             }
@@ -162,19 +181,20 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventor
                     StoreId = storeId,
                     ProductId = productId,
                     Quantity = 0,
-                    UpdatedDate = DateTime.UtcNow
+                    UpdatedDate = DateTime.UtcNow,
+                    RowVersion = Guid.NewGuid()
                 };
                 await _stockRepository.AddAsync(stock);
             }
 
-            if (type == 1) // Nhập
+            if (type == 1)
             {
                 stock.Quantity += quantity;
             }
-            else // Xuất
+            else
             {
                 if (stock.Quantity < quantity)
-                    throw new InvalidOperationException($"Tồn kho sản phẩm không đủ để xuất: {productId}");
+                    throw new InvalidOperationException($"Tồn kho không đủ để xuất: {productId}");
 
                 stock.Quantity -= quantity;
             }

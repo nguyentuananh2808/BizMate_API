@@ -65,26 +65,24 @@ namespace BizMate.Infrastructure.Persistence.Repositories
 
         public async Task UpdateAsync(InventoryReceipt receipt)
         {
-            // Attach entity nếu chưa được gắn vào context
-            var entry = _context.Entry(receipt);
-            if (entry.State == EntityState.Detached)
+            // Update Receipt
+            _context.InventoryReceipts.Update(receipt);
+
+            // Update Details
+            foreach (var detail in receipt.Details)
             {
-                _context.InventoryReceipts.Attach(receipt);
+                if (_context.Entry(detail).State == EntityState.Detached)
+                {
+                    _context.InventoryReceiptDetails.Attach(detail);
+                }
+
+                _context.Entry(detail).State = EntityState.Modified;
             }
 
-            // Chỉ đánh dấu các thuộc tính chính là Modified (không động đến RowVersion)
-            entry.Property(x => x.SupplierName).IsModified = true;
-            entry.Property(x => x.CustomerName).IsModified = true;
-            entry.Property(x => x.CustomerPhone).IsModified = true;
-            entry.Property(x => x.DeliveryAddress).IsModified = true;
-            entry.Property(x => x.Description).IsModified = true;
-            entry.Property(x => x.UpdatedDate).IsModified = true;
-
-            // ⚠️ Gán OriginalValue cho RowVersion để EF kiểm tra concurrency
-            entry.Property(x => x.RowVersion).OriginalValue = receipt.RowVersion;
-
+            // Save changes
             await _context.SaveChangesAsync();
         }
+
 
 
         public async Task DeleteAsync(Guid id)
@@ -102,6 +100,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
         public async Task<InventoryReceipt?> GetByIdAsync(Guid id)
         {
             return await _context.InventoryReceipts
+                .AsNoTracking()
                 .Include(r => r.Details)
                 .Include(r => r.Statuses)
                 .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);

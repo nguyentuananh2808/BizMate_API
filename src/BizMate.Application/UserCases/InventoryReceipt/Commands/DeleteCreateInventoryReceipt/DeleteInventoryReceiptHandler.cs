@@ -1,8 +1,6 @@
 ﻿using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Security;
-using BizMate.Public.Message;
 using MediatR;
-using _InventoryReceipt = BizMate.Domain.Entities.InventoryReceipt;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using BizMate.Application.Resources;
@@ -16,20 +14,16 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.DeleteCreateIn
         private readonly IInventoryReceiptRepository _inventoryRepository;
         private readonly IUserSession _userSession;
         private readonly ILogger<DeleteInventoryReceiptHandler> _logger;
-        private readonly IStringLocalizer<MessageUtils> _localizer;
-
         public DeleteInventoryReceiptHandler(
             IAppMessageService messageService,
             IInventoryReceiptRepository inventoryRepository,
             IUserSession userSession,
-            ILogger<DeleteInventoryReceiptHandler> logger,
-            IStringLocalizer<MessageUtils> localizer)
+            ILogger<DeleteInventoryReceiptHandler> logger)
         {
             _messageService = messageService;
             _inventoryRepository = inventoryRepository;
             _userSession = userSession;
             _logger = logger;
-            _localizer = localizer;
         }
 
         public async Task<DeleteInventoryReceiptResponse> Handle(DeleteInventoryReceiptRequest request, CancellationToken cancellationToken)
@@ -47,12 +41,12 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.DeleteCreateIn
                 }
 
                 await _inventoryRepository.DeleteAsync(request.Id);
-                return new DeleteInventoryReceiptResponse(true, _localizer["Xóa phiếu kho thành công."]);
+                return new DeleteInventoryReceiptResponse(true, "Xóa phiếu kho thành công.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Lỗi khi xóa phiếu kho.");
-                return new DeleteInventoryReceiptResponse(false, _localizer["Không thể xóa phiếu kho. Vui lòng thử lại."]);
+                return new DeleteInventoryReceiptResponse(false, "Không thể xóa phiếu kho. Vui lòng thử lại.");
             }
         }
     }

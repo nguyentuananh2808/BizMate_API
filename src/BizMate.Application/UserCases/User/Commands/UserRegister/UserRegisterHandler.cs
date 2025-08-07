@@ -48,7 +48,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserRegister
             {
                 var message = _messageService.AlreadyExist(email);
                 _logger.LogWarning(message);
-                return new UserRegisterResponse(success: false, message: message);
+                return new UserRegisterResponse(success: false, message: "Email đã được đăng ký.");
             }
             #endregion
 

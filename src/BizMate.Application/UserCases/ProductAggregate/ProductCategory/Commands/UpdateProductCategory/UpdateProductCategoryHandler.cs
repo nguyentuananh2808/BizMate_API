@@ -3,6 +3,7 @@ using BizMate.Application.Common.Dto.CoreDto;
 using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Security;
+using BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventoryReceipt;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -51,7 +52,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductCategory.Command
                 {
                     var message = _messageService.NotExist(request.Id.ToString());
                     _logger.LogWarning(message);
-                    return new UpdateProductCategoryResponse(false, message);
+                    return new UpdateProductCategoryResponse(false, "Loại sản phẩm không tồn tại.");
                 }
                 #endregion
 
@@ -59,20 +60,17 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductCategory.Command
                 var nameProductCategory = await _productCategoryRepository.IsNameProductCategoryAsync(storeId, name, request.Id, cancellationToken);
                 if (nameProductCategory != null)
                 {
-                    var message = _messageService.NotExist(request.Name.ToString());
+                    var message = _messageService.DuplicateData(request.Name.ToString());
                     _logger.LogWarning(message);
-                    return new UpdateProductCategoryResponse(false, message);
+                    return new UpdateProductCategoryResponse(false, $"Loại sản phẩm {request.Name} đã tồn tại.");
                 }
                 #endregion
 
-                //#region Check rowversion
-                //if (productCategory.RowVersion != request.RowVersion)
-                //{
-                //    var message = _messageService.ConcurrencyConflict(_localizer);
-                //    _logger.LogWarning("RowVersion conflict: Request={RequestVersion}, DB={DbVersion}", request.RowVersion, productCategory.RowVersion);
-                //    return new UpdateProductCategoryResponse(false, message);
-                //}
-                //#endregion
+                #region Check rowversion
+                if (productCategory.RowVersion != request.RowVersion)
+                    return new UpdateProductCategoryResponse(false, "Dữ liệu đã bị thay đổi bởi người khác. Vui lòng tải lại.");
+
+                #endregion
 
                 #region update data
                 productCategory.Name = name;
@@ -81,7 +79,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductCategory.Command
                 productCategory.UpdatedDate = DateTime.UtcNow;
                 productCategory.UpdatedBy = Guid.Parse(userId);
                 productCategory.IsActive = request.IsActive;
-
+                productCategory.RowVersion = Guid.NewGuid();
 
                 await _productCategoryRepository.UpdateAsync(productCategory, cancellationToken);
                 #endregion
@@ -89,12 +87,6 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductCategory.Command
                 var productCategoryDto = _mapper.Map<ProductCategoryCoreDto>(productCategory);
 
                 return new UpdateProductCategoryResponse(productCategoryDto, true, "Cập nhật loại sản phẩm thành công.");
-            }
-            catch (DbUpdateConcurrencyException ex)
-            {
-                var msg = _messageService.ConcurrencyConflict();
-                _logger.LogWarning(ex, "DbUpdateConcurrencyException: Có xung đột khi cập nhật sản phẩm {ProductId}", request.Id);
-                return new UpdateProductCategoryResponse(false, msg);
             }
             catch (Exception ex)
             {

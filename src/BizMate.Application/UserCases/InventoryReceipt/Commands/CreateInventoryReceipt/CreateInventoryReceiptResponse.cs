@@ -28,7 +28,7 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.CreateInventor
         public string? DeliveryAddress { get; set; }
 
         public string? Description { get; set; }
-        public byte[] RowVersion { get; set; }
+        public Guid RowVersion { get; set; }
         public bool IsActive { get; set; }
         public Guid? StatusId { get; set; }
         public string? StatusName { get; set; }
