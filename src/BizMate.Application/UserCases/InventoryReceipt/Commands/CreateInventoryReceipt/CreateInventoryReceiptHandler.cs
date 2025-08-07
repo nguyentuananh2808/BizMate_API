@@ -116,8 +116,7 @@ public class CreateInventoryReceiptHandler : IRequestHandler<CreateInventoryRece
                         StoreId = storeId,
                         ProductId = detail.ProductId,
                         Quantity = 0,
-                        UpdatedDate = DateTime.UtcNow,
-                        RowVersion = Guid.NewGuid().ToByteArray()
+                        UpdatedDate = DateTime.UtcNow
                     };
                     await _stockRepository.AddAsync(stock);
                 }

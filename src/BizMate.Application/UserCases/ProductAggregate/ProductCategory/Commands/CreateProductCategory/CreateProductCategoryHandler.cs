@@ -52,7 +52,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductCategory.Command
                 {
                     var message = _messageService.DuplicateData(nameProductCategory);
                     _logger.LogWarning(message);
-                    return new CreateProductCategoryResponse(null, false, message);
+                    return new CreateProductCategoryResponse(null, false, $"Loại sản phẩm {nameProductCategory} đã tồn tại.");
                 }
                 #endregion
                 #region create product category

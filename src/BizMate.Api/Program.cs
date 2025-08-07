@@ -12,6 +12,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
 
 internal class Program
 {
@@ -125,8 +126,11 @@ internal class Program
         using (var scope = app.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            db.Database.EnsureCreated();
-            await AppDbContextSeed.SeedAsync(db);
+            if (!(await db.Database.GetPendingMigrationsAsync()).Any())
+            {
+                await AppDbContextSeed.SeedAsync(db);
+            }
+
         }
 
         // Middleware

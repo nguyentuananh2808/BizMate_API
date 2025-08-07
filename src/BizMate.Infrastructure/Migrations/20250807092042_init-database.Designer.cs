@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BizMate.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250804182411_init-database")]
+    [Migration("20250807092042_init-database")]
     partial class initdatabase
     {
         /// <inheritdoc />
@@ -80,11 +80,8 @@ namespace BizMate.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("bytea");
+                    b.Property<Guid>("RowVersion")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("StoreId")
                         .HasColumnType("uuid");
@@ -134,11 +131,8 @@ namespace BizMate.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("bytea");
+                    b.Property<Guid>("RowVersion")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("StoreId")
                         .HasColumnType("uuid");
@@ -193,11 +187,8 @@ namespace BizMate.Infrastructure.Migrations
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uuid");
 
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("bytea");
+                    b.Property<Guid>("RowVersion")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("StoreId")
                         .HasColumnType("uuid");
@@ -268,11 +259,8 @@ namespace BizMate.Infrastructure.Migrations
                     b.Property<int?>("PaymentStatus")
                         .HasColumnType("integer");
 
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("bytea");
+                    b.Property<Guid>("RowVersion")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid?>("StatusId")
                         .HasColumnType("uuid");
@@ -346,11 +334,8 @@ namespace BizMate.Infrastructure.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("bytea");
+                    b.Property<Guid>("RowVersion")
+                        .HasColumnType("uuid");
 
                     b.Property<int>("Unit")
                         .HasColumnType("integer");
@@ -461,11 +446,8 @@ namespace BizMate.Infrastructure.Migrations
                     b.Property<Guid?>("ProductCategoryId")
                         .HasColumnType("uuid");
 
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("bytea");
+                    b.Property<Guid>("RowVersion")
+                        .HasColumnType("uuid");
 
                     b.Property<decimal?>("SalePrice")
                         .HasColumnType("numeric");
@@ -528,11 +510,8 @@ namespace BizMate.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("bytea");
+                    b.Property<Guid>("RowVersion")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("StoreId")
                         .HasColumnType("uuid");
@@ -621,11 +600,8 @@ namespace BizMate.Infrastructure.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("bytea");
+                    b.Property<Guid>("RowVersion")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("StoreId")
                         .HasColumnType("uuid");
@@ -670,11 +646,8 @@ namespace BizMate.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("bytea");
+                    b.Property<Guid>("RowVersion")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uuid");
@@ -726,11 +699,8 @@ namespace BizMate.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("bytea");
+                    b.Property<Guid>("RowVersion")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("StoreId")
                         .HasColumnType("uuid");
@@ -796,11 +766,8 @@ namespace BizMate.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("bytea");
+                    b.Property<Guid>("RowVersion")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("StoreId")
                         .HasColumnType("uuid");

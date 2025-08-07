@@ -71,7 +71,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
             {
                 var msg = _messageService.AlreadyExist(existingUser);
                 _logger.LogWarning(msg);
-                return new UserVerifyOtpResponse(false, msg);
+                return new UserVerifyOtpResponse(false, "Email đã đăng ký.");
             }
             #endregion
 
@@ -108,12 +108,6 @@ namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
             {
                 await _userRepository.AddAsync(user, cancellationToken);
             }
-            //catch (DbUpdateConcurrencyException ex)
-            //{
-            //    var msg = _localizer["Lỗi xung đột dữ liệu (RowVersion). Vui lòng thử lại."];
-            //    _logger.LogError(ex, "DbUpdateConcurrencyException khi tạo người dùng mới: {Email}", user.Email);
-            //    return new UserVerifyOtpResponse(false, msg);
-            //}
             catch (Exception ex)
             {
                 var msg = "Đã xảy ra lỗi khi tạo người dùng. Vui lòng thử lại sau.";

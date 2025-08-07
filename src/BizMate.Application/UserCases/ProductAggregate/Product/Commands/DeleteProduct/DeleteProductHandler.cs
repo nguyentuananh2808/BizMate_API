@@ -44,7 +44,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Delete
                 {
                     var message = _messageService.NotExist(request.Id);
                     _logger.LogWarning(message);
-                    return new DeleteProductResponse(false, message);
+                    return new DeleteProductResponse(false, "Sản phẩm không tồn tại.");
                 }
                 #region
                 var stock = await _stockRepository.GetByStoreAndProductAsync(storeId, product.Id);

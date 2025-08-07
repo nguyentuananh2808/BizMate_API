@@ -2,6 +2,7 @@
 using BizMate.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
+using static Dapper.SqlMapper;
 
 namespace BizMate.Infrastructure.Persistence
 {
@@ -14,6 +15,20 @@ namespace BizMate.Infrastructure.Persistence
         {
             _userSession = userSession;
         }
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            // Vô hiệu hóa ConcurrencyToken của RowVersion (nếu EF đang hiểu nhầm)
+            modelBuilder.Entity<InventoryReceipt>()
+                .Property(x => x.RowVersion)
+                .IsConcurrencyToken(false); // Hoặc .ValueGeneratedNever();
+
+            modelBuilder.Entity<InventoryReceiptDetail>()
+                .Property(x => x.RowVersion)
+                .IsConcurrencyToken(false);
+        }
+
 
         public DbSet<User> Users => Set<User>();
         public DbSet<Store> Stores => Set<Store>();
@@ -29,27 +44,5 @@ namespace BizMate.Infrastructure.Persistence
         public DbSet<DealerLevel> DealerLevels => Set<DealerLevel>();
         public DbSet<DealerPrice> DealerPrices => Set<DealerPrice>();
         public DbSet<Status> Statuses => Set<Status>();
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            base.OnModelCreating(modelBuilder);
-
-            modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
-
-            // Cấu hình RowVersion tự động cho tất cả entity có thuộc tính RowVersion
-            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
-            {
-                var rowVersionProperty = entityType
-                    .GetProperties()
-                    .FirstOrDefault(p => p.Name == "RowVersion" && p.ClrType == typeof(byte[]));
-
-                if (rowVersionProperty != null)
-                {
-                    rowVersionProperty.IsConcurrencyToken = true;
-                    rowVersionProperty.SetColumnType("bytea"); // PostgreSQL dùng bytea
-                }
-            }
-        }
-
     }
 }

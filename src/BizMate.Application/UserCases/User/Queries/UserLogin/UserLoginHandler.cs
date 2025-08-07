@@ -54,7 +54,7 @@ namespace BizMate.Application.UserCases.User.Queries.UserLogin
             {
                 var message = _messageService.NotExist(request.Email);
                 _logger.LogWarning(message);
-                return new UserLoginResponse(success: false, message: message);
+                return new UserLoginResponse(success: false, message: "Email không tồn tại.");
             }
             #endregion
 
@@ -64,7 +64,7 @@ namespace BizMate.Application.UserCases.User.Queries.UserLogin
             {
                 var message = _messageService.Invalid(request.Password);
                 _logger.LogWarning(message);
-                return new UserLoginResponse(success: false, message: message);
+                return new UserLoginResponse(success: false, message: "Mật khẩu không đúng.");
             }
             #endregion
 

@@ -9,7 +9,7 @@ namespace BizMate.Application.UserCases.InventoryReceipt.Commands.UpdateInventor
         [Required]
         public Guid Id { get; set; }
         [Required]
-        public byte[] RowVersion { get; set; }
+        public Guid RowVersion { get; set; }
         public string? SupplierName { get; set; }     // Cho phiếu nhập
         public string? CustomerName { get; set; }     // Cho phiếu xuất
         public string? CustomerPhone { get; set; }
