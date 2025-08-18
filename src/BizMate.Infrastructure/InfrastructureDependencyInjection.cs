@@ -34,6 +34,8 @@ public static class InfrastructureDependencyInjection
         services.AddScoped<ICodeGeneratorService, CodeGeneratorService>();
         services.AddScoped<IStockRepository, StockRepository>();
         services.AddScoped<IInventoryReceiptRepository, InventoryReceiptRepository>();
+        services.AddScoped<ICustomerRepository, CustomerRepository>();
+        services.AddScoped<IDealerLevelRepository, DealerLevelRepository>();
 
 
 

@@ -11,6 +11,8 @@
         public const string Image = "image";
         public const string InventoryReceipt = "inventory-receipt";
         public const string User = "user";
+        public const string Customer = "customer";
+        public const string DealerLevel = "dealer-level";
 
         // action
         public const string RefreshToken = "refreshtoken";

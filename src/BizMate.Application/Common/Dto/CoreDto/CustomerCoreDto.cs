@@ -1,6 +1,8 @@
-﻿namespace BizMate.Domain.Entities
+﻿using BizMate.Domain.Entities;
+
+namespace BizMate.Application.Common.Dto.CoreDto
 {
-    public class Customer : BaseEntity
+    public class CustomerCoreDto : BaseEntity
     {
         public string Name { get; set; } = default!;
         public string Phone { get; set; } = default!;
@@ -8,5 +10,4 @@
         public Guid? DealerLevelId { get; set; }
         public DealerLevel? DealerLevel { get; set; }
     }
-
 }

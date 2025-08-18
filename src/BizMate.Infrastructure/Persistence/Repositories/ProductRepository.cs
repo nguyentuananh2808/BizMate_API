@@ -106,7 +106,7 @@ public class ProductRepository : IProductRepository
 
     public async Task AddAsync(Product product, CancellationToken cancellationToken)
     {
-        await _context.Products.AddAsync(product);
+        await _context.Products.AddAsync(product, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
     }
 
