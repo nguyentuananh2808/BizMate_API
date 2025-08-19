@@ -33,10 +33,12 @@ public static class InfrastructureDependencyInjection
         services.AddScoped<ICodeGeneratorRepository, CodeGeneratorRepository>();
         services.AddScoped<ICodeGeneratorService, CodeGeneratorService>();
         services.AddScoped<IStockRepository, StockRepository>();
-        services.AddScoped<IInventoryReceiptRepository, InventoryReceiptRepository>();
         services.AddScoped<ICustomerRepository, CustomerRepository>();
         services.AddScoped<IDealerLevelRepository, DealerLevelRepository>();
         services.AddScoped<IDealerPriceRepository, DealerPriceRepository>();
+        services.AddScoped<IImportReceiptRepository, ImportReceiptRepository>();
+        services.AddScoped<IImportReceiptDetailRepository, ImportReceiptDetailRepository>();
+        services.AddScoped<IStatusRepository, StatusRepository>();
 
 
 
@@ -44,7 +46,6 @@ public static class InfrastructureDependencyInjection
         services.AddAutoMapper(typeof(UserMappingProfile));
         services.AddAutoMapper(typeof(ProductMappingProfile));
         services.AddAutoMapper(typeof(ProductCategoryMappingProfile));
-        services.AddAutoMapper(typeof(InventoryReceiptMappingProfile));
 
         // Security
         services.AddScoped<IJwtFactory, JwtFactory>();

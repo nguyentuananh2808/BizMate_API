@@ -1,8 +1,6 @@
 ﻿using BizMate.Application.Common.Security;
 using BizMate.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection;
-using static Dapper.SqlMapper;
 
 namespace BizMate.Infrastructure.Persistence
 {
@@ -15,20 +13,6 @@ namespace BizMate.Infrastructure.Persistence
         {
             _userSession = userSession;
         }
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            base.OnModelCreating(modelBuilder);
-
-            // Vô hiệu hóa ConcurrencyToken của RowVersion (nếu EF đang hiểu nhầm)
-            modelBuilder.Entity<InventoryReceipt>()
-                .Property(x => x.RowVersion)
-                .IsConcurrencyToken(false); // Hoặc .ValueGeneratedNever();
-
-            modelBuilder.Entity<InventoryReceiptDetail>()
-                .Property(x => x.RowVersion)
-                .IsConcurrencyToken(false);
-        }
-
 
         public DbSet<User> Users => Set<User>();
         public DbSet<Store> Stores => Set<Store>();
@@ -37,8 +21,12 @@ namespace BizMate.Infrastructure.Persistence
         public DbSet<ProductCategory> ProductCategories => Set<ProductCategory>();
         public DbSet<Supplier> Suppliers => Set<Supplier>();
         public DbSet<Stock> Stocks => Set<Stock>();
-        public DbSet<InventoryReceipt> InventoryReceipts => Set<InventoryReceipt>();
-        public DbSet<InventoryReceiptDetail> InventoryReceiptDetails => Set<InventoryReceiptDetail>();
+        public DbSet<ImportReceipt> ImportReceipts => Set<ImportReceipt>();
+        public DbSet<ImportReceiptDetail> ImportReceiptDetails => Set<ImportReceiptDetail>();
+        public DbSet<ExportReceipt> ExportReceipts => Set<ExportReceipt>();
+        public DbSet<ExportReceiptDetail> ExportReceiptDetails => Set<ExportReceiptDetail>();
+        public DbSet<Order> Orders => Set<Order>();
+        public DbSet<OrderDetail> OrderDetails => Set<OrderDetail>();
         public DbSet<OtpVerification> OtpVerifications => Set<OtpVerification>();
         public DbSet<CodeSequence> CodeSequences => Set<CodeSequence>();
         public DbSet<DealerLevel> DealerLevels => Set<DealerLevel>();

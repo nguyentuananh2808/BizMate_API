@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BizMate.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250807092042_init-database")]
+    [Migration("20250819082024_init-database")]
     partial class initdatabase
     {
         /// <inheritdoc />
@@ -45,6 +45,7 @@ namespace BizMate.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("Address")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Code")
@@ -94,6 +95,8 @@ namespace BizMate.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DealerLevelId");
+
                     b.HasIndex("StoreId");
 
                     b.ToTable("Customers");
@@ -104,10 +107,6 @@ namespace BizMate.Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uuid");
@@ -120,9 +119,6 @@ namespace BizMate.Infrastructure.Migrations
 
                     b.Property<string>("Description")
                         .HasColumnType("text");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
@@ -156,10 +152,6 @@ namespace BizMate.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uuid");
 
@@ -174,9 +166,6 @@ namespace BizMate.Infrastructure.Migrations
 
                     b.Property<string>("Description")
                         .HasColumnType("text");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
@@ -210,7 +199,7 @@ namespace BizMate.Infrastructure.Migrations
                     b.ToTable("DealerPrices");
                 });
 
-            modelBuilder.Entity("BizMate.Domain.Entities.InventoryReceipt", b =>
+            modelBuilder.Entity("BizMate.Domain.Entities.ExportReceipt", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -268,14 +257,8 @@ namespace BizMate.Infrastructure.Migrations
                     b.Property<Guid>("StoreId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("SupplierName")
-                        .HasColumnType("text");
-
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("numeric");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("integer");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uuid");
@@ -283,21 +266,16 @@ namespace BizMate.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uuid");
-
                     b.HasKey("Id");
 
                     b.HasIndex("StatusId");
 
                     b.HasIndex("StoreId");
 
-                    b.HasIndex("UserId");
-
-                    b.ToTable("InventoryReceipts");
+                    b.ToTable("ExportReceipts");
                 });
 
-            modelBuilder.Entity("BizMate.Domain.Entities.InventoryReceiptDetail", b =>
+            modelBuilder.Entity("BizMate.Domain.Entities.ExportReceiptDetail", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -315,7 +293,7 @@ namespace BizMate.Infrastructure.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
-                    b.Property<Guid>("InventoryReceiptId")
+                    b.Property<Guid>("ExportReceiptId")
                         .HasColumnType("uuid");
 
                     b.Property<bool>("IsDeleted")
@@ -348,9 +326,269 @@ namespace BizMate.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("InventoryReceiptId");
+                    b.HasIndex("ExportReceiptId");
 
-                    b.ToTable("InventoryReceiptDetails");
+                    b.ToTable("ExportReceiptDetails");
+                });
+
+            modelBuilder.Entity("BizMate.Domain.Entities.ImportReceipt", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeliveryAddress")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsCancelled")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("RowVersion")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("StatusId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("StoreId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("SupplierName")
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("numeric");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StatusId");
+
+                    b.HasIndex("StoreId");
+
+                    b.ToTable("ImportReceipts");
+                });
+
+            modelBuilder.Entity("BizMate.Domain.Entities.ImportReceiptDetail", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("ImportReceiptId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ProductCode")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("RowVersion")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Unit")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ImportReceiptId");
+
+                    b.ToTable("ImportReceiptDetails");
+                });
+
+            modelBuilder.Entity("BizMate.Domain.Entities.Order", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CustomerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CustomerName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("CustomerPhone")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("CustomerType")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeliveryAddress")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("OrderDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("RowVersion")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("StatusId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("StoreId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("numeric");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("StatusId");
+
+                    b.HasIndex("StoreId");
+
+                    b.ToTable("Orders");
+                });
+
+            modelBuilder.Entity("BizMate.Domain.Entities.OrderDetail", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ProductCode")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("RowVersion")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Unit")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("numeric");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("OrderDetails");
                 });
 
             modelBuilder.Entity("BizMate.Domain.Entities.OtpVerification", b =>
@@ -787,11 +1025,17 @@ namespace BizMate.Infrastructure.Migrations
 
             modelBuilder.Entity("BizMate.Domain.Entities.Customer", b =>
                 {
+                    b.HasOne("BizMate.Domain.Entities.DealerLevel", "DealerLevel")
+                        .WithMany()
+                        .HasForeignKey("DealerLevelId");
+
                     b.HasOne("BizMate.Domain.Entities.Store", "Store")
                         .WithMany("Customers")
                         .HasForeignKey("StoreId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("DealerLevel");
 
                     b.Navigation("Store");
                 });
@@ -834,36 +1078,94 @@ namespace BizMate.Infrastructure.Migrations
                     b.Navigation("Store");
                 });
 
-            modelBuilder.Entity("BizMate.Domain.Entities.InventoryReceipt", b =>
+            modelBuilder.Entity("BizMate.Domain.Entities.ExportReceipt", b =>
                 {
-                    b.HasOne("BizMate.Domain.Entities.Status", "Statuses")
+                    b.HasOne("BizMate.Domain.Entities.Status", "Status")
                         .WithMany()
                         .HasForeignKey("StatusId");
 
                     b.HasOne("BizMate.Domain.Entities.Store", "Store")
-                        .WithMany("InventoryReceipts")
+                        .WithMany()
                         .HasForeignKey("StoreId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BizMate.Domain.Entities.User", null)
-                        .WithMany("CreatedReceipts")
-                        .HasForeignKey("UserId");
-
-                    b.Navigation("Statuses");
+                    b.Navigation("Status");
 
                     b.Navigation("Store");
                 });
 
-            modelBuilder.Entity("BizMate.Domain.Entities.InventoryReceiptDetail", b =>
+            modelBuilder.Entity("BizMate.Domain.Entities.ExportReceiptDetail", b =>
                 {
-                    b.HasOne("BizMate.Domain.Entities.InventoryReceipt", "InventoryReceipt")
+                    b.HasOne("BizMate.Domain.Entities.ExportReceipt", "ExportReceipt")
                         .WithMany("Details")
-                        .HasForeignKey("InventoryReceiptId")
+                        .HasForeignKey("ExportReceiptId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("InventoryReceipt");
+                    b.Navigation("ExportReceipt");
+                });
+
+            modelBuilder.Entity("BizMate.Domain.Entities.ImportReceipt", b =>
+                {
+                    b.HasOne("BizMate.Domain.Entities.Status", "Status")
+                        .WithMany()
+                        .HasForeignKey("StatusId");
+
+                    b.HasOne("BizMate.Domain.Entities.Store", "Store")
+                        .WithMany()
+                        .HasForeignKey("StoreId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Status");
+
+                    b.Navigation("Store");
+                });
+
+            modelBuilder.Entity("BizMate.Domain.Entities.ImportReceiptDetail", b =>
+                {
+                    b.HasOne("BizMate.Domain.Entities.ImportReceipt", "ImportReceipt")
+                        .WithMany("Details")
+                        .HasForeignKey("ImportReceiptId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ImportReceipt");
+                });
+
+            modelBuilder.Entity("BizMate.Domain.Entities.Order", b =>
+                {
+                    b.HasOne("BizMate.Domain.Entities.Customer", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId");
+
+                    b.HasOne("BizMate.Domain.Entities.Status", "Status")
+                        .WithMany()
+                        .HasForeignKey("StatusId");
+
+                    b.HasOne("BizMate.Domain.Entities.Store", "Store")
+                        .WithMany()
+                        .HasForeignKey("StoreId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("Status");
+
+                    b.Navigation("Store");
+                });
+
+            modelBuilder.Entity("BizMate.Domain.Entities.OrderDetail", b =>
+                {
+                    b.HasOne("BizMate.Domain.Entities.Order", "Order")
+                        .WithMany("Details")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
                 });
 
             modelBuilder.Entity("BizMate.Domain.Entities.Product", b =>
@@ -946,7 +1248,17 @@ namespace BizMate.Infrastructure.Migrations
                     b.Navigation("DealerPrices");
                 });
 
-            modelBuilder.Entity("BizMate.Domain.Entities.InventoryReceipt", b =>
+            modelBuilder.Entity("BizMate.Domain.Entities.ExportReceipt", b =>
+                {
+                    b.Navigation("Details");
+                });
+
+            modelBuilder.Entity("BizMate.Domain.Entities.ImportReceipt", b =>
+                {
+                    b.Navigation("Details");
+                });
+
+            modelBuilder.Entity("BizMate.Domain.Entities.Order", b =>
                 {
                     b.Navigation("Details");
                 });
@@ -960,18 +1272,11 @@ namespace BizMate.Infrastructure.Migrations
                 {
                     b.Navigation("Customers");
 
-                    b.Navigation("InventoryReceipts");
-
                     b.Navigation("Products");
 
                     b.Navigation("Suppliers");
 
                     b.Navigation("Users");
-                });
-
-            modelBuilder.Entity("BizMate.Domain.Entities.User", b =>
-                {
-                    b.Navigation("CreatedReceipts");
                 });
 #pragma warning restore 612, 618
         }

@@ -7,7 +7,6 @@
         public string PasswordHash { get; set; } = default!;
         public string PasswordSalt { get; set; } = default!;
         public string Role { get; set; } = "Owner"; // or "Staff"
-        public ICollection<InventoryReceipt> CreatedReceipts { get; set; } = new List<InventoryReceipt>();
     }
 
 }

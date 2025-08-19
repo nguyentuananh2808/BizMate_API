@@ -14,6 +14,7 @@
         public const string Customer = "customer";
         public const string DealerLevel = "dealer-level";
         public const string DealerPrice = "dealer-price";
+        public const string ImportReceipt = "import-receipt";
 
         // action
         public const string RefreshToken = "refreshtoken";

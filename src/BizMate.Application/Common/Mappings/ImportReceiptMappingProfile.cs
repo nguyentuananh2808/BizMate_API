@@ -1,0 +1,33 @@
+﻿using AutoMapper;
+using BizMate.Application.Common.Dto.CoreDto;
+using BizMate.Domain.Entities;
+using BizMate.Public.Extensions;
+
+namespace BizMate.Application.Common.Mappings
+{
+    public class ImportReceiptMappingProfile : Profile
+    {
+        public ImportReceiptMappingProfile()
+        {
+            CreateMap<ImportReceipt, ImportReceiptCoreDto>().IgnoreAllMembers()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.Code, opt => opt.MapFrom(src => src.Code))
+                .ForMember(dest => dest.StoreId, opt => opt.MapFrom(src => src.StoreId))
+                .ForMember(dest => dest.SupplierName, opt => opt.MapFrom(src => src.SupplierName))
+                .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion))
+                .ForMember(dest => dest.DeliveryAddress, opt => opt.MapFrom(src => src.DeliveryAddress))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
+                .ForMember(dest => dest.StatusId, opt => opt.MapFrom(src => src.StatusId))
+                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive));
+
+            CreateMap<ImportReceiptDetail, ImportReceiptDetailDto>().IgnoreAllMembers()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion))
+                .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.ProductId))
+                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.ProductName))
+                .ForMember(dest => dest.Code, opt => opt.MapFrom(src => src.ProductCode))
+                .ForMember(dest => dest.Unit, opt => opt.MapFrom(src => src.Unit))
+                .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Quantity));
+        }
+    }
+}

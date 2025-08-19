@@ -2,7 +2,7 @@
 
 namespace BizMate.Application.Common.Dto.CoreDto
 {
-    public class InventoryReceiptDetailDto : BaseEntity
+    public class ImportReceiptDetailDto : BaseEntity
     {
         public Guid ProductId { get; set; }
         public string ProductName { get; set; } = default!;
