@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace BizMate.Domain.Entities
+﻿namespace BizMate.Domain.Entities
 {
     public abstract class BaseCoreEntity
     {

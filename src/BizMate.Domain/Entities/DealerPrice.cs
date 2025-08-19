@@ -1,6 +1,6 @@
 ﻿namespace BizMate.Domain.Entities
 {
-    public class DealerPrice : BaseEntity
+    public class DealerPrice : Base
     {
         public Guid ProductId { get; set; }
         public Product Product { get; set; } = default!;

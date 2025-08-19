@@ -1,5 +1,4 @@
-﻿using BizMate.Api.UserCases.DealerLevel.UpdateDealerLevel;
-using BizMate.Application.UserCases.DealerLevel.Commands.UpdateDealerLevel;
+﻿using BizMate.Application.UserCases.DealerLevel.Commands.UpdateDealerLevel;
 using BizMate.Domain.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;

@@ -6,9 +6,9 @@ namespace BizMate.Application.UserCases.DealerLevel.Queries.DealerLevel
 {
     public class GetDealerLevelResponse : BaseResponse
     {
-        public DealerLevelCoreDto DealerLevel { get; }
+        public DealerLevelDetailCoreDto DealerLevel { get; }
         [JsonConstructor]
-        public GetDealerLevelResponse(DealerLevelCoreDto dealerLevel, bool success = true) : base(success)
+        public GetDealerLevelResponse(DealerLevelDetailCoreDto dealerLevel, bool success = true) : base(success)
         {
             DealerLevel = dealerLevel;
         }

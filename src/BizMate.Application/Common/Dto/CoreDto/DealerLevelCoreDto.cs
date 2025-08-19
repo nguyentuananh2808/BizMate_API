@@ -2,7 +2,7 @@
 
 namespace BizMate.Application.Common.Dto.CoreDto
 {
-    public class DealerLevelCoreDto : BaseEntity
+    public class DealerLevelCoreDto : Base
     {
         public string Name { get; set; } = default!;
         public ICollection<DealerPrice> DealerPrices { get; set; } = new List<DealerPrice>();

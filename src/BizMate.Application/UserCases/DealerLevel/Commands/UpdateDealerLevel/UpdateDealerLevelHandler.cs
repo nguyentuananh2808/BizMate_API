@@ -62,7 +62,6 @@ namespace BizMate.Application.UserCases.DealerLevel.Commands.UpdateDealerLevel
                 DealerLevel.StoreId = storeId;
                 DealerLevel.UpdatedBy = Guid.Parse(userId);
                 DealerLevel.UpdatedDate = DateTime.UtcNow;
-                DealerLevel.IsActive = request.IsActive;
                 DealerLevel.RowVersion = Guid.NewGuid();
 
                 await _DealerLevelRepository.UpdateAsync(DealerLevel);

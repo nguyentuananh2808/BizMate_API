@@ -13,6 +13,7 @@
         public const string User = "user";
         public const string Customer = "customer";
         public const string DealerLevel = "dealer-level";
+        public const string DealerPrice = "dealer-price";
 
         // action
         public const string RefreshToken = "refreshtoken";

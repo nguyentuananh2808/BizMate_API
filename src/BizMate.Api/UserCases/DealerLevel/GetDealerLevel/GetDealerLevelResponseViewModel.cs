@@ -4,8 +4,8 @@ namespace BizMate.Api.UserCases.DealerLevel.GetDealerLevel
 {
     public class GetDealerLevelResponseViewModel
     {
-        public DealerLevelCoreDto DealerLevel { get; set; }
-        public GetDealerLevelResponseViewModel(DealerLevelCoreDto dealerLevel)
+        public DealerLevelDetailCoreDto DealerLevel { get; set; }
+        public GetDealerLevelResponseViewModel(DealerLevelDetailCoreDto dealerLevel)
         {
             DealerLevel = dealerLevel;
         }

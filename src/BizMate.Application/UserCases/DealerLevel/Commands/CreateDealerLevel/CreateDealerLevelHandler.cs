@@ -68,7 +68,6 @@ namespace BizMate.Application.UserCases.DealerLevel.Commands.CreateDealerLevel
                 {
                     Id = Guid.NewGuid(),
                     StoreId = storeId,
-                    Code = DealerLevelCode,
                     Name = name,
                     CreatedBy = Guid.Parse(userId),
                 };

@@ -29,7 +29,7 @@ namespace BizMate.Application.UserCases.DealerLevel.Queries.DealerLevel
             {
                 var DealerLevel = await _DealerLevelRepository.GetByIdAsync(request.Id, cancellationToken);
 
-                var mappedDealerLevel = _mapper.Map<DealerLevelCoreDto>(DealerLevel);
+                var mappedDealerLevel = _mapper.Map<DealerLevelDetailCoreDto>(DealerLevel);
                 return new GetDealerLevelResponse(mappedDealerLevel);
             }
             catch (Exception ex)
