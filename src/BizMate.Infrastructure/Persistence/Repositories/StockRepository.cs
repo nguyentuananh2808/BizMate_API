@@ -15,11 +15,15 @@ public class StockRepository : IStockRepository
         _queryFactory = queryFactory;
     }
 
-    public async Task<Stock?> GetByStoreAndProductAsync(Guid storeId, Guid productId)
+    public async Task<List<Stock>> GetByStoreAndProductAsync(Guid storeId, List<Guid> productIds)
     {
         return await _context.Stocks
-            .FirstOrDefaultAsync(s => s.StoreId == storeId && s.ProductId == productId && !s.IsDeleted);
+            .Where(s => s.StoreId == storeId
+                     && productIds.Contains(s.ProductId)
+                     && !s.IsDeleted)
+            .ToListAsync();
     }
+
 
     public async Task AddAsync(Stock stock)
     {
@@ -27,10 +31,10 @@ public class StockRepository : IStockRepository
         await _context.SaveChangesAsync();
     }
 
-    public async Task UpdateAsync(Stock stock)
+    public async Task UpdateAsync(Stock stock, CancellationToken cancellationToken)
     {
         _context.Stocks.Update(stock);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task DeleteAsync(Guid id)

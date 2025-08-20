@@ -4,9 +4,9 @@ namespace BizMate.Application.Common.Interfaces.Repositories
 {
     public interface IStockRepository
     {
-        Task<Stock> GetByStoreAndProductAsync(Guid storeId, Guid productId);
+        Task<List<Stock>> GetByStoreAndProductAsync(Guid storeId, List<Guid> productIds);
         Task AddAsync(Stock stock);
-        Task UpdateAsync(Stock stock);
+        Task UpdateAsync(Stock stock, CancellationToken cancellationToken);
     }
 
 }

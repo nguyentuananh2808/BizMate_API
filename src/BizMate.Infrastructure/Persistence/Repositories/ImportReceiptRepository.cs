@@ -191,7 +191,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             return (results, totalCount);
         }
 
-        public async Task UpdateStatusAsync(UpdateImportReceiptStatusDto statusImportReceipt)
+        public async Task UpdateStatusAsync(UpdateImportReceiptStatusDto statusImportReceipt, CancellationToken cancellationToken)
         {
             await _context.ImportReceipts
                 .Where(r => r.StoreId == statusImportReceipt.StoreId && r.Id == statusImportReceipt.Id)
@@ -199,7 +199,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                     .SetProperty(x => x.StatusId, statusImportReceipt.StatusId)
                     .SetProperty(x => x.RowVersion, statusImportReceipt.RowVersion)
                     .SetProperty(x => x.UpdatedBy, statusImportReceipt.UpdatedBy)
-                    .SetProperty(x => x.UpdatedDate, statusImportReceipt.UpdatedDate));
+                    .SetProperty(x => x.UpdatedDate, statusImportReceipt.UpdatedDate), cancellationToken);
         }
     }
 }

@@ -15,6 +15,7 @@
         public const string DealerLevel = "dealer-level";
         public const string DealerPrice = "dealer-price";
         public const string ImportReceipt = "import-receipt";
+        public const string ExportReceipt = "export-receipt";
 
         // action
         public const string RefreshToken = "refreshtoken";

@@ -2,8 +2,6 @@
 {
     public class ExportReceipt : BaseEntity
     {
-        public DateTime Date { get; set; } = DateTime.UtcNow;
-
         public string? CustomerName { get; set; }
         public string? CustomerPhone { get; set; }
         public string? DeliveryAddress { get; set; }

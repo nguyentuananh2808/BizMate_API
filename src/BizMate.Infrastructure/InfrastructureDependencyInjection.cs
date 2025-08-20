@@ -36,6 +36,7 @@ public static class InfrastructureDependencyInjection
         services.AddScoped<ICustomerRepository, CustomerRepository>();
         services.AddScoped<IDealerLevelRepository, DealerLevelRepository>();
         services.AddScoped<IDealerPriceRepository, DealerPriceRepository>();
+        services.AddScoped<IExportReceiptRepository, ExportReceiptRepository>();
         services.AddScoped<IImportReceiptRepository, ImportReceiptRepository>();
         services.AddScoped<IImportReceiptDetailRepository, ImportReceiptDetailRepository>();
         services.AddScoped<IStatusRepository, StatusRepository>();

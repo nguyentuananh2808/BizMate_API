@@ -6,7 +6,6 @@ namespace BizMate.Application.UserCases.ImportReceipt.Queries.ImportReceipts
 {
     public class GetImportReceiptsResponse : BaseResponse
     {
-
         public IEnumerable<ImportReceiptCoreDto> ImportReceipts { get; }
         public int TotalCount { get; }
 

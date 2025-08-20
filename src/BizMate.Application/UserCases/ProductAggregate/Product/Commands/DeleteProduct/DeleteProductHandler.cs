@@ -47,7 +47,18 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Delete
                     return new DeleteProductResponse(false, "Sản phẩm không tồn tại.");
                 }
                 #region
-                var stock = await _stockRepository.GetByStoreAndProductAsync(storeId, product.Id);
+
+                var productId = new List<Guid> { product.Id };
+                var stocks = await _stockRepository.GetByStoreAndProductAsync(storeId, productId);
+
+                var stock = stocks.FirstOrDefault();
+                if (stock == null || stock.StoreId != storeId)
+                {
+                    var message = _messageService.NotExist(request.Id);
+                    _logger.LogWarning(message);
+                    return new DeleteProductResponse(false, "Sản phẩm không tồn tại trong kho.");
+                }
+
                 if (stock.Quantity >= 0)
                 {
                     var message = "Số lượng sản phẩm còn tồn kho nên không thể xóa.";
@@ -55,17 +66,6 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Delete
                     return new DeleteProductResponse(false, message);
                 }
                 #endregion
-                /*var isUsedInInventory = await _db.Query("InventoryReceiptDetails")
-                    .Where("ProductId", request.Id)
-                    .ExistsAsync();
-
-                if (isUsedInInventory)
-                {
-                    var message = _localizer["Sản phẩm đang được sử dụng trong phiếu nhập kho. Không thể xóa."];
-                    _logger.LogWarning("Không thể xóa sản phẩm {ProductId} vì đang được sử dụng", request.Id);
-                    return new DeleteProductResponse(false, message);
-                }*/
-
                 await _productRepository.DeleteAsync(request.Id);
 
                 return new DeleteProductResponse(true, "Xóa sản phẩm thành công.");
