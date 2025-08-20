@@ -18,6 +18,7 @@ namespace BizMate.Infrastructure.Persistence
                     new Status { Id = Guid.NewGuid(), Name = "Hủy", Code = "CANCELLED", Group = "Order", IsActive = true },
                     new Status { Id = Guid.NewGuid(), Name = "Hoàn thành", Code = "COMPLETED", Group = "Order", IsActive = true },
                     new Status { Id = Guid.NewGuid(), Name = "Tạo mới", Code = "NEW", Group = "ImportReceipt", IsActive = true },
+                    new Status { Id = Guid.NewGuid(), Name = "Đã duyệt", Code = "APPROVED", Group = "ImportReceipt", IsActive = true },
                 };
 
                 context.Statuses.AddRange(orderStatuses);

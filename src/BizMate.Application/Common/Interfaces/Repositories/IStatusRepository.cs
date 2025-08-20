@@ -2,6 +2,6 @@
 {
     public interface IStatusRepository
     {
-        Task<Guid> GetStatusByCode(string code,string group);
+        Task<Guid> GetIdByGroupAndCodeAsync(string code,string group);
     }
 }

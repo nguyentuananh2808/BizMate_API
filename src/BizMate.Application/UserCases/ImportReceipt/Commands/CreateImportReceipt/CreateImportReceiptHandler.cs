@@ -50,7 +50,7 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.CreateImportRecei
                 var productDict = products.ToDictionary(p => p.Id);
 
                 //get status for ImportReceipt
-                var statusId = await _statusRepository.GetStatusByCode("NEW", "ImportReceipt");
+                var statusId = await _statusRepository.GetIdByGroupAndCodeAsync("NEW", "ImportReceipt");
                 if (statusId == Guid.Empty)
                 {
                     _logger.LogError("Không tìm thấy trạng thái 'tạo mới' cho phiếu nhập hàng.");

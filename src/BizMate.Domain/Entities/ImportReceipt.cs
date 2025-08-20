@@ -7,7 +7,7 @@
 
         public decimal TotalAmount { get; set; }
 
-        public Guid? StatusId { get; set; }
+        public Guid StatusId { get; set; }
         public bool IsDraft { get; set; } = false;
         public bool IsCancelled { get; set; } = false;
 

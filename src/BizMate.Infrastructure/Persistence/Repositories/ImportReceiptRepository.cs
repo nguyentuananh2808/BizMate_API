@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore;
 using SqlKata.Execution;
 using BizMate.Application.Common.Interfaces.Repositories;
+using BizMate.Application.Common.Dto.CoreDto;
 
 namespace BizMate.Infrastructure.Persistence.Repositories
 {
@@ -190,7 +191,15 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             return (results, totalCount);
         }
 
-
-
+        public async Task UpdateStatusAsync(UpdateImportReceiptStatusDto statusImportReceipt)
+        {
+            await _context.ImportReceipts
+                .Where(r => r.StoreId == statusImportReceipt.StoreId && r.Id == statusImportReceipt.Id)
+                .ExecuteUpdateAsync(r => r
+                    .SetProperty(x => x.StatusId, statusImportReceipt.StatusId)
+                    .SetProperty(x => x.RowVersion, statusImportReceipt.RowVersion)
+                    .SetProperty(x => x.UpdatedBy, statusImportReceipt.UpdatedBy)
+                    .SetProperty(x => x.UpdatedDate, statusImportReceipt.UpdatedDate));
+        }
     }
 }

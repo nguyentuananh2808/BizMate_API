@@ -11,7 +11,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
         {
             _context = context;
         }
-        public async Task<Guid> GetStatusByCode(string code, string group)
+        public async Task<Guid> GetIdByGroupAndCodeAsync(string code, string group)
         {
             return await _context.Statuses.Where(s => s.Code == code && s.Group == group)
                   .Select(s => s.Id)
