@@ -1,6 +1,8 @@
-﻿namespace BizMate.Domain.Entities
+﻿using MediatR;
+
+namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
 {
-    public class Order : BaseEntity
+    public class CreateOrderRequest : IRequest<CreateOrderResponse>
     {
         public DateTime OrderDate { get; set; } = DateTime.UtcNow;
 
@@ -9,7 +11,6 @@
 
         // Nếu là khách sỉ thì có CustomerId
         public Guid? CustomerId { get; set; }
-        public Customer? Customer { get; set; }
 
         // Thông tin khách hàng 
         public string CustomerName { get; set; } = default!;
@@ -17,11 +18,14 @@
         public string DeliveryAddress { get; set; } = default!;
 
         public decimal TotalAmount { get; set; }
+        public string? Description { get; set; }
+        public ICollection<CreateOrderDetailRequest> Details { get; set; } = new List<CreateOrderDetailRequest>();
+    }
 
-        // Trạng thái đơn hàng
-        public Guid StatusId { get; set; }
-        public Status Status { get; set; } = default!;
-
-        public ICollection<OrderDetail> Details { get; set; } = new List<OrderDetail>();
+    public class CreateOrderDetailRequest
+    {
+        public Guid ProductId { get; set; }
+        public int Quantity { get; set; }
+        public decimal UnitPrice { get; set; }
     }
 }

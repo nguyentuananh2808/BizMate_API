@@ -39,6 +39,9 @@ public static class InfrastructureDependencyInjection
         services.AddScoped<IExportReceiptRepository, ExportReceiptRepository>();
         services.AddScoped<IImportReceiptRepository, ImportReceiptRepository>();
         services.AddScoped<IImportReceiptDetailRepository, ImportReceiptDetailRepository>();
+        services.AddScoped<IOrderDetailRepository, OrderDetailRepository>();
+        services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IStatusRepository, StatusRepository>();
 
 
@@ -47,6 +50,8 @@ public static class InfrastructureDependencyInjection
         services.AddAutoMapper(typeof(UserMappingProfile));
         services.AddAutoMapper(typeof(ProductMappingProfile));
         services.AddAutoMapper(typeof(ProductCategoryMappingProfile));
+        services.AddAutoMapper(typeof(ExportReceiptMappingProfile));
+        services.AddAutoMapper(typeof(ImportReceiptMappingProfile));
 
         // Security
         services.AddScoped<IJwtFactory, JwtFactory>();

@@ -16,6 +16,7 @@
         public const string DealerPrice = "dealer-price";
         public const string ImportReceipt = "import-receipt";
         public const string ExportReceipt = "export-receipt";
+        public const string Notification = "notification";
 
         // action
         public const string RefreshToken = "refreshtoken";

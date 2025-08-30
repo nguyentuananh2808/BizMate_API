@@ -32,5 +32,6 @@ namespace BizMate.Infrastructure.Persistence
         public DbSet<DealerLevel> DealerLevels => Set<DealerLevel>();
         public DbSet<DealerPrice> DealerPrices => Set<DealerPrice>();
         public DbSet<Status> Statuses => Set<Status>();
+        public DbSet<Notification> Notifications => Set<Notification>();
     }
 }

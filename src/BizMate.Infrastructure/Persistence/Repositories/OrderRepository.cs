@@ -1,38 +1,35 @@
-﻿using BizMate.Domain.Entities;
+﻿using BizMate.Application.Common.Interfaces.Repositories;
+using BizMate.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using SqlKata.Execution;
-using BizMate.Application.Common.Interfaces.Repositories;
-using BizMate.Application.Common.Dto.CoreDto;
 
 namespace BizMate.Infrastructure.Persistence.Repositories
 {
-    public class ImportReceiptRepository : IImportReceiptRepository
+    public class OrderRepository : IOrderRepository
     {
         private readonly AppDbContext _context;
-        
-        public ImportReceiptRepository(AppDbContext context)
+        public OrderRepository(AppDbContext context)
         {
             _context = context;
         }
-
-        public async Task AddAsync(ImportReceipt receipt, CancellationToken cancellationToken)
+        public async Task AddAsync(Order receipt, CancellationToken cancellationToken)
         {
 
-            await _context.ImportReceipts.AddAsync(receipt);
+            await _context.Orders.AddAsync(receipt);
             await _context.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task UpdateAsync(ImportReceipt receipt)
+        public async Task UpdateAsync(Order receipt)
         {
             // Update Receipt
-            _context.ImportReceipts.Update(receipt);
+            _context.Orders.Update(receipt);
 
             // Update Details
             foreach (var detail in receipt.Details)
             {
                 if (_context.Entry(detail).State == EntityState.Detached)
                 {
-                    _context.ImportReceiptDetails.Attach(detail);
+                    _context.OrderDetails.Attach(detail);
                 }
 
                 _context.Entry(detail).State = EntityState.Modified;
@@ -45,51 +42,52 @@ namespace BizMate.Infrastructure.Persistence.Repositories
 
 
         public async Task DeleteAsync(Guid id)
-        {   
-            var receipt = await _context.ImportReceipts.Include(r => r.Details).FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
+        {
+            var receipt = await _context.Orders.Include(r => r.Details).FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
             if (receipt != null)
             {
                 receipt.IsDeleted = true;
                 receipt.DeletedAt = DateTime.UtcNow;
-                _context.ImportReceipts.Update(receipt);
+                _context.Orders.Update(receipt);
                 await _context.SaveChangesAsync();
             }
         }
 
-        public async Task<ImportReceipt?> GetByIdAsync(Guid id)
+        public async Task<Order?> GetByIdAsync(Guid id)
         {
-            return await _context.ImportReceipts
+            return await _context.Orders
                 .AsNoTracking()
                 .Include(r => r.Details)
                 .Include(r => r.Status)
                 .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
         }
 
-        public async Task<List<ImportReceipt>> SearchReceipts(Guid storeId, int? type, string? keyword, QueryFactory queryFactory)
+        public async Task<List<Order>> SearchReceipts(Guid storeId, int? type, string? keyword, QueryFactory queryFactory)
         {
-            var query = queryFactory.Query("ImportReceipts as r")
+            var query = queryFactory.Query("Orders as r")
                 .Where("r.StoreId", storeId)
                 .WhereFalse("r.IsDeleted");
 
             if (type.HasValue)
-                query.Where("r.Type", type.Value);
+                query.Where("r.CustomerType", type.Value);
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 var keywordLower = keyword.ToLower();
                 query.Where(q =>
                     q.WhereRaw(@"LOWER(r.""Code"") LIKE ?", $"%{keywordLower}%")
-                     .OrWhereRaw(@"LOWER(r.""SupplierName"") LIKE ?", $"%{keywordLower}%"));
+                     .OrWhereRaw(@"LOWER(r.""CustomerName"") LIKE ?", $"%{keywordLower}%")
+                     .OrWhereRaw(@"LOWER(r.""CustomerPhone"") LIKE ?", $"%{keywordLower}%"));
             }
 
-            var result = await query.GetAsync<ImportReceipt>();
+            var result = await query.GetAsync<Order>();
             return result.ToList();
         }
 
-        public async Task<(List<ImportReceipt> Receipts, int TotalCount)> SearchReceiptsWithPaging(
+        public async Task<(List<Order> Receipts, int TotalCount)> SearchReceiptsWithPaging(
     Guid storeId, DateTime? dateFrom, DateTime? dateTo, string? statusCode, string? keyword, int pageIndex, int pageSize, QueryFactory queryFactory)
         {
-            var baseQuery = queryFactory.Query("ImportReceipts as r")
+            var baseQuery = queryFactory.Query("Orders as r")
                 .LeftJoin("Statuses as s", "r.StatusId", "s.Id")
                 .Where("r.StoreId", storeId)
                 .WhereFalse("r.IsDeleted");
@@ -100,7 +98,8 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                 var keywordLower = keyword.ToLower();
                 baseQuery.Where(q =>
                     q.WhereRaw(@"LOWER(r.""Code"") LIKE ?", $"%{keywordLower}%")
-                     .OrWhereRaw(@"LOWER(r.""SupplierName"") LIKE ?", $"%{keywordLower}%"));
+                     .OrWhereRaw(@"LOWER(r.""CustomerName"") LIKE ?", $"%{keywordLower}%")
+                     .OrWhereRaw(@"LOWER(r.""CustomerPhone"") LIKE ?", $"%{keywordLower}%"));
             }
 
             if (dateFrom.HasValue)
@@ -122,18 +121,18 @@ namespace BizMate.Infrastructure.Persistence.Repositories
 
             var results = rows.Select(row =>
             {
-                var receipt = new ImportReceipt
+                var receipt = new Order
                 {
                     Id = row.Id,
                     StoreId = row.StoreId,
                     Code = row.Code,
-                    SupplierName = row.SupplierName,
+                    CustomerName = row.CustomerName,
+                    CustomerType = row.CustomerType,
+                    CustomerPhone = row.CustomerPhone,
+                    CustomerId = row.CustomerId,
                     DeliveryAddress = row.DeliveryAddress,
                     TotalAmount = row.TotalAmount,
                     StatusId = row.StatusId,
-                    IsDraft = row.IsDraft,
-                    IsCancelled = row.IsCancelled,
-
                     Status = row.Status_Id != null
                         ? new Status
                         {
@@ -149,15 +148,16 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             return (results, totalCount);
         }
 
-        public async Task UpdateStatusAsync(UpdateImportReceiptStatusDto statusImportReceipt, CancellationToken cancellationToken)
-        {
-            await _context.ImportReceipts
-                .Where(r => r.StoreId == statusImportReceipt.StoreId && r.Id == statusImportReceipt.Id)
-                .ExecuteUpdateAsync(r => r
-                    .SetProperty(x => x.StatusId, statusImportReceipt.StatusId)
-                    .SetProperty(x => x.RowVersion, statusImportReceipt.RowVersion)
-                    .SetProperty(x => x.UpdatedBy, statusImportReceipt.UpdatedBy)
-                    .SetProperty(x => x.UpdatedDate, statusImportReceipt.UpdatedDate), cancellationToken);
-        }
+        //public async Task UpdateStatusAsync(UpdateOrderStatusDto statusOrder, CancellationToken cancellationToken)
+        //{
+        //    await _context.Orders
+        //        .Where(r => r.StoreId == statusOrder.StoreId && r.Id == statusOrder.Id)
+        //        .ExecuteUpdateAsync(r => r
+        //            .SetProperty(x => x.StatusId, statusOrder.StatusId)
+        //            .SetProperty(x => x.RowVersion, statusOrder.RowVersion)
+        //            .SetProperty(x => x.UpdatedBy, statusOrder.UpdatedBy)
+        //            .SetProperty(x => x.UpdatedDate, statusOrder.UpdatedDate), cancellationToken);
+        //}
+
     }
 }

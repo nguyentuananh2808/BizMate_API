@@ -1,4 +1,5 @@
 ﻿using BizMate.Application.Common.Interfaces.Repositories;
+using BizMate.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace BizMate.Infrastructure.Persistence.Repositories
@@ -16,6 +17,12 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             return await _context.Statuses.Where(s => s.Code == code && s.Group == group)
                   .Select(s => s.Id)
                   .FirstOrDefaultAsync();
+        }
+
+        public async Task<Status?> GetIdById(Guid id, CancellationToken cancellation)
+        {
+            return await _context.Statuses
+                .FirstOrDefaultAsync(s => s.Id == id, cancellation);
         }
     }
 }

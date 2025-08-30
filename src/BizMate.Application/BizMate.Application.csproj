@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <Folder Include="UserCases\InventoryReceipt\Queries\" />
+    <Folder Include="UserCases\Order\Queries\" />
   </ItemGroup>
 
   <ItemGroup>

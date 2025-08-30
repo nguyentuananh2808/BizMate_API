@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using BizMate.Application.Common.Interfaces.Repositories;
+﻿using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Security;
 using MediatR;
@@ -16,7 +15,6 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateImportRecei
         private readonly IImportReceiptRepository _importReceiptRepository;
         private readonly IUserSession _userSession;
         private readonly IProductRepository _productRepository;
-        private readonly QueryFactory _db;
         private readonly ILogger<UpdateImportReceiptHandler> _logger;
 
         #region constructor
@@ -26,7 +24,6 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateImportRecei
             IAppMessageService messageService,
             IUserSession userSession,
             IImportReceiptRepository ImportReceiptRepository,
-            QueryFactory db,
             ILogger<UpdateImportReceiptHandler> logger)
         {
             _detailRepository = detailRepository;
@@ -34,7 +31,6 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateImportRecei
             _productRepository = productRepository;
             _userSession = userSession;
             _importReceiptRepository = ImportReceiptRepository;
-            _db = db;
             _logger = logger;
         }
         #endregion
@@ -42,7 +38,6 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateImportRecei
         {
             try
             {
-                var storeId = _userSession.StoreId;
                 var userId = _userSession.UserId;
 
                 #region check ImportReceipt exist
@@ -66,6 +61,7 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateImportRecei
                 importReceipt.DeliveryAddress = request.DeliveryAddress;
                 importReceipt.Description = request.Description;
                 importReceipt.UpdatedDate = DateTime.UtcNow;
+                importReceipt.UpdatedBy = Guid.Parse(userId);
                 importReceipt.RowVersion = Guid.NewGuid();
 
                 // Xóa và thêm lại chi tiết
