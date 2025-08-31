@@ -7,12 +7,12 @@ using _Customer = BizMate.Domain.Entities.Customer;
 using BizMate.Application.Common.Security;
 using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Dto.CoreDto;
+using BizMate.Public.Message;
 
 namespace BizMate.Application.UserCases.CustomerAggregate.Customer.Commands.CreateCustomer
 {
     public class CreateCustomerHandler : IRequestHandler<CreateCustomerRequest, CreateCustomerResponse>
     {
-        private readonly IAppMessageService _messageService;
         private readonly ICustomerRepository _CustomerRepository;
         private readonly ICodeGeneratorService _codeGeneratorService;
         private readonly IUserSession _userSession;
@@ -22,7 +22,6 @@ namespace BizMate.Application.UserCases.CustomerAggregate.Customer.Commands.Crea
 
         #region constructor
         public CreateCustomerHandler(
-            IAppMessageService messageService,
             ICodeGeneratorService codeGeneratorService,
             IUserSession userSession,
             ICustomerRepository CustomerRepository,
@@ -30,7 +29,6 @@ namespace BizMate.Application.UserCases.CustomerAggregate.Customer.Commands.Crea
             ILogger<CreateCustomerHandler> logger,
             IMapper mapper)
         {
-            _messageService = messageService;
             _codeGeneratorService = codeGeneratorService;
             _userSession = userSession;
             _CustomerRepository = CustomerRepository;
@@ -57,9 +55,9 @@ namespace BizMate.Application.UserCases.CustomerAggregate.Customer.Commands.Crea
 
                 if (existingCustomer.Any())
                 {
-                    var message = _messageService.DuplicateData(name);
+                    var message = ValidationMessage.LocalizedStrings.AlreadyExist;
                     _logger.LogWarning(message);
-                    return new CreateCustomerResponse(false, $"Khách hàng {name} đã tồn tại.");
+                    return new CreateCustomerResponse(false, message);
                 }
                 #endregion
 

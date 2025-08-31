@@ -4,12 +4,12 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using SqlKata.Execution;
 using BizMate.Application.Common.Interfaces;
+using BizMate.Public.Message;
 
 namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.DeleteProduct
 {
     public class DeleteProductHandler : IRequestHandler<DeleteProductRequest, DeleteProductResponse>
     {
-        private readonly IAppMessageService _messageService;
         private readonly IProductRepository _productRepository;
         private readonly IUserSession _userSession;
         private readonly IStockRepository _stockRepository;
@@ -19,14 +19,12 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Delete
         #region constructor
         public DeleteProductHandler(
             IStockRepository stockRepository,
-            IAppMessageService messageService,
             IUserSession userSession,
             IProductRepository productRepository,
             QueryFactory db,
             ILogger<DeleteProductHandler> logger)
         {
             _stockRepository = stockRepository;
-            _messageService = messageService;
             _userSession = userSession;
             _productRepository = productRepository;
             _db = db;
@@ -42,9 +40,9 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Delete
                 var product = await _productRepository.GetByIdAsync(request.Id);
                 if (product == null || product.StoreId != storeId)
                 {
-                    var message = _messageService.NotExist(request.Id);
+                    var message = ValidationMessage.LocalizedStrings.DataNotExist;
                     _logger.LogWarning(message);
-                    return new DeleteProductResponse(false, "Sản phẩm không tồn tại.");
+                    return new DeleteProductResponse(false, message);
                 }
                 #region
 

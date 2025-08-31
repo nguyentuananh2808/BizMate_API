@@ -7,12 +7,12 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using _DealerLevel = BizMate.Domain.Entities.DealerLevel;
 using SqlKata.Execution;
+using BizMate.Public.Message;
 
 namespace BizMate.Application.UserCases.DealerLevel.Commands.CreateDealerLevel
 {
     public class CreateDealerLevelHandler : IRequestHandler<CreateDealerLevelRequest, CreateDealerLevelResponse>
     {
-        private readonly IAppMessageService _messageService;
         private readonly IDealerLevelRepository _DealerLevelRepository;
         private readonly ICodeGeneratorService _codeGeneratorService;
         private readonly IUserSession _userSession;
@@ -22,7 +22,6 @@ namespace BizMate.Application.UserCases.DealerLevel.Commands.CreateDealerLevel
 
         #region constructor
         public CreateDealerLevelHandler(
-            IAppMessageService messageService,
             ICodeGeneratorService codeGeneratorService,
             IUserSession userSession,
             IDealerLevelRepository dealerLevelRepository,
@@ -30,7 +29,6 @@ namespace BizMate.Application.UserCases.DealerLevel.Commands.CreateDealerLevel
             ILogger<CreateDealerLevelHandler> logger,
             IMapper mapper)
         {
-            _messageService = messageService;
             _codeGeneratorService = codeGeneratorService;
             _userSession = userSession;
             _DealerLevelRepository = dealerLevelRepository;
@@ -54,9 +52,9 @@ namespace BizMate.Application.UserCases.DealerLevel.Commands.CreateDealerLevel
 
                 if (existingDealerLevel.Any())
                 {
-                    var message = _messageService.DuplicateData(name);
+                    var message = ValidationMessage.LocalizedStrings.AlreadyExist;
                     _logger.LogWarning(message);
-                    return new CreateDealerLevelResponse(false, $"Khách hàng {name} đã tồn tại.");
+                    return new CreateDealerLevelResponse(false, message);
                 }
                 #endregion
 

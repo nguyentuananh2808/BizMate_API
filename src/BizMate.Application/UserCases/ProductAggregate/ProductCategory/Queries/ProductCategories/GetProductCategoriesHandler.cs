@@ -1,12 +1,10 @@
 ﻿using AutoMapper;
 using BizMate.Application.Common.Dto.CoreDto;
-using BizMate.Application.Common.Dto.UserAggregate;
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Security;
 using BizMate.Application.UserCases.ProductAggregate.ProductCategory.Queries.ProductCategories;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using SqlKata.Execution;
 
 namespace BizMate.Application.UserCases.ProductAggregate.Product.Queries.ProductCategories
 {

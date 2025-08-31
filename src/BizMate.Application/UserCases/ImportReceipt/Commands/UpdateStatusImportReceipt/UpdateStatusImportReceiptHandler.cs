@@ -1,8 +1,8 @@
 ﻿using BizMate.Application.Common.Dto.CoreDto;
-using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Security;
 using BizMate.Domain.Entities;
+using BizMate.Public.Message;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -13,7 +13,6 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateStatusImpor
     {
         private readonly IStatusRepository _statusRepository;
         private readonly IStockRepository _stockRepository;
-        private readonly IAppMessageService _messageService;
         private readonly IImportReceiptRepository _importReceiptRepository;
         private readonly IUserSession _userSession;
         private readonly ILogger<UpdateStatusImportReceiptHandler> _logger;
@@ -22,14 +21,12 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateStatusImpor
         public UpdateStatusImportReceiptHandler(
             IStockRepository stockRepository,
             IStatusRepository statusRepository,
-            IAppMessageService messageService,
             IUserSession userSession,
             IImportReceiptRepository importReceiptRepository,
             ILogger<UpdateStatusImportReceiptHandler> logger)
         {
             _stockRepository = stockRepository;
             _statusRepository = statusRepository;
-            _messageService = messageService;
             _userSession = userSession;
             _importReceiptRepository = importReceiptRepository;
             _logger = logger;
@@ -48,7 +45,7 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateStatusImpor
                 var importReceipt = await _importReceiptRepository.GetByIdAsync(request.Id);
                 if (importReceipt == null)
                 {
-                    var message = _messageService.NotExist(request.Id.ToString());
+                    var message = ValidationMessage.LocalizedStrings.DataNotExist;
                     _logger.LogWarning(message);
                     return new UpdateStatusImportReceiptResponse(false, "Phiếu nhập kho không tồn tại.");
                 }
@@ -57,7 +54,9 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateStatusImpor
                 #region check rowversion
                 if (importReceipt.RowVersion != request.RowVersion)
                 {
-                    return new UpdateStatusImportReceiptResponse(false, "Dữ liệu đã bị thay đổi bởi người khác. Vui lòng tải lại.");
+                    var message = ValidationMessage.LocalizedStrings.NotValidRowversion;
+                    _logger.LogWarning(message);
+                    return new UpdateStatusImportReceiptResponse(false, message);
                 }
                 #endregion
 
@@ -65,7 +64,7 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateStatusImpor
                 var statusId = await _statusRepository.GetIdByGroupAndCodeAsync(request.Code, "ImportReceipt");
                 if (statusId == Guid.Empty)
                 {
-                    var message = _messageService.NotExist(request.Code);
+                    var message = ValidationMessage.LocalizedStrings.DataNotExist2;
                     _logger.LogWarning(message);
                     return new UpdateStatusImportReceiptResponse(false, "Trạng thái không tồn tại.");
                 }
@@ -74,9 +73,9 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateStatusImpor
                 #region check role
                 if (role == "Staff" && request.Code == "APPROVED")
                 {
-                    var message = _messageService.Forbidden();
+                    var message = ValidationMessage.LocalizedStrings.RoleWithoutAuthority;
                     _logger.LogWarning(message);
-                    return new UpdateStatusImportReceiptResponse(false, "Bạn không có quyền duyệt phiếu nhập kho.");
+                    return new UpdateStatusImportReceiptResponse(false, message);
                 }
                 #endregion
 

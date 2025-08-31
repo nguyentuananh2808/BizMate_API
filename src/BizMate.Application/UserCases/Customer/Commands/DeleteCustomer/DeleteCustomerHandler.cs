@@ -3,24 +3,22 @@ using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Security;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using BizMate.Public.Message;
 
 namespace BizMate.Application.UserCases.Customer.Commands.DeleteCustomer
 {
     public class DeleteCustomerHandler : IRequestHandler<DeleteCustomerRequest, DeleteCustomerResponse>
     {
-        private readonly IAppMessageService _messageService;
         private readonly ICustomerRepository _CustomerRepository;
         private readonly IUserSession _userSession;
         private readonly ILogger<DeleteCustomerHandler> _logger;
 
         #region constructor
         public DeleteCustomerHandler(
-            IAppMessageService messageService,
             IUserSession userSession,
             ICustomerRepository CustomerRepository,
             ILogger<DeleteCustomerHandler> logger)
         {
-            _messageService = messageService;
             _userSession = userSession;
             _CustomerRepository = CustomerRepository;
             _logger = logger;
@@ -35,9 +33,9 @@ namespace BizMate.Application.UserCases.Customer.Commands.DeleteCustomer
                 var Customer = await _CustomerRepository.GetByIdAsync(request.Id);
                 if (Customer == null || Customer.StoreId != storeId)
                 {
-                    var message = _messageService.NotExist(request.Id);
+                    var message = ValidationMessage.LocalizedStrings.DataNotExist;
                     _logger.LogWarning(message);
-                    return new DeleteCustomerResponse(false, "Khách hàng không tồn tại.");
+                    return new DeleteCustomerResponse(false, message);
                 }
 
                 await _CustomerRepository.DeleteAsync(request.Id);

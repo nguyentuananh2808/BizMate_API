@@ -7,12 +7,12 @@ using AutoMapper;
 using _Product = BizMate.Domain.Entities.Product;
 using BizMate.Application.Common.Security;
 using BizMate.Application.Common.Interfaces;
+using BizMate.Public.Message;
 
 namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.CreateProduct
 {
     public class CreateProductHandler : IRequestHandler<CreateProductRequest, CreateProductResponse>
     {
-        private readonly IAppMessageService _messageService;
         private readonly IProductRepository _productRepository;
         private readonly ICodeGeneratorService _codeGeneratorService;
         private readonly IUserSession _userSession;
@@ -22,7 +22,6 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Create
 
         #region constructor
         public CreateProductHandler(
-            IAppMessageService messageService,
             ICodeGeneratorService codeGeneratorService,
             IUserSession userSession,
             IProductRepository productRepository,
@@ -30,7 +29,6 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Create
             ILogger<CreateProductHandler> logger,
             IMapper mapper)
         {
-            _messageService = messageService;
             _codeGeneratorService = codeGeneratorService;
             _userSession = userSession;
             _productRepository = productRepository;
@@ -54,9 +52,9 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Create
 
                 if (existingProduct.Any())
                 {
-                    var message = _messageService.DuplicateData(request.Name);
+                    var message = ValidationMessage.LocalizedStrings.AlreadyExist;
                     _logger.LogWarning(message);
-                    return new CreateProductResponse(false, $"Sản phẩm {request.Name} đã tồn tại.");
+                    return new CreateProductResponse(false, message);
                 }
                 #endregion
 
@@ -68,7 +66,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Create
                 {
                     Id = Guid.NewGuid(),
                     Code = productCode,
-                    Name = request.Name,
+                    Name = request.Name.Trim(),
                     Unit = request.Unit,
                     ImageUrl = request.ImageUrl,
                     StoreId = storeId,

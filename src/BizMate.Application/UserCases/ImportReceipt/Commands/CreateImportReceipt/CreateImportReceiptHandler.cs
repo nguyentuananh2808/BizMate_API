@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using _ImportReceipt = BizMate.Domain.Entities.ImportReceipt;
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Domain.Entities;
+using BizMate.Public.Message;
 
 namespace BizMate.Application.UserCases.ImportReceipt.Commands.CreateImportReceipt
 {
@@ -53,8 +54,9 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.CreateImportRecei
                 var statusId = await _statusRepository.GetIdByGroupAndCodeAsync("NEW", "ImportReceipt");
                 if (statusId == Guid.Empty)
                 {
-                    _logger.LogError("Không tìm thấy trạng thái 'tạo mới' cho phiếu nhập hàng.");
-                    return new CreateImportReceiptResponse(false, "Không thể tạo phiếu nhập hàng. Trạng thái không hợp lệ.");
+                    var message = ValidationMessage.LocalizedStrings.DataNotExist;
+                    _logger.LogError(message);
+                    return new CreateImportReceiptResponse(false, message);
                 }
                 var receiptCode = await _codeGeneratorService.GenerateCodeAsync("#NK");
 

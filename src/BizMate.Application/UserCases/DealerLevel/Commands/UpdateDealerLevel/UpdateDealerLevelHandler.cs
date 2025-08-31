@@ -1,36 +1,29 @@
 ﻿using AutoMapper;
 using BizMate.Application.Common.Dto.CoreDto;
 using BizMate.Application.Common.Interfaces.Repositories;
-using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Security;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using SqlKata.Execution;
+using BizMate.Public.Message;
 
 namespace BizMate.Application.UserCases.DealerLevel.Commands.UpdateDealerLevel
 {
     public class UpdateDealerLevelHandler : IRequestHandler<UpdateDealerLevelRequest, UpdateDealerLevelResponse>
     {
-        private readonly IAppMessageService _messageService;
         private readonly IDealerLevelRepository _DealerLevelRepository;
         private readonly IUserSession _userSession;
-        private readonly QueryFactory _db;
         private readonly ILogger<UpdateDealerLevelHandler> _logger;
         private readonly IMapper _mapper;
 
         #region constructor
         public UpdateDealerLevelHandler(
-            IAppMessageService messageService,
             IUserSession userSession,
             IDealerLevelRepository DealerLevelRepository,
-            QueryFactory db,
             ILogger<UpdateDealerLevelHandler> logger,
             IMapper mapper)
         {
-            _messageService = messageService;
             _userSession = userSession;
             _DealerLevelRepository = DealerLevelRepository;
-            _db = db;
             _logger = logger;
             _mapper = mapper;
         }
@@ -46,19 +39,23 @@ namespace BizMate.Application.UserCases.DealerLevel.Commands.UpdateDealerLevel
                 var DealerLevel = await _DealerLevelRepository.GetByIdAsync(request.Id);
                 if (DealerLevel == null)
                 {
-                    var message = _messageService.NotExist(request.Id.ToString());
+                    var message = ValidationMessage.LocalizedStrings.DataNotExist;
                     _logger.LogWarning(message);
-                    return new UpdateDealerLevelResponse(false, "Bảng giá theo đại lý không tồn tại.");
+                    return new UpdateDealerLevelResponse(false, message);
                 }
                 #endregion
 
                 #region Check rowversion
                 if (DealerLevel.RowVersion != request.RowVersion)
-                    return new UpdateDealerLevelResponse(false, "Dữ liệu đã bị thay đổi bởi người khác. Vui lòng tải lại.");
+                {
+                    var message = ValidationMessage.LocalizedStrings.NotValidRowversion;
+                    _logger.LogWarning(message);
+                    return new UpdateDealerLevelResponse(false, message);
+                }
                 #endregion
 
                 #region update data
-                DealerLevel.Name = request.Name;
+                DealerLevel.Name = request.Name.Trim();
                 DealerLevel.StoreId = storeId;
                 DealerLevel.UpdatedBy = Guid.Parse(userId);
                 DealerLevel.UpdatedDate = DateTime.UtcNow;

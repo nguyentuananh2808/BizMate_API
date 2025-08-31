@@ -6,35 +6,29 @@ using BizMate.Application.Common.Security;
 using MediatR;
 using _DealerPrice = BizMate.Domain.Entities.DealerPrice;
 using Microsoft.Extensions.Logging;
-using SqlKata.Execution;
+using BizMate.Public.Message;
 
 namespace BizMate.Application.UserCases.DealerPrice.Commands.CreateDealerPrice
 {
     public class CreateDealerPriceHandler : IRequestHandler<CreateDealerPriceRequest, CreateDealerPriceResponse>
     {
-        private readonly IAppMessageService _messageService;
         private readonly IDealerPriceRepository _DealerPriceRepository;
         private readonly ICodeGeneratorService _codeGeneratorService;
         private readonly IUserSession _userSession;
-        private readonly QueryFactory _db;
         private readonly ILogger<CreateDealerPriceHandler> _logger;
         private readonly IMapper _mapper;
 
         #region constructor
         public CreateDealerPriceHandler(
-            IAppMessageService messageService,
             ICodeGeneratorService codeGeneratorService,
             IUserSession userSession,
             IDealerPriceRepository DealerPriceRepository,
-            QueryFactory db,
             ILogger<CreateDealerPriceHandler> logger,
             IMapper mapper)
         {
-            _messageService = messageService;
             _codeGeneratorService = codeGeneratorService;
             _userSession = userSession;
             _DealerPriceRepository = DealerPriceRepository;
-            _db = db;
             _logger = logger;
             _mapper = mapper;
         }
@@ -54,9 +48,9 @@ namespace BizMate.Application.UserCases.DealerPrice.Commands.CreateDealerPrice
 
                 if (existingDealerPrice != null)
                 {
-                    //var message = _messageService.DuplicateData(existingDealerPrice);
-                    //_logger.LogWarning(message);
-                    return new CreateDealerPriceResponse(false, $"Giá của sản phẩm và đại lý đã tồn tại.");
+                    var message = ValidationMessage.LocalizedStrings.AlreadyExist;
+                    _logger.LogWarning(message);
+                    return new CreateDealerPriceResponse(false, message);
                 }
                 #endregion
 

@@ -1,8 +1,8 @@
 ﻿using AutoMapper;
 using BizMate.Application.Common.Dto.UserAggregate;
-using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Security;
+using BizMate.Public.Message;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using SqlKata.Execution;
@@ -11,7 +11,6 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Update
 {
     public class UpdateProductHandler : IRequestHandler<UpdateProductRequest, UpdateProductResponse>
     {
-        private readonly IAppMessageService _messageService;
         private readonly IProductRepository _productRepository;
         private readonly IUserSession _userSession;
         private readonly QueryFactory _db;
@@ -20,14 +19,12 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Update
 
         #region constructor
         public UpdateProductHandler(
-            IAppMessageService messageService,
             IUserSession userSession,
             IProductRepository productRepository,
             QueryFactory db,
             ILogger<UpdateProductHandler> logger,
             IMapper mapper)
         {
-            _messageService = messageService;
             _userSession = userSession;
             _productRepository = productRepository;
             _db = db;
@@ -46,29 +43,33 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Update
                 var product = await _productRepository.GetByIdAsync(request.Id);
                 if (product == null)
                 {
-                    var message = _messageService.NotExist(request.Id.ToString());
+                    var message = ValidationMessage.LocalizedStrings.DataNotExist;
                     _logger.LogWarning(message);
-                    return new UpdateProductResponse(false, "Sản phẩm không tồn tại.");
+                    return new UpdateProductResponse(false, message);
                 }
                 #endregion
 
                 #region Check rowversion
                 if (product.RowVersion != request.RowVersion)
-                    return new UpdateProductResponse(false, "Dữ liệu đã bị thay đổi bởi người khác. Vui lòng tải lại.");
+                {
+                    var message = ValidationMessage.LocalizedStrings.NotValidRowversion;
+                    _logger.LogWarning(message);
+                    return new UpdateProductResponse(false, message);
+                }
                 #endregion
 
                 #region Check for duplicate product names in the same store and supplier (except yourself)
                 var duplicateProducts = await _productRepository.SearchProducts(storeId, request.SupplierId, request.Name, _db);
                 if (duplicateProducts.Any(p => p.Id != request.Id))
                 {
-                    var message = _messageService.DuplicateData(request.Name);
+                    var message = ValidationMessage.LocalizedStrings.DataDuplicate;
                     _logger.LogWarning(message);
-                    return new UpdateProductResponse(false, $"Sản phẩm {request.Name} đã tồn tại.");
+                    return new UpdateProductResponse(false, message);
                 }
                 #endregion
 
                 #region update data
-                product.Name = request.Name;
+                product.Name = request.Name.Trim();
                 product.Unit = request.Unit;
                 product.ImageUrl = request.ImageUrl;
                 product.Description = request.Description;

@@ -3,6 +3,7 @@ using BizMate.Application.Common.Dto.CoreDto;
 using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Security;
+using BizMate.Public.Message;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using _ProductCategory = BizMate.Domain.Entities.ProductCategory;
@@ -12,21 +13,19 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductCategory.Command
     public class CreateProductCategoryHandler : IRequestHandler<CreateProductCategoryRequest, CreateProductCategoryResponse>
     {
         private readonly IProductCategoryRepository _productCategoryRepository;
-        private readonly IAppMessageService _messageService;
         private readonly IMapper _mapper;
         private readonly ILogger<CreateProductCategoryHandler> _logger;
         private readonly IUserSession _userSession;
         private readonly ICodeGeneratorService _codeGeneratorService;
         #region constructor
         public CreateProductCategoryHandler(IMapper mapper, IProductCategoryRepository productCategoryRepository,
-          ILogger<CreateProductCategoryHandler> logger, IUserSession userSession, ICodeGeneratorService codeGeneratorService, IAppMessageService messageService)
+          ILogger<CreateProductCategoryHandler> logger, IUserSession userSession, ICodeGeneratorService codeGeneratorService)
         {
             _mapper = mapper;
             _productCategoryRepository = productCategoryRepository;
             _codeGeneratorService = codeGeneratorService;
             _userSession = userSession;
             _productCategoryRepository = productCategoryRepository;
-            _messageService = messageService;
             _logger = logger;
         }
 
@@ -50,9 +49,9 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductCategory.Command
 
                 if (categoryDb != null)
                 {
-                    var message = _messageService.DuplicateData(nameProductCategory);
+                    var message = ValidationMessage.LocalizedStrings.AlreadyExist;
                     _logger.LogWarning(message);
-                    return new CreateProductCategoryResponse(null, false, $"Loại sản phẩm {nameProductCategory} đã tồn tại.");
+                    return new CreateProductCategoryResponse(null, false, message);
                 }
                 #endregion
                 #region create product category

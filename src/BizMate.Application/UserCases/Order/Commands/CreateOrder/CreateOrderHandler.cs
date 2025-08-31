@@ -5,6 +5,7 @@ using BizMate.Domain.Entities;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using _Order = BizMate.Domain.Entities.Order;
+using BizMate.Public.Message;
 
 namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
 {
@@ -53,8 +54,9 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
                 var statusId = await _statusRepository.GetIdByGroupAndCodeAsync("NEW", "Order");
                 if (statusId == Guid.Empty)
                 {
-                    _logger.LogError("Không tìm thấy trạng thái 'tạo mới' cho đơn hàng.");
-                    return new CreateOrderResponse(false, "Không thể tạo đơn hàng. Trạng thái không hợp lệ.");
+                    var message = ValidationMessage.LocalizedStrings.DataNotExist;
+                    _logger.LogWarning(message);
+                    return new CreateOrderResponse(false, message);
                 }
                 var receiptCode = await _codeGeneratorService.GenerateCodeAsync("#NK");
 

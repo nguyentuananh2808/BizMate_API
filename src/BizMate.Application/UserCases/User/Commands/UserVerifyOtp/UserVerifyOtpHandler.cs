@@ -7,7 +7,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using AutoMapper;
 using _User = BizMate.Domain.Entities.User;
-using Microsoft.EntityFrameworkCore;
+using BizMate.Public.Message;
 
 namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
 {
@@ -69,9 +69,9 @@ namespace BizMate.Application.UserCases.User.Commands.UserVerifyOtp
             var existingUser = await _userRepository.GetByEmailAsync(email, cancellationToken);
             if (existingUser != null)
             {
-                var msg = _messageService.AlreadyExist(existingUser);
-                _logger.LogWarning(msg);
-                return new UserVerifyOtpResponse(false, "Email đã đăng ký.");
+                var message = ValidationMessage.LocalizedStrings.AlreadyExist;
+                _logger.LogWarning(message);
+                return new UserVerifyOtpResponse(false, message);
             }
             #endregion
 

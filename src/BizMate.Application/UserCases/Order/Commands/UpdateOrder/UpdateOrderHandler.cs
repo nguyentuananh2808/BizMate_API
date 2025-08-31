@@ -1,5 +1,4 @@
 ﻿using BizMate.Application.Common.Interfaces.Repositories;
-using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Security;
 using BizMate.Domain.Entities;
 using MediatR;
@@ -7,12 +6,12 @@ using Microsoft.Extensions.Logging;
 using _Order = BizMate.Domain.Entities.Order;
 using _Status = BizMate.Domain.Entities.Status;
 using BizMate.Application.Common.Dto.CoreDto;
+using BizMate.Public.Message;
 
 namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
 {
     public class UpdateOrderHandler : IRequestHandler<UpdateOrderRequest, UpdateOrderResponse>
     {
-        private readonly IAppMessageService _messageService;
         private readonly IStatusRepository _statusRepository;
         private readonly INotificationRepository _notificationRepository;
         private readonly IOrderDetailRepository _detailRepository;
@@ -26,7 +25,6 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
             INotificationRepository notificationRepository,
             IOrderDetailRepository detailRepository,
             IProductRepository productRepository,
-            IAppMessageService messageService,
             IUserSession userSession,
             IOrderRepository orderRepository,
             ILogger<UpdateOrderHandler> logger)
@@ -34,7 +32,6 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
             _statusRepository = statusRepository;
             _notificationRepository = notificationRepository;
             _detailRepository = detailRepository;
-            _messageService = messageService;
             _productRepository = productRepository;
             _userSession = userSession;
             _orderRepository = orderRepository;
@@ -58,8 +55,11 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
                     return new UpdateOrderResponse(false, "Không thể cập nhật đơn hàng. Trạng thái không hợp lệ.");
 
                 if (!ValidateRowVersion(order, request.RowVersion))
-                    return new UpdateOrderResponse(false, "Dữ liệu đã bị thay đổi bởi người khác. Vui lòng tải lại.");
-
+                {
+                    var message = ValidationMessage.LocalizedStrings.NotValidRowversion;
+                    _logger.LogWarning(message);
+                    return new UpdateOrderResponse(false, message);
+                }
                 UpdateOrderInfo(order, request, userId);
 
                 await UpdateOrderDetailsAsync(order.Id, details);
@@ -80,9 +80,9 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
         #region Helpers
         private UpdateOrderResponse NotFoundResponse(Guid id)
         {
-            var message = _messageService.NotExist(id.ToString());
+            var message = ValidationMessage.LocalizedStrings.DataNotExist;
             _logger.LogWarning(message);
-            return new UpdateOrderResponse(false, "Đơn hàng không tồn tại.");
+            return new UpdateOrderResponse(false, message);
         }
 
         private async Task<_Status?> ValidateStatusAsync(Guid statusId, CancellationToken cancellationToken)

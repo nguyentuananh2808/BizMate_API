@@ -49,6 +49,9 @@
 
         public static class LocalizedStrings
         {
+
+            public const string NotValidRowversion = "BACKEND.VALIDATION.MESSAGE.NOT_VALID_ROWVERSION";
+
             public const string MustNotEmpty = "BACKEND.VALIDATION.MESSAGE.MUST_NOT_EMPTY";
 
             public const string MustContainUppercase = "BACKEND.VALIDATION.MESSAGE.PASSWORD_MUST_CONTAIN_UPPERCASE";
@@ -182,6 +185,8 @@
             public const string CustomerDoNotHaveCustomerAddress = "BACKEND.APP_MESSAGE.CUSTOMER_DO_NOT_HAVE_CUSTOMER_ADDRESS";
 
             public const string ExistCustomerAddressType = "BACKEND.APP_MESSAGE.EXIST_CUSTOMER_ADDRESS_TYPE";
+           
+            public const string NotValidPassword = "BACKEND.APP_MESSAGE.NOT_VALID_PASSWORD";
 
             public const string ExistInvoiceCannotCancelOrder = "BACKEND.EXIST_INVOICE_CANNOT_CANCEL_ORDER";
 
@@ -1424,6 +1429,8 @@
             public const string CurrentAddress = "USER.FIELD_CURRENT_ADDRESS";
 
             public const string Role = "ROLE.PLURAL_NAME";
+
+            public const string RoleWithoutAuthority = "ROLE.WITHOUT_AUTHORITY";
 
             public const string ApprovedBy = "COMMON.APPROVED_BY";
 

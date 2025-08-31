@@ -1,38 +1,25 @@
-﻿using AutoMapper;
-using BizMate.Application.Common.Interfaces;
-using BizMate.Application.Common.Interfaces.Repositories;
+﻿using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Security;
-using BizMate.Application.Resources;
-using BizMate.Public.Dto.UserAggregate;
+using BizMate.Public.Message;
 using MediatR;
-using Microsoft.Extensions.Caching.Distributed;
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 
 namespace BizMate.Application.UserCases.User.Queries.UserLogin
 {
     public sealed class UserLoginHandler : IRequestHandler<UserLoginRequest, UserLoginResponse>
     {
-        private readonly IAppMessageService _messageService;
         private readonly IUserRepository _userRepository;
         private readonly IJwtFactory _jwtFactory;
         private readonly ITokenFactory _tokenFactory;
-        private readonly IUserSession _userSession;
-        private readonly IMapper _mapper;
         private readonly ILogger<UserLoginHandler> _logger;
 
         #region constructor
         public UserLoginHandler(
-            IAppMessageService messageService,
-            IJwtFactory jwtFactory, ITokenFactory tokenFactory, IUserSession userSession,
-            IMapper mapper, ILogger<UserLoginHandler> logger, IDistributedCache cache, IUserRepository userRepository)
+            IJwtFactory jwtFactory, ITokenFactory tokenFactory, ILogger<UserLoginHandler> logger, IUserRepository userRepository)
         {
-            _messageService = messageService;
             _userRepository = userRepository;
             _jwtFactory = jwtFactory;
             _tokenFactory = tokenFactory;
-            _userSession = userSession;
-            _mapper = mapper;
             _logger = logger;
         }
         #endregion
@@ -52,9 +39,9 @@ namespace BizMate.Application.UserCases.User.Queries.UserLogin
             var emailDb = await _userRepository.GetByEmailAsync(email, default);
             if (emailDb == null)
             {
-                var message = _messageService.NotExist(request.Email);
+                var message = ValidationMessage.LocalizedStrings.DataNotExist;
                 _logger.LogWarning(message);
-                return new UserLoginResponse(success: false, message: "Email không tồn tại.");
+                return new UserLoginResponse(success: false, message);
             }
             #endregion
 
@@ -62,9 +49,9 @@ namespace BizMate.Application.UserCases.User.Queries.UserLogin
             var isValidPassword = PasswordHasher.Verify(password, emailDb.PasswordHash, emailDb.PasswordSalt);
             if (!isValidPassword)
             {
-                var message = _messageService.Invalid(request.Password);
+                var message = ValidationMessage.LocalizedStrings.NotValidPassword;
                 _logger.LogWarning(message);
-                return new UserLoginResponse(success: false, message: "Mật khẩu không đúng.");
+                return new UserLoginResponse(success: false, message);
             }
             #endregion
 

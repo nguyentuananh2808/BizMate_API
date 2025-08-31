@@ -1,26 +1,23 @@
 ﻿using BizMate.Application.Common.Interfaces.Repositories;
-using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Security;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using BizMate.Public.Message;
 
 namespace BizMate.Application.UserCases.DealerLevel.Commands.DeleteDealerLevel
 {
     public class DeleteDealerLevelHandler : IRequestHandler<DeleteDealerLevelRequest, DeleteDealerLevelResponse>
     {
-        private readonly IAppMessageService _messageService;
         private readonly IDealerLevelRepository _DealerLevelRepository;
         private readonly IUserSession _userSession;
         private readonly ILogger<DeleteDealerLevelHandler> _logger;
 
         #region constructor
         public DeleteDealerLevelHandler(
-            IAppMessageService messageService,
             IUserSession userSession,
             IDealerLevelRepository DealerLevelRepository,
             ILogger<DeleteDealerLevelHandler> logger)
         {
-            _messageService = messageService;
             _userSession = userSession;
             _DealerLevelRepository = DealerLevelRepository;
             _logger = logger;
@@ -36,9 +33,9 @@ namespace BizMate.Application.UserCases.DealerLevel.Commands.DeleteDealerLevel
                 var DealerLevel = await _DealerLevelRepository.GetByIdAsync(request.Id);
                 if (DealerLevel == null || DealerLevel.StoreId != storeId)
                 {
-                    var message = _messageService.NotExist(request.Id);
+                    var message = ValidationMessage.LocalizedStrings.DataNotExist;
                     _logger.LogWarning(message);
-                    return new DeleteDealerLevelResponse(false, "Bảng giá theo đại lý không tồn tại.");
+                    return new DeleteDealerLevelResponse(false, message);
                 }
                 #endregion
 

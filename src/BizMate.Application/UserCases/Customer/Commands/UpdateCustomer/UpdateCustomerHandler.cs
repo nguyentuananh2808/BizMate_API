@@ -1,36 +1,29 @@
 ﻿using AutoMapper;
 using BizMate.Application.Common.Interfaces.Repositories;
-using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Security;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using SqlKata.Execution;
 using BizMate.Application.Common.Dto.CoreDto;
+using BizMate.Public.Message;
 
 namespace BizMate.Application.UserCases.Customer.Commands.UpdateCustomer
 {
     public class UpdateCustomerHandler : IRequestHandler<UpdateCustomerRequest, UpdateCustomerResponse>
     {
-        private readonly IAppMessageService _messageService;
         private readonly ICustomerRepository _CustomerRepository;
         private readonly IUserSession _userSession;
-        private readonly QueryFactory _db;
         private readonly ILogger<UpdateCustomerHandler> _logger;
         private readonly IMapper _mapper;
 
         #region constructor
         public UpdateCustomerHandler(
-            IAppMessageService messageService,
             IUserSession userSession,
             ICustomerRepository CustomerRepository,
-            QueryFactory db,
             ILogger<UpdateCustomerHandler> logger,
             IMapper mapper)
         {
-            _messageService = messageService;
             _userSession = userSession;
             _CustomerRepository = CustomerRepository;
-            _db = db;
             _logger = logger;
             _mapper = mapper;
         }
@@ -46,21 +39,26 @@ namespace BizMate.Application.UserCases.Customer.Commands.UpdateCustomer
                 var Customer = await _CustomerRepository.GetByIdAsync(request.Id);
                 if (Customer == null)
                 {
-                    var message = _messageService.NotExist(request.Id.ToString());
+                    var message = ValidationMessage.LocalizedStrings.DataNotExist;
                     _logger.LogWarning(message);
-                    return new UpdateCustomerResponse(false, "Sản phẩm không tồn tại.");
+                    return new UpdateCustomerResponse(false, message);
                 }
                 #endregion
 
                 #region Check rowversion
                 if (Customer.RowVersion != request.RowVersion)
-                    return new UpdateCustomerResponse(false, "Dữ liệu đã bị thay đổi bởi người khác. Vui lòng tải lại.");
+                {
+                    var message = ValidationMessage.LocalizedStrings.NotValidRowversion;
+                    _logger.LogWarning(message);
+                    return new UpdateCustomerResponse(false, message);
+
+                }
                 #endregion
 
                 #region update data
-                Customer.Name = request.Name;
-                Customer.Phone = request.Phone;
-                Customer.Address = request.Address;
+                Customer.Name = request.Name.Trim();
+                Customer.Phone = request.Phone.Trim();
+                Customer.Address = request.Address.Trim();
                 Customer.StoreId = storeId;
                 Customer.UpdatedBy = Guid.Parse(userId);
                 Customer.UpdatedDate = DateTime.UtcNow;

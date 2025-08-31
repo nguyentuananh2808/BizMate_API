@@ -1,16 +1,15 @@
 ﻿using BizMate.Application.Common.Interfaces.Repositories;
-using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Security;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using SqlKata.Execution;
 using BizMate.Domain.Entities;
+using BizMate.Public.Message;
 
 namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateImportReceipt
 {
     public class UpdateImportReceiptHandler : IRequestHandler<UpdateImportReceiptRequest, UpdateImportReceiptResponse>
     {
-        private readonly IAppMessageService _messageService;
         private readonly IImportReceiptDetailRepository _detailRepository;
         private readonly IImportReceiptRepository _importReceiptRepository;
         private readonly IUserSession _userSession;
@@ -21,13 +20,11 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateImportRecei
         public UpdateImportReceiptHandler(
             IImportReceiptDetailRepository detailRepository,
             IProductRepository productRepository,
-            IAppMessageService messageService,
             IUserSession userSession,
             IImportReceiptRepository ImportReceiptRepository,
             ILogger<UpdateImportReceiptHandler> logger)
         {
             _detailRepository = detailRepository;
-            _messageService = messageService;
             _productRepository = productRepository;
             _userSession = userSession;
             _importReceiptRepository = ImportReceiptRepository;
@@ -44,15 +41,19 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateImportRecei
                 var importReceipt = await _importReceiptRepository.GetByIdAsync(request.Id);
                 if (importReceipt == null)
                 {
-                    var message = _messageService.NotExist(request.Id.ToString());
+                    var message = ValidationMessage.LocalizedStrings.DataNotExist;
                     _logger.LogWarning(message);
-                    return new UpdateImportReceiptResponse(false, "Phiếu nhập kho không tồn tại.");
+                    return new UpdateImportReceiptResponse(false, message);
                 }
                 #endregion
 
                 #region Check rowversion
                 if (importReceipt.RowVersion != request.RowVersion)
-                    return new UpdateImportReceiptResponse(false, "Dữ liệu đã bị thay đổi bởi người khác. Vui lòng tải lại.");
+                {
+                    var message = ValidationMessage.LocalizedStrings.NotValidRowversion;
+                    _logger.LogWarning(message);
+                    return new UpdateImportReceiptResponse(false, message);
+                }
                 #endregion
 
                 #region update data

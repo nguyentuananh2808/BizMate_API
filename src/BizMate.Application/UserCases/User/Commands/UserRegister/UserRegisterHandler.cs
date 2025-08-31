@@ -1,7 +1,7 @@
 ﻿using BizMate.Application.Common.Extensions;
 using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Interfaces.Repositories;
-using BizMate.Application.Resources;
+using BizMate.Public.Message;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -9,7 +9,6 @@ namespace BizMate.Application.UserCases.User.Commands.UserRegister
 {
     public sealed class UserRegisterHandler : IRequestHandler<UserRegisterRequest, UserRegisterResponse>
     {
-        private readonly IAppMessageService _messageService;
         private readonly IUserRepository _userRepository;
         private readonly IOtpVerificationRepository _otpVerificationRepository;
         private readonly IOtpStore _otpStore;
@@ -18,14 +17,12 @@ namespace BizMate.Application.UserCases.User.Commands.UserRegister
 
         #region constructor
         public UserRegisterHandler(
-            IAppMessageService messageService,
             IUserRepository userRepository,
             IOtpVerificationRepository otpVerificationRepository,
             IEmailService emailService,
             IOtpStore otpStore,
             ILogger<UserRegisterHandler> logger)
         {
-            _messageService = messageService;
             _otpStore = otpStore;
             _userRepository = userRepository;
             _otpVerificationRepository = otpVerificationRepository;
@@ -40,15 +37,15 @@ namespace BizMate.Application.UserCases.User.Commands.UserRegister
 
         private async Task<UserRegisterResponse> UserRegister(UserRegisterRequest request, CancellationToken cancellationToken)
         {
-            var email = request.Email;
+            var email = request.Email.Trim();
 
             #region Check email exists
             var emailDb = await _userRepository.GetByEmailAsync(email, cancellationToken);
             if (emailDb != null)
             {
-                var message = _messageService.AlreadyExist(email);
+                var message = ValidationMessage.LocalizedStrings.DataDuplicate;
                 _logger.LogWarning(message);
-                return new UserRegisterResponse(success: false, message: "Email đã được đăng ký.");
+                return new UserRegisterResponse(success: false, message);
             }
             #endregion
 

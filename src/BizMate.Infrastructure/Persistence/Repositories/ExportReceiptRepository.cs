@@ -30,7 +30,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
         }
 
         public async Task<(List<ExportReceipt> Receipts, int TotalCount)> SearchReceiptsWithPaging(
-    Guid storeId, DateTime? dateFrom, DateTime? dateTo, string? statusCode, string? keyword, int pageIndex, int pageSize, QueryFactory queryFactory)
+    Guid storeId, DateTime? dateFrom, DateTime? dateTo,  string? keyword, int pageIndex, int pageSize, QueryFactory queryFactory)
         {
             var baseQuery = queryFactory.Query("ExportReceipts as r")
                 //.LeftJoin("Statuses as s", "r.StatusId", "s.Id")
@@ -52,9 +52,6 @@ namespace BizMate.Infrastructure.Persistence.Repositories
 
             if (dateTo.HasValue)
                 baseQuery.Where("r.Date", "<=", dateTo.Value);
-
-            if (!string.IsNullOrWhiteSpace(statusCode))
-                baseQuery.Where("s.Code", statusCode);
 
             var totalCount = await baseQuery.Clone().CountAsync<int>();
 

@@ -1,36 +1,29 @@
 ﻿using AutoMapper;
 using BizMate.Application.Common.Dto.CoreDto;
 using BizMate.Application.Common.Interfaces.Repositories;
-using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Security;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using SqlKata.Execution;
+using BizMate.Public.Message;
 
 namespace BizMate.Application.UserCases.DealerPrice.Commands.UpdateDealerPrice
 {
     public class UpdateDealerPriceHandler : IRequestHandler<UpdateDealerPriceRequest, UpdateDealerPriceResponse>
     {
-        private readonly IAppMessageService _messageService;
         private readonly IDealerPriceRepository _DealerPriceRepository;
         private readonly IUserSession _userSession;
-        private readonly QueryFactory _db;
         private readonly ILogger<UpdateDealerPriceHandler> _logger;
         private readonly IMapper _mapper;
 
         #region constructor
         public UpdateDealerPriceHandler(
-            IAppMessageService messageService,
             IUserSession userSession,
             IDealerPriceRepository DealerPriceRepository,
-            QueryFactory db,
             ILogger<UpdateDealerPriceHandler> logger,
             IMapper mapper)
         {
-            _messageService = messageService;
             _userSession = userSession;
             _DealerPriceRepository = DealerPriceRepository;
-            _db = db;
             _logger = logger;
             _mapper = mapper;
         }
@@ -46,15 +39,19 @@ namespace BizMate.Application.UserCases.DealerPrice.Commands.UpdateDealerPrice
                 var DealerPrice = await _DealerPriceRepository.GetByIdAsync(request.Id);
                 if (DealerPrice == null)
                 {
-                    var message = _messageService.NotExist(request.Id.ToString());
+                    var message = ValidationMessage.LocalizedStrings.DataNotExist;
                     _logger.LogWarning(message);
-                    return new UpdateDealerPriceResponse(false, "Giá sản phẩm của đại lý không tồn tại.");
+                    return new UpdateDealerPriceResponse(false, message);
                 }
                 #endregion
 
                 #region Check rowversion
                 if (DealerPrice.RowVersion != request.RowVersion)
-                    return new UpdateDealerPriceResponse(false, "Dữ liệu đã bị thay đổi bởi người khác. Vui lòng tải lại.");
+                {
+                    var message = ValidationMessage.LocalizedStrings.NotValidRowversion;
+                    _logger.LogWarning(message);
+                    return new UpdateDealerPriceResponse(false, message);
+                }
                 #endregion
 
                 #region update data

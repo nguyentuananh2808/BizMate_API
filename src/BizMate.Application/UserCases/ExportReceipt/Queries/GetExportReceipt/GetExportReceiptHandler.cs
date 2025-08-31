@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using BizMate.Application.Common.Interfaces.Repositories;
+using BizMate.Public.Message;
 using MediatR;
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 
 namespace BizMate.Application.UserCases.ExportReceipt.Queries.GetExportReceipt
@@ -11,18 +11,15 @@ namespace BizMate.Application.UserCases.ExportReceipt.Queries.GetExportReceipt
         private readonly IExportReceiptRepository _ExportReceiptRepository;
         private readonly ILogger<GetExportReceiptHandler> _logger;
         private readonly IMapper _mapper;
-        private readonly IStringLocalizer<GetExportReceiptHandler> _localizer;
 
         public GetExportReceiptHandler(
             IExportReceiptRepository ExportReceiptRepository,
             ILogger<GetExportReceiptHandler> logger,
-            IMapper mapper,
-            IStringLocalizer<GetExportReceiptHandler> localizer)
+            IMapper mapper)
         {
             _ExportReceiptRepository = ExportReceiptRepository;
             _logger = logger;
             _mapper = mapper;
-            _localizer = localizer;
         }
 
         public async Task<GetExportReceiptResponse> Handle(GetExportReceiptRequest request, CancellationToken cancellationToken)
@@ -31,7 +28,7 @@ namespace BizMate.Application.UserCases.ExportReceipt.Queries.GetExportReceipt
 
             if (receipt == null)
             {
-                var message = _localizer["Không tìm thấy phiếu xuất."];
+                var message = ValidationMessage.LocalizedStrings.DataNotExist;
                 _logger.LogWarning(message);
                 return new GetExportReceiptResponse(false, message);
             }

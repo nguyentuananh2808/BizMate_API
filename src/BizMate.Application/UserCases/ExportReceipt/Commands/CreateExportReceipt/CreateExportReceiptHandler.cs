@@ -5,6 +5,7 @@ using BizMate.Domain.Entities;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using _ExportReceipt = BizMate.Domain.Entities.ExportReceipt;
+using BizMate.Public.Message;
 
 namespace BizMate.Application.UserCases.ExportReceipt.Commands.CreateExportReceipt
 {
@@ -53,8 +54,9 @@ namespace BizMate.Application.UserCases.ExportReceipt.Commands.CreateExportRecei
                 var statusId = await _statusRepository.GetIdByGroupAndCodeAsync("NEW", "ExportReceipt");
                 if (statusId == Guid.Empty)
                 {
-                    _logger.LogError("Không tìm thấy trạng thái 'tạo mới' cho phiếu xuất hàng.");
-                    return new CreateExportReceiptResponse(false, "Không thể tạo phiếu xuất hàng. Trạng thái không hợp lệ.");
+                    var message = ValidationMessage.LocalizedStrings.DataNotExist;
+                    _logger.LogError(message);
+                    return new CreateExportReceiptResponse(false, message);
                 }
                 var receiptCode = await _codeGeneratorService.GenerateCodeAsync("#NK");
 

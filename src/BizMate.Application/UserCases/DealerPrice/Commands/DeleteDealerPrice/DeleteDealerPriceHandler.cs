@@ -1,26 +1,23 @@
 ﻿using BizMate.Application.Common.Interfaces.Repositories;
-using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Security;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using BizMate.Public.Message;
 
 namespace BizMate.Application.UserCases.DealerPrice.Commands.DeleteDealerPrice
 {
     public class DeleteDealerPriceHandler : IRequestHandler<DeleteDealerPriceRequest, DeleteDealerPriceResponse>
     {
-        private readonly IAppMessageService _messageService;
         private readonly IDealerPriceRepository _DealerPriceRepository;
         private readonly IUserSession _userSession;
         private readonly ILogger<DeleteDealerPriceHandler> _logger;
 
         #region constructor
         public DeleteDealerPriceHandler(
-            IAppMessageService messageService,
             IUserSession userSession,
             IDealerPriceRepository DealerPriceRepository,
             ILogger<DeleteDealerPriceHandler> logger)
         {
-            _messageService = messageService;
             _userSession = userSession;
             _DealerPriceRepository = DealerPriceRepository;
             _logger = logger;
@@ -35,9 +32,9 @@ namespace BizMate.Application.UserCases.DealerPrice.Commands.DeleteDealerPrice
                 var dealerPrice = await _DealerPriceRepository.GetByIdAsync(request.DealerPriceId, cancellationToken);
                 if (dealerPrice == null || dealerPrice.StoreId != storeId)
                 {
-                    var message = _messageService.NotExist(request.DealerPriceId);
+                    var message = ValidationMessage.LocalizedStrings.DataNotExist;
                     _logger.LogWarning(message);
-                    return new DeleteDealerPriceResponse(false, "Giá của sản phẩm không tồn tại.");
+                    return new DeleteDealerPriceResponse(false, message);
                 }
 
                 await _DealerPriceRepository.DeleteAsync(request.DealerPriceId);
