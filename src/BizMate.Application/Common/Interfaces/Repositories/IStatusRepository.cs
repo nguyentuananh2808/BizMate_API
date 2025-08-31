@@ -6,5 +6,6 @@ namespace BizMate.Application.Common.Interfaces.Repositories
     {
         Task<Guid> GetIdByGroupAndCodeAsync(string code,string group);
         Task<Status?> GetIdById(Guid id,CancellationToken cancellation);
+        Task<IEnumerable<Status>> GetStatusesOfGroup(string group);
     }
 }

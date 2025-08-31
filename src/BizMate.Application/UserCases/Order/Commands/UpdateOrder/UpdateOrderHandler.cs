@@ -5,6 +5,7 @@ using BizMate.Domain.Entities;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using _Order = BizMate.Domain.Entities.Order;
+using _Status = BizMate.Domain.Entities.Status;
 using BizMate.Application.Common.Dto.CoreDto;
 
 namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
@@ -84,7 +85,7 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
             return new UpdateOrderResponse(false, "Đơn hàng không tồn tại.");
         }
 
-        private async Task<Status?> ValidateStatusAsync(Guid statusId, CancellationToken cancellationToken)
+        private async Task<_Status?> ValidateStatusAsync(Guid statusId, CancellationToken cancellationToken)
         {
             var status = await _statusRepository.GetIdById(statusId, cancellationToken);
             if (status == null)
@@ -155,7 +156,7 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
                 await _detailRepository.DeleteRangeAsync(toDelete.Select(x => x.Id).ToList());
         }
 
-        private async Task AddNotificationAsync(_Order order, Status status, Guid userId, Guid storeId)
+        private async Task AddNotificationAsync(_Order order, _Status status, Guid userId, Guid storeId)
         {
             var notif = new NotificationDto
             {

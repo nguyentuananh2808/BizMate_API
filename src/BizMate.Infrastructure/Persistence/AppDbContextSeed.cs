@@ -11,14 +11,14 @@ namespace BizMate.Infrastructure.Persistence
             {
                 var orderStatuses = new List<Status>
                 {
-                    new Status { Id = Guid.NewGuid(), Name = "Nháp", Code = "DRAFT", Group = "Order", IsActive = true },
-                    new Status { Id = Guid.NewGuid(), Name = "Tạo mới", Code = "NEW", Group = "Order", IsActive = true },
-                    new Status { Id = Guid.NewGuid(), Name = "Đang đóng hàng", Code = "PACKING", Group = "Order", IsActive = true },
-                    new Status { Id = Guid.NewGuid(), Name = "Đã đóng hàng", Code = "PACKED", Group = "Order", IsActive = true },
-                    new Status { Id = Guid.NewGuid(), Name = "Hủy", Code = "CANCELLED", Group = "Order", IsActive = true },
-                    new Status { Id = Guid.NewGuid(), Name = "Hoàn thành", Code = "COMPLETED", Group = "Order", IsActive = true },
-                    new Status { Id = Guid.NewGuid(), Name = "Tạo mới", Code = "NEW", Group = "ImportReceipt", IsActive = true },
-                    new Status { Id = Guid.NewGuid(), Name = "Đã duyệt", Code = "APPROVED", Group = "ImportReceipt", IsActive = true },
+                    new Status { Id = Guid.NewGuid(), Name = "Nháp", Code = "DRAFT", Group = "Order", IsActive = false },
+                    new Status { Id = Guid.NewGuid(), Name = "Tạo mới", Code = "NEW", Group = "Order", IsActive = false },
+                    new Status { Id = Guid.NewGuid(), Name = "Đang đóng hàng", Code = "PACKING", Group = "Order", IsActive = false },
+                    new Status { Id = Guid.NewGuid(), Name = "Đã đóng hàng", Code = "PACKED", Group = "Order", IsActive = false },
+                    new Status { Id = Guid.NewGuid(), Name = "Hủy", Code = "CANCELLED", Group = "Order", IsActive = false },
+                    new Status { Id = Guid.NewGuid(), Name = "Hoàn thành", Code = "COMPLETED", Group = "Order", IsActive = false },
+                    new Status { Id = Guid.NewGuid(), Name = "Tạo mới", Code = "NEW", Group = "ImportReceipt", IsActive = false },
+                    new Status { Id = Guid.NewGuid(), Name = "Đã duyệt", Code = "APPROVED", Group = "ImportReceipt", IsActive = false },
                 };
 
                 context.Statuses.AddRange(orderStatuses);
