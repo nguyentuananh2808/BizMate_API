@@ -3,7 +3,6 @@ using BizMate.Application.Common.Security;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using SqlKata.Execution;
-using BizMate.Application.Common.Interfaces;
 using BizMate.Public.Message;
 
 namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.DeleteProduct
@@ -13,7 +12,6 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Delete
         private readonly IProductRepository _productRepository;
         private readonly IUserSession _userSession;
         private readonly IStockRepository _stockRepository;
-        private readonly QueryFactory _db;
         private readonly ILogger<DeleteProductHandler> _logger;
 
         #region constructor
@@ -21,13 +19,11 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Delete
             IStockRepository stockRepository,
             IUserSession userSession,
             IProductRepository productRepository,
-            QueryFactory db,
             ILogger<DeleteProductHandler> logger)
         {
             _stockRepository = stockRepository;
             _userSession = userSession;
             _productRepository = productRepository;
-            _db = db;
             _logger = logger;
         }
         #endregion
@@ -52,9 +48,9 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Delete
                 var stock = stocks.FirstOrDefault();
                 if (stock == null || stock.StoreId != storeId)
                 {
-                    var message = _messageService.NotExist(request.Id);
+                    var message = "Sản phẩm không tồn tại trong kho.";
                     _logger.LogWarning(message);
-                    return new DeleteProductResponse(false, "Sản phẩm không tồn tại trong kho.");
+                    return new DeleteProductResponse(false, message);
                 }
 
                 if (stock.Quantity >= 0)

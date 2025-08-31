@@ -57,3 +57,4 @@ namespace BizMate.Application.UserCases.ExportReceipt.Queries.GetExportReceipts
             }
         }
     }
+}
