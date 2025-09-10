@@ -6,7 +6,7 @@ namespace BizMate.Application.Common.Interfaces.Repositories
     {
         Task<List<Stock>> GetByStoreAndProductAsync(Guid storeId, List<Guid> productIds);
         Task AddAsync(Stock stock);
-        Task UpdateAsync(Stock stock, CancellationToken cancellationToken);
+        Task UpdateAsync(IEnumerable<Stock> stocks, CancellationToken cancellationToken);
     }
 
 }

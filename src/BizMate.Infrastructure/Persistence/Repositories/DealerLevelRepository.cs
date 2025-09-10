@@ -35,17 +35,17 @@ namespace BizMate.Infrastructure.Persistence.Repositories
         public async Task<DealerLevel> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             return await _context.DealerLevels
-          .Where(p => !p.IsDeleted && p.Id == id)
-          .Include(p => p.DealerPrices)
-          .FirstOrDefaultAsync(cancellationToken);
+                .Where(p => !p.IsDeleted && p.Id == id)
+                .Include(p => p.DealerPrices)
+                    .ThenInclude(dp => dp.Product) 
+                .FirstOrDefaultAsync(cancellationToken);
         }
 
         public async Task<List<DealerLevel>> SearchDealerLevels(Guid storeId, string? name, QueryFactory queryFactory)
         {
             var query = queryFactory.Query("DealerLevels as d")
               .Where("d.StoreId", storeId)
-              .Where("d.IsDeleted", false)
-              .Where("d.IsActive", false);
+              .Where("d.IsDeleted", false);
             if (name != null)
                 query.Where("Name", name);
 
@@ -54,17 +54,13 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             return result.ToList();
         }
 
-        public async Task<(List<DealerLevelCoreDto> DealerLevels, int TotalCount)> SearchDealerLevelsWithPaging(Guid storeId, string? keyword, int pageIndex, int pageSize, bool? isActive, QueryFactory queryFactory)
+        public async Task<(List<DealerLevelCoreDto> DealerLevels, int TotalCount)> SearchDealerLevelsWithPaging(Guid storeId, string? keyword, int pageIndex, int pageSize, QueryFactory queryFactory)
         {
             var baseQuery = queryFactory.Query("DealerLevels as d")
                 .Where("d.StoreId", storeId)
                 .Where("d.IsDeleted", false);
 
-            if (isActive.HasValue)
-            {
-                baseQuery.Where("d.IsActive", isActive.Value);
-            }
-
+          
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 var kw = $"%{keyword.ToLower()}%";

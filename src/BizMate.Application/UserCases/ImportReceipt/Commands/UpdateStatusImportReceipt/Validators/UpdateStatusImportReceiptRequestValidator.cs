@@ -8,7 +8,7 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateStatusImpor
     {
         public UpdateStatusImportReceiptRequestValidator(IStringLocalizer<UpdateStatusImportReceiptRequestValidator> localizer)
         {
-            RuleFor(x => x.Code).NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty]);
+            RuleFor(x => x.CodeStatus).NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty]);
             RuleFor(x => x.Id).NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty]);
             RuleFor(x => x.RowVersion).NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty]);
         }

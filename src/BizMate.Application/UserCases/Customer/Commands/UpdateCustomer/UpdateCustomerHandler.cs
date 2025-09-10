@@ -5,6 +5,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using BizMate.Application.Common.Dto.CoreDto;
 using BizMate.Public.Message;
+using BizMate.Domain.Entities;
 
 namespace BizMate.Application.UserCases.Customer.Commands.UpdateCustomer
 {
@@ -62,6 +63,7 @@ namespace BizMate.Application.UserCases.Customer.Commands.UpdateCustomer
                 Customer.StoreId = storeId;
                 Customer.UpdatedBy = Guid.Parse(userId);
                 Customer.UpdatedDate = DateTime.UtcNow;
+                Customer.DealerLevelId = request.DealerLevelId;
                 Customer.IsActive = request.IsActive;
                 Customer.RowVersion = Guid.NewGuid();
 

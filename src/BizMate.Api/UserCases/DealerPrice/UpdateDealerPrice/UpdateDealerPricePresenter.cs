@@ -19,7 +19,7 @@ namespace BizMate.Api.UserCases.DealerPrice.UpdateDealerPrice
             ContentResult.StatusCode = (int)(response.Success ? HttpStatusCode.OK : HttpStatusCode.Unauthorized);
             ContentResult.Content = response.Success
                 ? CommonJsonSerializer.SerializeObject(
-                    new UpdateDealerPriceResponseViewModel(response.DealerPrice))
+                    new UpdateDealerPriceResponseViewModel(false, response.Message))
                 : CommonJsonSerializer.SerializeObject(response);
         }
     }

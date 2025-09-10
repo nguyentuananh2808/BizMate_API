@@ -31,9 +31,9 @@ public class StockRepository : IStockRepository
         await _context.SaveChangesAsync();
     }
 
-    public async Task UpdateAsync(Stock stock, CancellationToken cancellationToken)
+    public async Task UpdateAsync(IEnumerable<Stock> stocks, CancellationToken cancellationToken)
     {
-        _context.Stocks.Update(stock);
+        _context.Stocks.UpdateRange(stocks);
         await _context.SaveChangesAsync(cancellationToken);
     }
 

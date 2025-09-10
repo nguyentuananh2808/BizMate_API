@@ -91,6 +91,7 @@ public class ProductRepository : IProductRepository
         baseQuery
             .Select("p.*")
             .SelectRaw(@"COALESCE(s.""Quantity"", 0) as Quantity")
+            .SelectRaw(@"COALESCE(s.""Quantity"", 0) - COALESCE(s.""Reserved"", 0) as Available")
             .Select("pc.Name as ProductCategoryName");
 
         var totalQuery = baseQuery.Clone();

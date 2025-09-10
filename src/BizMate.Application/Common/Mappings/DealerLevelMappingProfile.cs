@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using BizMate.Application.Common.Dto.CoreDto;
+using BizMate.Application.UserCases.DealerLevel.Queries.DealerLevel;
 using BizMate.Domain.Entities;
 using BizMate.Public.Extensions;
 
@@ -25,13 +26,13 @@ namespace BizMate.Application.Common.Mappings
                             src.DealerPrices.Select(dp => new DealerPriceForDealerLevelDetailCoreDto
                             {
                                 ProductId = dp.ProductId,
-                                NameProduct = dp.Product.Name,
+                                NameProduct = dp.Product.Name != null ? dp.Product.Name : string.Empty,
                                 UnitProduct = dp.Product.Unit,
                                 Price = dp.Price,
                                 DealerPriceId = dp.Id,
                                 RowVersionDealerPrice = dp.RowVersion
                             })));
-
+            
         }
     }
 }

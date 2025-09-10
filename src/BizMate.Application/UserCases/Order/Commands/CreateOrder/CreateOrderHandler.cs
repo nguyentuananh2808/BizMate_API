@@ -11,6 +11,7 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
 {
     public class CreateOrderHandler : IRequestHandler<CreateOrderRequest, CreateOrderResponse>
     {
+        private readonly IStockRepository _stockRepository;
         private readonly IOrderRepository _orderRepository;
         private readonly ICodeGeneratorService _codeGeneratorService;
         private readonly IUserSession _userSession;
@@ -20,6 +21,7 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
 
         #region constructor
         public CreateOrderHandler(
+            IStockRepository stockRepository,   
             IStatusRepository statusRepository,
             IProductRepository productRepository,
             ICodeGeneratorService codeGeneratorService,
@@ -27,6 +29,7 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
             IOrderRepository OrderRepository,
             ILogger<CreateOrderHandler> logger)
         {
+            _stockRepository = stockRepository;
             _productRepository = productRepository;
             _statusRepository = statusRepository;
             _codeGeneratorService = codeGeneratorService;
@@ -93,6 +96,9 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
                 };
 
                 await _orderRepository.AddAsync(newOrder, cancellationToken);
+
+                //tăng số lượng sản phẩm giữ chỗ
+                await ReserveStockAsync(storeId, newOrder.Details, Guid.Parse(userId), cancellationToken);
                 #endregion
 
                 return new CreateOrderResponse(true, "Tạo đơn hàng thành công.");
@@ -103,5 +109,28 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
                 return new CreateOrderResponse(false, "Không thể tạo đơn hàng. Vui lòng thử lại.");
             }
         }
+
+        public async Task ReserveStockAsync(Guid storeId, IEnumerable<OrderDetail> orderDetails, Guid userId, CancellationToken cancellationToken)
+        {
+            var productIds = orderDetails.Select(d => d.ProductId).Distinct().ToList();
+            var stocks = await _stockRepository.GetByStoreAndProductAsync(storeId, productIds);
+            var stockDict = stocks.ToDictionary(s => s.ProductId);
+
+            foreach (var detail in orderDetails)
+            {
+                if (!stockDict.TryGetValue(detail.ProductId, out var stock))
+                    throw new InvalidOperationException($"Không tìm thấy tồn kho cho sản phẩm {detail.ProductId}");
+
+                if (stock.Available < detail.Quantity)
+                    throw new InvalidOperationException($"Sản phẩm {detail.ProductId} không đủ tồn. Khả dụng {stock.Available}, cần {detail.Quantity}");
+
+                stock.Reserved += detail.Quantity;
+                stock.UpdatedBy = userId;
+                stock.UpdatedDate = DateTime.UtcNow;
+            }
+
+            await _stockRepository.UpdateAsync(stockDict.Values, cancellationToken);
+        }
+
     }
 }

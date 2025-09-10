@@ -26,7 +26,6 @@
 
   <ItemGroup>
     <Folder Include="UserCases\InventoryReceipt\Queries\" />
-    <Folder Include="UserCases\Order\Queries\" />
     <Folder Include="UserCases\Status\Queries\GetStatuses\Validators\" />
   </ItemGroup>
 

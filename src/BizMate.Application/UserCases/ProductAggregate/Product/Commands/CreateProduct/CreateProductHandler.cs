@@ -47,7 +47,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Create
                 var existingProduct = await _productRepository.SearchProducts(
                     storeId,
                     request.SupplierId,
-                    request.Name,
+                    request.Name.Trim(),
                     _db);
 
                 if (existingProduct.Any())

@@ -55,7 +55,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductCategory.Command
                 }
                 #endregion
                 #region create product category
-                string codeProductCategory = await _codeGeneratorService.GenerateCodeAsync("#NSP", 5);
+                string codeProductCategory = await _codeGeneratorService.GenerateCodeAsync("#LSP", 5);
                 var productCategory = new _ProductCategory
                 {
                     Code = codeProductCategory,

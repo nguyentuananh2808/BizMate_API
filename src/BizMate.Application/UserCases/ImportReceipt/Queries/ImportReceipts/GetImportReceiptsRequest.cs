@@ -7,6 +7,6 @@ namespace BizMate.Application.UserCases.ImportReceipt.Queries.ImportReceipts
     {
         public DateTime? DateFrom { get; set; }
         public DateTime? DateTo { get; set; }
-        public string? StatusCode { get; set; }
+        public IEnumerable<Guid>? StatusIds { get; set; }
     }
 }

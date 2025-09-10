@@ -12,6 +12,7 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
 {
     public class UpdateOrderHandler : IRequestHandler<UpdateOrderRequest, UpdateOrderResponse>
     {
+        private readonly IStockRepository _stockRepository;
         private readonly IStatusRepository _statusRepository;
         private readonly INotificationRepository _notificationRepository;
         private readonly IOrderDetailRepository _detailRepository;
@@ -27,7 +28,8 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
             IProductRepository productRepository,
             IUserSession userSession,
             IOrderRepository orderRepository,
-            ILogger<UpdateOrderHandler> logger)
+            ILogger<UpdateOrderHandler> logger,
+            IStockRepository stockRepository)
         {
             _statusRepository = statusRepository;
             _notificationRepository = notificationRepository;
@@ -36,45 +38,108 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
             _userSession = userSession;
             _orderRepository = orderRepository;
             _logger = logger;
+            _stockRepository = stockRepository;
         }
 
         public async Task<UpdateOrderResponse> Handle(UpdateOrderRequest request, CancellationToken cancellationToken)
         {
-            try
+            var userId = Guid.Parse(_userSession.UserId);
+            var storeId = _userSession.StoreId;
+
+            // 1. Lấy order hiện tại
+            var order = await _orderRepository.GetByIdAsync(request.Id);
+            if (order == null) return NotFoundResponse(request.Id);
+
+            // 2. Validate trạng thái
+            var status = await ValidateStatusAsync(order.StatusId, cancellationToken);
+            if (status == null) return new UpdateOrderResponse(false, "Trạng thái không hợp lệ");
+
+            // 3. Check row version
+            if (!ValidateRowVersion(order, request.RowVersion))
+                return new UpdateOrderResponse(false, "Dữ liệu đã thay đổi, vui lòng tải lại");
+
+            // 4. Cập nhật thông tin order
+            UpdateOrderInfo(order, request, _userSession.UserId);
+            await _orderRepository.UpdateAsync(order);
+
+            // 5. Cập nhật chi tiết đơn hàng + reserved stock
+            await UpdateOrderDetailsAsync(order.Id, request.Details, userId, storeId, cancellationToken);
+
+            // 6. Bắn thông báo
+            await AddNotificationAsync(order, status, userId, storeId);
+
+            return new UpdateOrderResponse(true, "Cập nhật đơn hàng thành công");
+        }
+
+        private async Task UpdateOrderDetailsAsync(Guid orderId, IEnumerable<UpdateOrderDetailRequest> details, Guid userId, Guid storeId, CancellationToken cancellationToken)
+        {
+            var existingDetails = await _detailRepository.GetByOrderIdAsync(orderId);
+            var requestProductIds = details.Select(d => d.ProductId).ToList();
+
+            // Lấy toàn bộ sản phẩm cần thiết 1 lần
+            var products = await _productRepository.GetByIdsAsync(requestProductIds);
+            var productDict = products.ToDictionary(p => p.Id, p => p);
+
+            // Lấy tồn kho
+            var stocks = await _stockRepository.GetByStoreAndProductAsync(storeId, requestProductIds);
+            var stockDict = stocks.ToDictionary(s => s.ProductId);
+
+            foreach (var item in details)
             {
-                var userId = _userSession.UserId;
-                var storeId = _userSession.StoreId;
+                var existing = existingDetails.FirstOrDefault(d => d.ProductId == item.ProductId);
 
-                var order = await _orderRepository.GetByIdAsync(request.Id);
-                var details = request.Details;
-                if (order == null)
-                    return NotFoundResponse(request.Id);
-
-                var status = await ValidateStatusAsync(request.StatusId, cancellationToken);
-                if (status == null)
-                    return new UpdateOrderResponse(false, "Không thể cập nhật đơn hàng. Trạng thái không hợp lệ.");
-
-                if (!ValidateRowVersion(order, request.RowVersion))
+                if (existing != null)
                 {
-                    var message = ValidationMessage.LocalizedStrings.NotValidRowversion;
-                    _logger.LogWarning(message);
-                    return new UpdateOrderResponse(false, message);
+                    var diff = item.Quantity - existing.Quantity;
+                    existing.Quantity = item.Quantity;
+                    await _detailRepository.UpdateAsync(existing);
+
+                    if (diff != 0 && stockDict.TryGetValue(item.ProductId, out var stock))
+                    {
+                        stock.Reserved += diff;
+                        stock.UpdatedBy = userId;
+                        stock.UpdatedDate = DateTime.UtcNow;
+                    }
                 }
-                UpdateOrderInfo(order, request, userId);
+                else if (productDict.TryGetValue(item.ProductId, out var product))
+                {
+                    await _detailRepository.AddAsync(new OrderDetail
+                    {
+                        Id = Guid.NewGuid(),
+                        ProductId = item.ProductId,
+                        Quantity = item.Quantity,
+                        OrderId = orderId,
+                        ProductName = product.Name,
+                        ProductCode = product.Code,
+                        Unit = product.Unit
+                    });
 
-                await UpdateOrderDetailsAsync(order.Id, details);
-
-                await _orderRepository.UpdateAsync(order);
-
-                await AddNotificationAsync(order, status, Guid.Parse(userId), storeId);
-
-                return new UpdateOrderResponse(true, "Cập nhật đơn hàng thành công.");
+                    if (stockDict.TryGetValue(item.ProductId, out var stock))
+                    {
+                        stock.Reserved += item.Quantity;
+                        stock.UpdatedBy = userId;
+                        stock.UpdatedDate = DateTime.UtcNow;
+                    }
+                }
             }
-            catch (Exception ex)
+
+            // Xử lý xóa sản phẩm
+            var toDelete = existingDetails.Where(d => !requestProductIds.Contains(d.ProductId)).ToList();
+            foreach (var del in toDelete)
             {
-                _logger.LogError(ex, "Lỗi khi cập nhật đơn hàng.");
-                return new UpdateOrderResponse(false, "Không thể cập nhật đơn hàng. Vui lòng thử lại.");
+                if (stockDict.TryGetValue(del.ProductId, out var stock))
+                {
+                    stock.Reserved -= del.Quantity;
+                    stock.UpdatedBy = userId;
+                    stock.UpdatedDate = DateTime.UtcNow;
+                }
             }
+
+            if (toDelete.Any())
+                await _detailRepository.DeleteRangeAsync(toDelete.Select(x => x.Id).ToList());
+
+            // Update lại tồn kho một lần
+            await _stockRepository.UpdateAsync(stockDict.Values, cancellationToken);
         }
 
         #region Helpers
@@ -119,48 +184,11 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
             order.RowVersion = Guid.NewGuid();
         }
 
-        private async Task UpdateOrderDetailsAsync(Guid orderId, IEnumerable<UpdateOrderDetailRequest> details)
-        {
-            var existingDetails = await _detailRepository.GetByOrderIdAsync(orderId);
-            var requestProductIds = details.Select(d => d.ProductId).ToList();
-
-            // Lấy toàn bộ sản phẩm cần thiết 1 lần
-            var products = await _productRepository.GetByIdsAsync(requestProductIds);
-            var productDict = products.ToDictionary(p => p.Id, p => p);
-
-            foreach (var item in details)
-            {
-                var existing = existingDetails.FirstOrDefault(d => d.ProductId == item.ProductId);
-                if (existing != null)
-                {
-                    existing.Quantity = item.Quantity;
-                    await _detailRepository.UpdateAsync(existing);
-                }
-                else if (productDict.TryGetValue(item.ProductId, out var product))
-                {
-                    await _detailRepository.AddAsync(new OrderDetail
-                    {
-                        Id = Guid.NewGuid(),
-                        ProductId = item.ProductId,
-                        Quantity = item.Quantity,
-                        OrderId = orderId,
-                        ProductName = product.Name,
-                        ProductCode = product.Code,
-                        Unit = product.Unit
-                    });
-                }
-            }
-
-            var toDelete = existingDetails.Where(d => !requestProductIds.Contains(d.ProductId)).ToList();
-            if (toDelete.Any())
-                await _detailRepository.DeleteRangeAsync(toDelete.Select(x => x.Id).ToList());
-        }
-
         private async Task AddNotificationAsync(_Order order, _Status status, Guid userId, Guid storeId)
         {
             var notif = new NotificationDto
             {
-                UserId = null,//gửi tất cả user trong cửa hàng
+                UserId = null, // gửi tất cả user trong cửa hàng
                 OrderId = order.Id,
                 StoreId = storeId,
                 Message = $"Đơn hàng #{order.Code} đã được cập nhật thành công",

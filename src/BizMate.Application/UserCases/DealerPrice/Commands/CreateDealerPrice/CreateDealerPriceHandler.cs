@@ -1,7 +1,4 @@
-﻿using AutoMapper;
-using BizMate.Application.Common.Dto.CoreDto;
-using BizMate.Application.Common.Interfaces;
-using BizMate.Application.Common.Interfaces.Repositories;
+﻿using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Security;
 using MediatR;
 using _DealerPrice = BizMate.Domain.Entities.DealerPrice;
@@ -12,25 +9,19 @@ namespace BizMate.Application.UserCases.DealerPrice.Commands.CreateDealerPrice
 {
     public class CreateDealerPriceHandler : IRequestHandler<CreateDealerPriceRequest, CreateDealerPriceResponse>
     {
-        private readonly IDealerPriceRepository _DealerPriceRepository;
-        private readonly ICodeGeneratorService _codeGeneratorService;
+        private readonly IDealerPriceRepository _dealerPriceRepository;
         private readonly IUserSession _userSession;
         private readonly ILogger<CreateDealerPriceHandler> _logger;
-        private readonly IMapper _mapper;
 
         #region constructor
         public CreateDealerPriceHandler(
-            ICodeGeneratorService codeGeneratorService,
             IUserSession userSession,
             IDealerPriceRepository DealerPriceRepository,
-            ILogger<CreateDealerPriceHandler> logger,
-            IMapper mapper)
+            ILogger<CreateDealerPriceHandler> logger)
         {
-            _codeGeneratorService = codeGeneratorService;
             _userSession = userSession;
-            _DealerPriceRepository = DealerPriceRepository;
+            _dealerPriceRepository = DealerPriceRepository;
             _logger = logger;
-            _mapper = mapper;
         }
         #endregion
         public async Task<CreateDealerPriceResponse> Handle(CreateDealerPriceRequest request, CancellationToken cancellationToken)
@@ -40,13 +31,13 @@ namespace BizMate.Application.UserCases.DealerPrice.Commands.CreateDealerPrice
                 var storeId = _userSession.StoreId;
                 var userId = _userSession.UserId;
                 #region check DealerPrice duplicate
-                var existingDealerPrice = await _DealerPriceRepository.CheckDealerPriceExist(
+                var existingDealerPrice = await _dealerPriceRepository.CheckDealerPricesExistAsync(
                     storeId,
-                    request.ProductId,
+                    request.ProductIds,
                     request.DealerLevelId
                     );
 
-                if (existingDealerPrice != null)
+                if (existingDealerPrice == false)
                 {
                     var message = ValidationMessage.LocalizedStrings.AlreadyExist;
                     _logger.LogWarning(message);
@@ -55,23 +46,21 @@ namespace BizMate.Application.UserCases.DealerPrice.Commands.CreateDealerPrice
                 #endregion
 
                 #region create new DealerPrice
-
-                var newDealerPrice = new _DealerPrice
+                var newDealerPrices = request.ProductIds.Select(productId => new _DealerPrice
                 {
                     Id = Guid.NewGuid(),
                     StoreId = storeId,
-                    ProductId = request.ProductId,
-                    Price = request.Price,
+                    ProductId = productId,
                     DealerLevelId = request.DealerLevelId,
                     CreatedBy = Guid.Parse(userId),
-                };
+                }).ToList();
 
-                await _DealerPriceRepository.AddAsync(newDealerPrice, cancellationToken);
+                await _dealerPriceRepository.AddRangeAsync(newDealerPrices, cancellationToken);
+
+
                 #endregion
 
-                var DealerPriceDto = _mapper.Map<DealerPriceCoreDto>(newDealerPrice);
-
-                return new CreateDealerPriceResponse(DealerPriceDto, true, "Tạo giá đại lý của sản phẩm thành công.");
+                return new CreateDealerPriceResponse(true, "Tạo giá đại lý của sản phẩm thành công.");
             }
             catch (Exception ex)
             {

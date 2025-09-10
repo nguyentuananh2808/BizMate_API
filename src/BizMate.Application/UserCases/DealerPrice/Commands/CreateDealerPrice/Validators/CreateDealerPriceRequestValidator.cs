@@ -8,9 +8,8 @@ namespace BizMate.Application.UserCases.DealerPrice.Commands.CreateDealerPrice.V
     {
         public CreateDealerPriceRequestValidator(IStringLocalizer<CreateDealerPriceRequestValidator> localizer)
         {
-            RuleFor(x => x.ProductId).NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty]);
+            RuleFor(x => x.ProductIds).NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty]);
             RuleFor(x => x.DealerLevelId).NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty]);
-            RuleFor(x => x.Price).NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty]);
         }
     }
 }

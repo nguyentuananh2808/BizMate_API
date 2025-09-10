@@ -43,7 +43,6 @@ namespace BizMate.Application.UserCases.DealerLevel.Queries.DealerLevels
                     keyword: request.KeySearch,
                     pageIndex: request.PageIndex,
                     pageSize: request.PageSize,
-                    isActive: request.IsActive,
                     queryFactory: _queryFactory);
 
                 var mappedDealerLevels = _mapper.Map<List<DealerLevelCoreDto>>(DealerLevels);

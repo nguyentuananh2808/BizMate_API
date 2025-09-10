@@ -1,13 +1,14 @@
-﻿using BizMate.Application.Common.Dto.CoreDto;
-
-namespace BizMate.Api.UserCases.DealerPrice.UpdateDealerPrice
+﻿namespace BizMate.Api.UserCases.DealerPrice.UpdateDealerPrice
 {
     public class UpdateDealerPriceResponseViewModel
     {
-        public DealerPriceCoreDto DealerPrice { get; set; }
-        public UpdateDealerPriceResponseViewModel(DealerPriceCoreDto dealerPrice)
+        public bool Success { get; set; }
+        public string Message { get; set; }
+
+        public UpdateDealerPriceResponseViewModel(bool success, string message)
         {
-            DealerPrice = dealerPrice;
+            Success = success;
+            Message = message;
         }
     }
 }

@@ -18,6 +18,7 @@
         public const string ExportReceipt = "export-receipt";
         public const string Notification = "notification";
         public const string Status = "status";
+        public const string Order = "order";
 
         // action
         public const string RefreshToken = "refreshtoken";

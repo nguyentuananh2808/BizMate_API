@@ -47,7 +47,7 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateStatusImpor
                 {
                     var message = ValidationMessage.LocalizedStrings.DataNotExist;
                     _logger.LogWarning(message);
-                    return new UpdateStatusImportReceiptResponse(false, "Phiếu nhập kho không tồn tại.");
+                    return new UpdateStatusImportReceiptResponse(false, message);
                 }
                 #endregion
 
@@ -61,17 +61,17 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateStatusImpor
                 #endregion
 
                 #region get status
-                var statusId = await _statusRepository.GetIdByGroupAndCodeAsync(request.Code, "ImportReceipt");
+                var statusId = await _statusRepository.GetIdByGroupAndCodeAsync(request.CodeStatus, "ImportReceipt");
                 if (statusId == Guid.Empty)
                 {
                     var message = ValidationMessage.LocalizedStrings.DataNotExist2;
                     _logger.LogWarning(message);
-                    return new UpdateStatusImportReceiptResponse(false, "Trạng thái không tồn tại.");
+                    return new UpdateStatusImportReceiptResponse(false, message);
                 }
                 #endregion
 
                 #region check role
-                if (role == "Staff" && request.Code == "APPROVED")
+                if (role == "Staff" && request.CodeStatus == "APPROVED")
                 {
                     var message = ValidationMessage.LocalizedStrings.RoleWithoutAuthority;
                     _logger.LogWarning(message);
@@ -94,7 +94,7 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateStatusImpor
                 #endregion
 
                 #region import stock if APPROVED
-                if (request.Code == "APPROVED" && importReceipt.Details.Any())
+                if (request.CodeStatus == "APPROVED" && importReceipt.Details.Any())
                 {
                     await ImportStockAsync(importReceipt.Details, storeId, userId, cancellationToken);
                 }
@@ -135,7 +135,7 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateStatusImpor
                     stock.UpdatedBy = userId;
                     stock.UpdatedDate = DateTime.UtcNow;
 
-                    await _stockRepository.UpdateAsync(stock, cancellationToken);
+                    await _stockRepository.UpdateAsync(new[] { stock }, cancellationToken);
                 }
                 else
                 {

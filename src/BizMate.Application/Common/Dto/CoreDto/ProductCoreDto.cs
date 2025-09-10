@@ -6,6 +6,7 @@ namespace BizMate.Application.Common.Dto.UserAggregate
     {
         public string Name { get; set; } = default!;
         public int Quantity { get; set; }
+        public int Available { get; set; }
         public int Unit { get; set; } = default!;
         public string? ImageUrl { get; set; }
         public Guid? SupplierId { get; set; }

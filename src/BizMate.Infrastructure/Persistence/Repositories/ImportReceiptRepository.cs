@@ -9,7 +9,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
     public class ImportReceiptRepository : IImportReceiptRepository
     {
         private readonly AppDbContext _context;
-        
+
         public ImportReceiptRepository(AppDbContext context)
         {
             _context = context;
@@ -45,7 +45,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
 
 
         public async Task DeleteAsync(Guid id)
-        {   
+        {
             var receipt = await _context.ImportReceipts.Include(r => r.Details).FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
             if (receipt != null)
             {
@@ -87,7 +87,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
         }
 
         public async Task<(List<ImportReceipt> Receipts, int TotalCount)> SearchReceiptsWithPaging(
-    Guid storeId, DateTime? dateFrom, DateTime? dateTo, string? statusCode, string? keyword, int pageIndex, int pageSize, QueryFactory queryFactory)
+    Guid storeId, DateTime? dateFrom, DateTime? dateTo, IEnumerable<Guid>? statusIds, string? keyword, int pageIndex, int pageSize, QueryFactory queryFactory)
         {
             var baseQuery = queryFactory.Query("ImportReceipts as r")
                 .LeftJoin("Statuses as s", "r.StatusId", "s.Id")
@@ -109,8 +109,8 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             if (dateTo.HasValue)
                 baseQuery.Where("r.Date", "<=", dateTo.Value);
 
-            if (!string.IsNullOrWhiteSpace(statusCode))
-                baseQuery.Where("s.Code", statusCode);
+            if (statusIds != null && statusIds.Any())
+                baseQuery.WhereIn("s.Id", statusIds);
 
             var totalCount = await baseQuery.Clone().CountAsync<int>();
 

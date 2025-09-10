@@ -11,7 +11,7 @@ namespace BizMate.Application.Common.Interfaces.Repositories
         Task AddAsync(DealerLevel DealerLevel, CancellationToken cancellationToken = default);
         Task UpdateAsync(DealerLevel DealerLevel, CancellationToken cancellationToken = default);
         Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
-        Task<(List<DealerLevelCoreDto> DealerLevels, int TotalCount)> SearchDealerLevelsWithPaging(Guid storeId, string? keyword, int pageIndex, int pageSize, bool? isActive, QueryFactory queryFactory);
+        Task<(List<DealerLevelCoreDto> DealerLevels, int TotalCount)> SearchDealerLevelsWithPaging(Guid storeId, string? keyword, int pageIndex, int pageSize, QueryFactory queryFactory);
 
 
     }

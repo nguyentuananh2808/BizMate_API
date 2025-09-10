@@ -40,7 +40,7 @@ namespace BizMate.Application.UserCases.ImportReceipt.Queries.ImportReceipts
                     storeId: storeId,
                     dateFrom: request.DateFrom,
                     dateTo: request.DateTo,
-                    statusCode: request.StatusCode,
+                    statusIds: request.StatusIds,
                     keyword: request.KeySearch,
                     pageIndex: request.PageIndex,
                     pageSize: request.PageSize,

@@ -866,6 +866,9 @@ namespace BizMate.Infrastructure.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
+                    b.Property<int>("Reserved")
+                        .HasColumnType("integer");
+
                     b.Property<Guid>("RowVersion")
                         .HasColumnType("uuid");
 

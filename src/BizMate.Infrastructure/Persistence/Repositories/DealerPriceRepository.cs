@@ -12,11 +12,12 @@ namespace BizMate.Infrastructure.Persistence.Repositories
         {
             _context = context;
         }
-        public async Task AddAsync(DealerPrice dealerPrice, CancellationToken cancellationToken = default)
+        public async Task AddRangeAsync(IEnumerable<DealerPrice> dealerPrices, CancellationToken cancellationToken = default)
         {
-            await _context.AddAsync(dealerPrice, cancellationToken);
+            await _context.AddRangeAsync(dealerPrices, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
         }
+
 
         public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
@@ -41,14 +42,17 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             await _context.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task<DealerPrice?> CheckDealerPriceExist(Guid storeId, Guid productId, Guid dealerLevelId)
+        public async Task<bool> CheckDealerPricesExistAsync(Guid storeId, IEnumerable<Guid> productIds, Guid dealerLevelId)
         {
-            return await _context.Set<DealerPrice>()
-                .Where(dp => dp.StoreId == storeId
-                          && dp.ProductId == productId
-                          && dp.DealerLevelId == dealerLevelId
-                          && !dp.IsDeleted)
-                .FirstOrDefaultAsync();
+            var exists = await _context.Set<DealerPrice>()
+                 .AnyAsync(dp => dp.StoreId == storeId
+                              && productIds.Contains(dp.ProductId)
+                              && dp.DealerLevelId == dealerLevelId
+                              && !dp.IsDeleted);
+
+            // Nếu tìm thấy ít nhất 1 productId trùng => false
+            return !exists;
         }
+
     }
 }

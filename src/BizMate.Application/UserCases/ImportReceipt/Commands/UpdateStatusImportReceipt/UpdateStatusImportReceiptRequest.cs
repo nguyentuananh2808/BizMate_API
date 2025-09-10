@@ -1,11 +1,15 @@
 ﻿using MediatR;
+using System.ComponentModel.DataAnnotations;
 
 namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateStatusImportReceipt
 {
     public class UpdateStatusImportReceiptRequest : IRequest<UpdateStatusImportReceiptResponse>
     {
-        public Guid Id { get; set; }
-        public string Code { get; set; } = default!;
-        public Guid RowVersion { get; set; }
+        [Required]
+        public Guid Id { get; set; } = default!;
+        [Required]
+        public string CodeStatus { get; set; } = default!;
+        [Required]
+        public Guid RowVersion { get; set; } = default!;
     }
 }

@@ -1,4 +1,5 @@
-﻿using BizMate.Application.Common.Interfaces.Repositories;
+﻿using BizMate.Application.Common.Dto.CoreDto;
+using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using SqlKata.Execution;
@@ -85,7 +86,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
         }
 
         public async Task<(List<Order> Receipts, int TotalCount)> SearchReceiptsWithPaging(
-    Guid storeId, DateTime? dateFrom, DateTime? dateTo, string? statusCode, string? keyword, int pageIndex, int pageSize, QueryFactory queryFactory)
+    Guid storeId, DateTime? dateFrom, DateTime? dateTo, IEnumerable<Guid>? statusIds, string? keyword, int pageIndex, int pageSize, QueryFactory queryFactory)
         {
             var baseQuery = queryFactory.Query("Orders as r")
                 .LeftJoin("Statuses as s", "r.StatusId", "s.Id")
@@ -108,8 +109,8 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             if (dateTo.HasValue)
                 baseQuery.Where("r.Date", "<=", dateTo.Value);
 
-            if (!string.IsNullOrWhiteSpace(statusCode))
-                baseQuery.Where("s.Code", statusCode);
+            if (statusIds != null && statusIds.Any())
+                baseQuery.WhereIn("s.Id", statusIds);
 
             var totalCount = await baseQuery.Clone().CountAsync<int>();
 
@@ -148,16 +149,17 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             return (results, totalCount);
         }
 
-        //public async Task UpdateStatusAsync(UpdateOrderStatusDto statusOrder, CancellationToken cancellationToken)
-        //{
-        //    await _context.Orders
-        //        .Where(r => r.StoreId == statusOrder.StoreId && r.Id == statusOrder.Id)
-        //        .ExecuteUpdateAsync(r => r
-        //            .SetProperty(x => x.StatusId, statusOrder.StatusId)
-        //            .SetProperty(x => x.RowVersion, statusOrder.RowVersion)
-        //            .SetProperty(x => x.UpdatedBy, statusOrder.UpdatedBy)
-        //            .SetProperty(x => x.UpdatedDate, statusOrder.UpdatedDate), cancellationToken);
-        //}
+
+        public async Task UpdateStatusAsync(UpdateOrderStatusDto statusOrder, CancellationToken cancellationToken)
+        {
+            await _context.Orders
+                .Where(r => r.StoreId == statusOrder.StoreId && r.Id == statusOrder.Id && !r.IsDeleted)
+                .ExecuteUpdateAsync(r => r
+                    .SetProperty(x => x.StatusId, statusOrder.StatusId)
+                    .SetProperty(x => x.RowVersion, statusOrder.RowVersion)
+                    .SetProperty(x => x.UpdatedBy, statusOrder.UpdatedBy)
+                    .SetProperty(x => x.UpdatedDate, statusOrder.UpdatedDate), cancellationToken);
+        }
 
     }
 }

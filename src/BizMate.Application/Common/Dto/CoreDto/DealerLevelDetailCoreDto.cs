@@ -12,13 +12,13 @@ namespace BizMate.Application.Common.Dto.CoreDto
 
     public class DealerPriceForDealerLevelDetailCoreDto
     {
-        public Guid DealerPriceId { get; set; } = default!;
+        public Guid DealerPriceId { get; set; } 
         // get info product
         public Guid ProductId { get; set; }
-        public string NameProduct { get; set; } = default!;
-        public int UnitProduct { get; set; } = default!;
+        public string? NameProduct { get; set; } 
+        public int UnitProduct { get; set; }
         //get info dealer price
-        public decimal Price { get; set; } = default!;
-        public Guid RowVersionDealerPrice { get; set; }
+        public decimal Price { get; set; } 
+        public Guid RowVersionDealerPrice { get; set; } 
     }
 }

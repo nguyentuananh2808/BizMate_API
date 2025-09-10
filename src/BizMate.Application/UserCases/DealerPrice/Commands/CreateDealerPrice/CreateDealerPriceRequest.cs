@@ -1,11 +1,13 @@
 ﻿using MediatR;
+using System.ComponentModel.DataAnnotations;
 
 namespace BizMate.Application.UserCases.DealerPrice.Commands.CreateDealerPrice
 {
     public class CreateDealerPriceRequest : IRequest<CreateDealerPriceResponse>
     {
-        public Guid ProductId { get; set; }
-        public Guid DealerLevelId { get; set; }
-        public decimal Price { get; set; }
+        [Required]
+        public IEnumerable<Guid> ProductIds { get; set; } = default!;
+        [Required]
+        public Guid DealerLevelId { get; set; } = default!;
     }
 }
