@@ -15,7 +15,9 @@ namespace BizMate.Application.Common.Dto.CoreDto
         public Guid DealerPriceId { get; set; } 
         // get info product
         public Guid ProductId { get; set; }
-        public string? NameProduct { get; set; } 
+        public string? ProductName { get; set; }
+
+        public string? ProductCode { get; set; }
         public int UnitProduct { get; set; }
         //get info dealer price
         public decimal Price { get; set; } 

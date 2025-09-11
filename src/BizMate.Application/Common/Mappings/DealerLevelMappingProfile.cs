@@ -26,7 +26,8 @@ namespace BizMate.Application.Common.Mappings
                             src.DealerPrices.Select(dp => new DealerPriceForDealerLevelDetailCoreDto
                             {
                                 ProductId = dp.ProductId,
-                                NameProduct = dp.Product.Name != null ? dp.Product.Name : string.Empty,
+                                ProductName = dp.Product.Name != null ? dp.Product.Name : string.Empty,
+                                ProductCode = dp.Product.Code != null ? dp.Product.Code : string.Empty,
                                 UnitProduct = dp.Product.Unit,
                                 Price = dp.Price,
                                 DealerPriceId = dp.Id,

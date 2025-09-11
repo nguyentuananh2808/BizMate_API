@@ -36,7 +36,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
         {
             return await _context.DealerLevels
                 .Where(p => !p.IsDeleted && p.Id == id)
-                .Include(p => p.DealerPrices)
+                .Include(p => p.DealerPrices.Where(dp => !dp.IsDeleted))
                     .ThenInclude(dp => dp.Product) 
                 .FirstOrDefaultAsync(cancellationToken);
         }

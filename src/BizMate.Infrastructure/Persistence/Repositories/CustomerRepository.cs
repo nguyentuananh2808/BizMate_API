@@ -89,5 +89,12 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             _context.Customers.Update(customer);
             await _context.SaveChangesAsync(cancellationToken);
         }
+
+        public async Task<bool> HasCustomersWithDealerLevelAsync(Guid dealerLevelId, CancellationToken cancellationToken = default)
+        {
+            return await _context.Customers
+                .AnyAsync(c => !c.IsDeleted && c.DealerLevelId == dealerLevelId, cancellationToken);
+        }
+
     }
 }

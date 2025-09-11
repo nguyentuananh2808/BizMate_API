@@ -3,22 +3,26 @@ using BizMate.Application.Common.Security;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using BizMate.Public.Message;
+using BizMate.Domain.Entities;
 
 namespace BizMate.Application.UserCases.DealerLevel.Commands.DeleteDealerLevel
 {
     public class DeleteDealerLevelHandler : IRequestHandler<DeleteDealerLevelRequest, DeleteDealerLevelResponse>
     {
         private readonly IDealerLevelRepository _DealerLevelRepository;
+        private readonly ICustomerRepository _customerRepository;
         private readonly IUserSession _userSession;
         private readonly ILogger<DeleteDealerLevelHandler> _logger;
 
         #region constructor
         public DeleteDealerLevelHandler(
+            ICustomerRepository customerRepository,
             IUserSession userSession,
             IDealerLevelRepository DealerLevelRepository,
             ILogger<DeleteDealerLevelHandler> logger)
         {
             _userSession = userSession;
+            _customerRepository = customerRepository;
             _DealerLevelRepository = DealerLevelRepository;
             _logger = logger;
         }
@@ -40,6 +44,13 @@ namespace BizMate.Application.UserCases.DealerLevel.Commands.DeleteDealerLevel
                 #endregion
 
                 #region check if DealerLevel is used
+                var inUse = await _customerRepository.HasCustomersWithDealerLevelAsync(request.Id);
+                if (inUse)
+                {
+                    var message = ValidationMessage.LocalizedStrings.ExistCustomerInDealerLevel;
+                    _logger.LogWarning(message);
+                    return new DeleteDealerLevelResponse(false, message);
+                }
 
                 #endregion
                 await _DealerLevelRepository.DeleteAsync(request.Id);

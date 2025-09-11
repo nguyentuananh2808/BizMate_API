@@ -234,6 +234,8 @@
 
             public const string AlreadyExist = "BACKEND.VALIDATION.MESSAGE.ALREADY_EXIST";
 
+            public const string ExistCustomerInDealerLevel = "BACKEND.APP_MESSAGE.EXIST_CUSTOMER_IN_DEALERLEVEL";
+
             public const string ObjectAlreadyExist = "BACKEND.VALIDATION.MESSAGE_OBJECT_ALREADY_EXIST";
 
             public const string NotAllowToDoXWithCustomerStatus = "BACKEND.VALIDATION.MESSAGE_NOT_ALLOW_TO_DO_X_WITH_CUSTOMER_STATUS";
