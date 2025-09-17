@@ -11,9 +11,8 @@ namespace BizMate.Application.Common.Dto.CoreDto
         public string ProductName { get; set; } = default!;
         public string? ProductCode { get; set; }
         public int Unit { get; set; }
-
         public int Quantity { get; set; }
         public decimal UnitPrice { get; set; }
-        public decimal Total => Quantity * UnitPrice;
+        public decimal Total { get; set; }
     }
 }

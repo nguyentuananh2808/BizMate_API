@@ -15,7 +15,6 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder.Validators
             RuleFor(x => x.CustomerPhone).NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty]);
             RuleFor(x => x.CustomerName).NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty]);
             RuleFor(x => x.CustomerType).NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty]);
-            RuleFor(x => x.TotalAmount).NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty]);
             RuleFor(x => x.Details).NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty]);
             // Validate từng chi tiết
             RuleForEach(x => x.Details).ChildRules(detail =>
@@ -28,9 +27,6 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder.Validators
                     .GreaterThan(0)
                     .WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty]);
 
-                detail.RuleFor(d => d.UnitPrice)
-                    .GreaterThan(0)
-                    .WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty]);
 
             });
         }

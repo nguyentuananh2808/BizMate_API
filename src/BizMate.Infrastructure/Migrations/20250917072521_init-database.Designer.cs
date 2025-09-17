@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BizMate.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250831143946_init-database")]
+    [Migration("20250917072521_init-database")]
     partial class initdatabase
     {
         /// <inheritdoc />
@@ -602,6 +602,9 @@ namespace BizMate.Infrastructure.Migrations
 
                     b.Property<Guid>("RowVersion")
                         .HasColumnType("uuid");
+
+                    b.Property<decimal>("Total")
+                        .HasColumnType("numeric");
 
                     b.Property<int>("Unit")
                         .HasColumnType("integer");

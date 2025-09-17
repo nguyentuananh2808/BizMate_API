@@ -55,7 +55,8 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             return result.ToList();
 
         }
-        public async Task<(List<CustomerCoreDto> Customers, int TotalCount)> SearchCustomersWithPaging(Guid storeId, string? keyword, int pageIndex, int pageSize, bool? isActive, QueryFactory queryFactory)
+        public async Task<(List<CustomerCoreDto> Customers, int TotalCount)> SearchCustomersWithPaging(
+     Guid storeId, string? keyword, int pageIndex, int pageSize, bool? isActive, QueryFactory queryFactory)
         {
             var baseQuery = queryFactory.Query("Customers as p")
                 .Where("p.StoreId", storeId)
@@ -68,10 +69,36 @@ namespace BizMate.Infrastructure.Persistence.Repositories
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
-                var kw = $"%{keyword.ToLower()}%";
-                baseQuery.WhereRaw(@"LOWER(p.""Name"") LIKE ? OR LOWER(p.""Code"") LIKE ? OR LOWER(p.""Phone"") LIKE ?", kw, kw, kw);
-            }
+                var keywords = keyword
+                    .ToLower()
+                    .Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
+                baseQuery.Where(q =>
+                {
+                    foreach (var word in keywords)
+                    {
+                        var kwPrefix = $"{word}%";   // match từ đầu
+                        var kwLike = $"%{word}%";  // match ở bất kỳ đâu
+
+                        q.OrWhereRaw(@"LOWER(p.""Name"") LIKE ?", kwPrefix);
+                        q.OrWhereRaw(@"LOWER(p.""Name"") LIKE ?", kwLike);
+                    }
+                    return q;
+                });
+
+                // Ưu tiên Name bắt đầu bằng keyword trước
+                baseQuery.OrderByRaw(@"
+                    CASE 
+                        WHEN LOWER(p.""Name"") LIKE ? THEN 0
+                        ELSE 1
+                    END, p.""Name"" ASC",
+                            keyword.ToLower() + "%"
+                        );
+                }
+                else
+                {
+                    baseQuery.OrderBy("p.Name");
+                }
 
             var totalQuery = baseQuery.Clone();
             var totalCount = await totalQuery.CountAsync<int>();

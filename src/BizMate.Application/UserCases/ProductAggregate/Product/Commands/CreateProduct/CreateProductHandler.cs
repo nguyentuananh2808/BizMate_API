@@ -68,6 +68,8 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Create
                     Code = productCode,
                     Name = request.Name.Trim(),
                     Unit = request.Unit,
+                    SalePrice=request.SalePrice,
+                    CostPrice=request.CostPrice,
                     ImageUrl = request.ImageUrl,
                     StoreId = storeId,
                     ProductCategoryId = request.ProductCategoryId,

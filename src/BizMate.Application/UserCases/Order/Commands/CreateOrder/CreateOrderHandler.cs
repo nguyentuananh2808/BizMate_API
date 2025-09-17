@@ -5,13 +5,15 @@ using BizMate.Domain.Entities;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using _Order = BizMate.Domain.Entities.Order;
-using BizMate.Public.Message;
+using _DealerLevel = BizMate.Domain.Entities.DealerLevel;
 
 namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
 {
     public class CreateOrderHandler : IRequestHandler<CreateOrderRequest, CreateOrderResponse>
     {
         private readonly IStockRepository _stockRepository;
+        private readonly ICustomerRepository _customerRepository;
+        private readonly IDealerLevelRepository _dealerLevelRepository;
         private readonly IOrderRepository _orderRepository;
         private readonly ICodeGeneratorService _codeGeneratorService;
         private readonly IUserSession _userSession;
@@ -21,7 +23,9 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
 
         #region constructor
         public CreateOrderHandler(
-            IStockRepository stockRepository,   
+            IDealerLevelRepository dealerLevelRepository,
+            ICustomerRepository customerRepository,
+            IStockRepository stockRepository,
             IStatusRepository statusRepository,
             IProductRepository productRepository,
             ICodeGeneratorService codeGeneratorService,
@@ -29,6 +33,8 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
             IOrderRepository OrderRepository,
             ILogger<CreateOrderHandler> logger)
         {
+            _dealerLevelRepository = dealerLevelRepository;
+            _customerRepository = customerRepository;
             _stockRepository = stockRepository;
             _productRepository = productRepository;
             _statusRepository = statusRepository;
@@ -47,27 +53,34 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
 
 
                 #region create new Order
+                var receiptId = Guid.NewGuid();
+
+                var statusCode = request.IsDraft ? "DRAFT" : "NEW";
+                var statusId = await _statusRepository.GetIdByGroupAndCodeAsync(statusCode, "Order");
+
+                var code = await _codeGeneratorService.GenerateCodeAsync("#DH", 5);
+                // Lấy customer
+                var customer = request.CustomerId != null
+                    ? await _customerRepository.GetByIdAsync(request.CustomerId.Value, cancellationToken)
+                    : null;
+
+                // Lấy product list cần thiết
                 var productIds = request.Details.Select(d => d.ProductId).ToList();
-
-                var products = await _productRepository.GetByIdsAsync(productIds);
-
+                var products = await _productRepository.GetByIdsAsync(productIds, cancellationToken);
                 var productDict = products.ToDictionary(p => p.Id);
 
-                //get status for Order
-                var statusId = await _statusRepository.GetIdByGroupAndCodeAsync("NEW", "Order");
-                if (statusId == Guid.Empty)
+                // Nếu là đại lý thì lấy DealerLevel + DealerPrices
+                _DealerLevel? dealerLevel = null;
+                if (request.CustomerType == 2 && customer?.DealerLevelId != null)
                 {
-                    var message = ValidationMessage.LocalizedStrings.DataNotExist;
-                    _logger.LogWarning(message);
-                    return new CreateOrderResponse(false, message);
+                    dealerLevel = await _dealerLevelRepository.GetByIdAsync(customer.DealerLevelId.Value, cancellationToken);
                 }
-                var receiptCode = await _codeGeneratorService.GenerateCodeAsync("#NK");
 
-                var receiptId = Guid.NewGuid();
+
                 var newOrder = new _Order
                 {
                     Id = receiptId,
-                    Code = receiptCode,
+                    Code = code,
                     StoreId = storeId,
                     CreatedBy = Guid.Parse(userId),
                     CustomerId = request.CustomerId,
@@ -80,6 +93,22 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
                     Details = request.Details.Select(d =>
                     {
                         var product = productDict[d.ProductId];
+                        decimal unitPrice;
+
+                        if (request.CustomerType == 2 && dealerLevel != null)
+                        {
+                            // Tìm giá theo DealerLevel (đã load sẵn DealerPrices từ repository)
+                            var dealerPrice = dealerLevel.DealerPrices
+                                .FirstOrDefault(dp => dp.ProductId == d.ProductId && !dp.IsDeleted);
+
+                            unitPrice = dealerPrice?.Price
+                                        ?? product.SalePrice.GetValueOrDefault(0); // fallback nếu chưa có giá cho DealerLevel
+                        }
+                        else
+                        {
+                            // Khách thường hoặc đại lý chưa có DealerLevel
+                            unitPrice = product.SalePrice.GetValueOrDefault(0);
+                        }
 
                         return new OrderDetail
                         {
@@ -89,11 +118,14 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
                             Quantity = d.Quantity,
                             ProductName = product.Name,
                             ProductCode = product.Code,
-                            UnitPrice = d.UnitPrice,
+                            UnitPrice = unitPrice,
                             Unit = product.Unit,
+                            Total = d.Quantity * unitPrice
                         };
                     }).ToList()
                 };
+
+                newOrder.RecalculateTotal();
 
                 await _orderRepository.AddAsync(newOrder, cancellationToken);
 

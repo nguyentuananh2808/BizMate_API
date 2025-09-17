@@ -85,7 +85,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             return result.ToList();
         }
 
-        public async Task<(List<Order> Receipts, int TotalCount)> SearchReceiptsWithPaging(
+        public async Task<(List<OrderCoreDto> Receipts, int TotalCount)> SearchReceiptsWithPaging(
     Guid storeId, DateTime? dateFrom, DateTime? dateTo, IEnumerable<Guid>? statusIds, string? keyword, int pageIndex, int pageSize, QueryFactory queryFactory)
         {
             var baseQuery = queryFactory.Query("Orders as r")
@@ -104,10 +104,10 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             }
 
             if (dateFrom.HasValue)
-                baseQuery.Where("r.Date", ">=", dateFrom.Value);
+                baseQuery.Where("r.OrderDate", ">=", dateFrom.Value);
 
             if (dateTo.HasValue)
-                baseQuery.Where("r.Date", "<=", dateTo.Value);
+                baseQuery.Where("r.OrderDate", "<=", dateTo.Value);
 
             if (statusIds != null && statusIds.Any())
                 baseQuery.WhereIn("s.Id", statusIds);
@@ -120,31 +120,23 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                 .Limit(pageSize)
                 .GetAsync();
 
-            var results = rows.Select(row =>
+            var results = rows.Select(row => new OrderCoreDto
             {
-                var receipt = new Order
-                {
-                    Id = row.Id,
-                    StoreId = row.StoreId,
-                    Code = row.Code,
-                    CustomerName = row.CustomerName,
-                    CustomerType = row.CustomerType,
-                    CustomerPhone = row.CustomerPhone,
-                    CustomerId = row.CustomerId,
-                    DeliveryAddress = row.DeliveryAddress,
-                    TotalAmount = row.TotalAmount,
-                    StatusId = row.StatusId,
-                    Status = row.Status_Id != null
-                        ? new Status
-                        {
-                            Id = row.Status_Id,
-                            Code = row.Status_Code,
-                            Name = row.Status_Name
-                        }
-                        : null
-                };
-                return receipt;
+
+                Id = row.Id,
+                StoreId = row.StoreId,
+                Code = row.Code,
+                CustomerName = row.CustomerName,
+                CustomerType = row.CustomerType,
+                CustomerPhone = row.CustomerPhone,
+                CustomerId = row.CustomerId,
+                DeliveryAddress = row.DeliveryAddress,
+                TotalAmount = row.TotalAmount,
+                StatusId = row.StatusId,
+                Description=row.Description,
+                StatusName = row.Status_Name
             }).ToList();
+
 
             return (results, totalCount);
         }

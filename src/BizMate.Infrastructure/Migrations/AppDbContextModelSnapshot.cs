@@ -600,6 +600,9 @@ namespace BizMate.Infrastructure.Migrations
                     b.Property<Guid>("RowVersion")
                         .HasColumnType("uuid");
 
+                    b.Property<decimal>("Total")
+                        .HasColumnType("numeric");
+
                     b.Property<int>("Unit")
                         .HasColumnType("integer");
 

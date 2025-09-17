@@ -47,9 +47,8 @@ namespace BizMate.Application.UserCases.Order.Queries.GetOrders
                     queryFactory: _queryFactory
                 );
 
-                var mapped = _mapper.Map<List<OrderCoreDto>>(receipts);
 
-                return new GetOrdersResponse(mapped, totalCount);
+                return new GetOrdersResponse(receipts, totalCount);
             }
             catch (Exception ex)
             {

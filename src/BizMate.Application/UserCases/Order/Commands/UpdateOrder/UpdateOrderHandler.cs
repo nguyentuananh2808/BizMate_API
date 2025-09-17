@@ -60,6 +60,7 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
 
             // 4. Cập nhật thông tin order
             UpdateOrderInfo(order, request, _userSession.UserId);
+
             await _orderRepository.UpdateAsync(order);
 
             // 5. Cập nhật chi tiết đơn hàng + reserved stock
@@ -92,6 +93,7 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
                 {
                     var diff = item.Quantity - existing.Quantity;
                     existing.Quantity = item.Quantity;
+                    existing.Total = existing.Quantity * existing.UnitPrice;
                     await _detailRepository.UpdateAsync(existing);
 
                     if (diff != 0 && stockDict.TryGetValue(item.ProductId, out var stock))
@@ -111,7 +113,9 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
                         OrderId = orderId,
                         ProductName = product.Name,
                         ProductCode = product.Code,
-                        Unit = product.Unit
+                        Unit = product.Unit,
+                        UnitPrice = product.SalePrice.GetValueOrDefault(0),
+                        Total = item.Quantity * product.SalePrice.GetValueOrDefault(0)
                     });
 
                     if (stockDict.TryGetValue(item.ProductId, out var stock))

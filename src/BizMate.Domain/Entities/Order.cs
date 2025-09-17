@@ -15,13 +15,18 @@
         public string CustomerName { get; set; } = default!;
         public string CustomerPhone { get; set; } = default!;
         public string DeliveryAddress { get; set; } = default!;
-
         public decimal TotalAmount { get; set; }
 
         // Trạng thái đơn hàng
         public Guid StatusId { get; set; }
+
         public Status Status { get; set; } = default!;
 
         public ICollection<OrderDetail> Details { get; set; } = new List<OrderDetail>();
+        //  tính lại TotalAmount từ Details
+        public void RecalculateTotal()
+        {
+            TotalAmount = Details?.Sum(d => d.Total) ?? 0;
+        }
     }
 }

@@ -50,15 +50,7 @@ namespace BizMate.Application.UserCases.ExportReceipt.Commands.CreateExportRecei
 
                 var productDict = products.ToDictionary(p => p.Id);
 
-                //get status for ExportReceipt
-                var statusId = await _statusRepository.GetIdByGroupAndCodeAsync("NEW", "ExportReceipt");
-                if (statusId == Guid.Empty)
-                {
-                    var message = ValidationMessage.LocalizedStrings.DataNotExist;
-                    _logger.LogError(message);
-                    return new CreateExportReceiptResponse(false, message);
-                }
-                var receiptCode = await _codeGeneratorService.GenerateCodeAsync("#NK");
+                var receiptCode = await _codeGeneratorService.GenerateCodeAsync("#XK");
 
                 var receiptId = Guid.NewGuid();
                 var newExportReceipt = new _ExportReceipt
@@ -70,7 +62,6 @@ namespace BizMate.Application.UserCases.ExportReceipt.Commands.CreateExportRecei
                     CustomerPhone = request.CustomerPhone,
                     CustomerName = request.CustomerName,
                     DeliveryAddress = request.DeliveryAddress,
-                    StatusId = statusId,
                     Description = request.Description,
                     Details = request.Details.Select(d =>
                     {

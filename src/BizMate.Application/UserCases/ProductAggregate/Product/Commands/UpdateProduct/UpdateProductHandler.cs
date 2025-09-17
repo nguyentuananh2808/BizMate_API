@@ -71,6 +71,8 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Update
                 #region update data
                 product.Name = request.Name.Trim();
                 product.Unit = request.Unit;
+                product.SalePrice = request.SalePrice;
+                product.CostPrice = request.CostPrice;
                 product.ImageUrl = request.ImageUrl;
                 product.Description = request.Description;
                 product.SupplierId = request.SupplierId;

@@ -21,8 +21,6 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
         public string CustomerName { get; set; } = default!;
         public string CustomerPhone { get; set; } = default!;
         public string DeliveryAddress { get; set; } = default!;
-
-        public decimal TotalAmount { get; set; }
         public string? Description { get; set; }
         public Guid StatusId { get; set; }
         public ICollection<UpdateOrderDetailRequest> Details { get; set; } = new List<UpdateOrderDetailRequest>();
@@ -32,6 +30,5 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
     {
         public Guid ProductId { get; set; }
         public int Quantity { get; set; }
-        public decimal UnitPrice { get; set; }
     }
 }
