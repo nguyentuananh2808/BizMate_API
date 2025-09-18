@@ -43,6 +43,7 @@ public static class InfrastructureDependencyInjection
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IStatusRepository, StatusRepository>();
+        services.AddScoped<IUnitOfWork, EfUnitOfWork>();
 
 
 

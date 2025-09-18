@@ -13,19 +13,24 @@ namespace BizMate.Infrastructure.Persistence.Repositories
         {
             _context = context;
         }
-        public async Task AddAsync(Order receipt, CancellationToken cancellationToken)
-        {
 
-            await _context.Orders.AddAsync(receipt);
-            await _context.SaveChangesAsync(cancellationToken);
+
+        public async Task AddAsync(Order receipt, CancellationToken cancellationToken = default)
+        {
+            // Thêm entity nhưng không save changes - để caller quyết định commit
+            await _context.Orders.AddAsync(receipt, cancellationToken);
         }
 
-        public async Task UpdateAsync(Order receipt)
+        public async Task UpdateAsync(Order receipt, CancellationToken cancellationToken = default)
         {
-            // Update Receipt
-            _context.Orders.Update(receipt);
+            // Update Receipt (EF sẽ track entities; nếu entity detached, attach trước)
+            if (_context.Entry(receipt).State == EntityState.Detached)
+            {
+                _context.Orders.Attach(receipt);
+            }
+            _context.Entry(receipt).State = EntityState.Modified;
 
-            // Update Details
+            // Update Details: ensure each detail is tracked with correct state
             foreach (var detail in receipt.Details)
             {
                 if (_context.Entry(detail).State == EntityState.Detached)
@@ -33,37 +38,42 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                     _context.OrderDetails.Attach(detail);
                 }
 
-                _context.Entry(detail).State = EntityState.Modified;
+                // if id empty => treat as added (should be set by caller)
+                _context.Entry(detail).State = detail.Id == Guid.Empty ? EntityState.Added : EntityState.Modified;
             }
 
-            // Save changes
-            await _context.SaveChangesAsync();
+            // NOTE: Không gọi SaveChanges ở đây để handler quản lý transaction và 1 lần SaveChanges
+            await Task.CompletedTask;
         }
 
-
-
-        public async Task DeleteAsync(Guid id)
+        public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            var receipt = await _context.Orders.Include(r => r.Details).FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
+            var receipt = await _context.Orders.Include(r => r.Details).FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted, cancellationToken);
             if (receipt != null)
             {
                 receipt.IsDeleted = true;
                 receipt.DeletedAt = DateTime.UtcNow;
                 _context.Orders.Update(receipt);
-                await _context.SaveChangesAsync();
             }
         }
 
-        public async Task<Order?> GetByIdAsync(Guid id)
+        public async Task<Order?> GetByIdAsync(Guid id, bool includeDetails = true, CancellationToken cancellationToken = default)
         {
-            return await _context.Orders
-                .AsNoTracking()
-                .Include(r => r.Details)
-                .Include(r => r.Status)
-                .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
+            IQueryable<Order> query = _context.Orders.Where(r => r.Id == id && !r.IsDeleted);
+
+            if (includeDetails)
+                query = query.Include(r => r.Details)
+                             .Include(r => r.Status);
+
+            return await query.FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task<List<Order>> SearchReceipts(Guid storeId, int? type, string? keyword, QueryFactory queryFactory)
+        public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task<List<Order>> SearchReceipts(Guid storeId, int? type, string? keyword, QueryFactory queryFactory, CancellationToken cancellationToken = default)
         {
             var query = queryFactory.Query("Orders as r")
                 .Where("r.StoreId", storeId)
@@ -86,7 +96,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
         }
 
         public async Task<(List<OrderCoreDto> Receipts, int TotalCount)> SearchReceiptsWithPaging(
-    Guid storeId, DateTime? dateFrom, DateTime? dateTo, IEnumerable<Guid>? statusIds, string? keyword, int pageIndex, int pageSize, QueryFactory queryFactory)
+            Guid storeId, DateTime? dateFrom, DateTime? dateTo, IEnumerable<Guid>? statusIds, string? keyword, int pageIndex, int pageSize, QueryFactory queryFactory,CancellationToken cancellationToken)
         {
             var baseQuery = queryFactory.Query("Orders as r")
                 .LeftJoin("Statuses as s", "r.StatusId", "s.Id")
@@ -133,7 +143,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                 DeliveryAddress = row.DeliveryAddress,
                 TotalAmount = row.TotalAmount,
                 StatusId = row.StatusId,
-                Description=row.Description,
+                Description = row.Description,
                 StatusName = row.Status_Name
             }).ToList();
 
@@ -144,6 +154,8 @@ namespace BizMate.Infrastructure.Persistence.Repositories
 
         public async Task UpdateStatusAsync(UpdateOrderStatusDto statusOrder, CancellationToken cancellationToken)
         {
+            // Lưu ý: ExecuteUpdateAsync sẽ áp dụng trực tiếp trên DB; handler hiện tại dùng phương thức SaveChangesAsync chung nên
+            // nếu bạn muốn dùng ExecuteUpdateAsync, phải hiểu hành vi transaction của EF. Ở đây vẫn giữ cho các thao tác do handler quản lý.
             await _context.Orders
                 .Where(r => r.StoreId == statusOrder.StoreId && r.Id == statusOrder.Id && !r.IsDeleted)
                 .ExecuteUpdateAsync(r => r
