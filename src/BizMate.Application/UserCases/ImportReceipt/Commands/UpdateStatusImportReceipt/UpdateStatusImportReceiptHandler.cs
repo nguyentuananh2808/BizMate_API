@@ -42,7 +42,7 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateStatusImpor
                 var role = _userSession.Role;
 
                 #region check importReceipt exist
-                var importReceipt = await _importReceiptRepository.GetByIdAsync(request.Id);
+                var importReceipt = await _importReceiptRepository.GetByIdAsync(request.Id,cancellationToken);
                 if (importReceipt == null)
                 {
                     var message = ValidationMessage.LocalizedStrings.DataNotExist;

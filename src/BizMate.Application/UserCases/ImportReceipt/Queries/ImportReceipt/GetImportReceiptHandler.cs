@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using BizMate.Application.Common.Dto.CoreDto;
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Public.Message;
 using MediatR;
@@ -24,7 +25,7 @@ namespace BizMate.Application.UserCases.ImportReceipt.Queries.ImportReceipt
 
         public async Task<GetImportReceiptResponse> Handle(GetImportReceiptRequest request, CancellationToken cancellationToken)
         {
-            var receipt = await _importReceiptRepository.GetByIdAsync(request.Id);
+            var receipt = await _importReceiptRepository.GetByIdAsync(request.Id, cancellationToken);
 
             if (receipt == null)
             {
@@ -33,9 +34,9 @@ namespace BizMate.Application.UserCases.ImportReceipt.Queries.ImportReceipt
                 return new GetImportReceiptResponse(false, message);
             }
 
-            var result = _mapper.Map<GetImportReceiptResponse>(receipt);
+            var result = _mapper.Map<ImportReceiptCoreDto>(receipt);
 
-            return result;
+            return new GetImportReceiptResponse(result);
         }
     }
 }

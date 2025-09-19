@@ -48,10 +48,10 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             }
 
             if (dateFrom.HasValue)
-                baseQuery.Where("r.Date", ">=", dateFrom.Value);
+                baseQuery.Where("r.CreatedDate", ">=", dateFrom.Value);
 
             if (dateTo.HasValue)
-                baseQuery.Where("r.Date", "<=", dateTo.Value);
+                baseQuery.Where("r.CreatedDate", "<=", dateTo.Value);
 
             var totalCount = await baseQuery.Clone().CountAsync<int>();
 

@@ -71,6 +71,7 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.CreateImportRecei
                     DeliveryAddress = request.DeliveryAddress,
                     StatusId = statusId,
                     Description = request.Description,
+                    TotalAmount=0,
                     Details = request.Details.Select(d =>
                     {
                         var product = productDict[d.ProductId];

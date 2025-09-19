@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using SqlKata.Execution;
 using BizMate.Domain.Entities;
 using BizMate.Public.Message;
+using BizMate.Application.Common.Interfaces;
 
 namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateImportReceipt
 {
@@ -13,17 +14,20 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateImportRecei
         private readonly IImportReceiptDetailRepository _detailRepository;
         private readonly IImportReceiptRepository _importReceiptRepository;
         private readonly IUserSession _userSession;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IProductRepository _productRepository;
         private readonly ILogger<UpdateImportReceiptHandler> _logger;
 
         #region constructor
         public UpdateImportReceiptHandler(
+            IUnitOfWork unitOfWork,
             IImportReceiptDetailRepository detailRepository,
             IProductRepository productRepository,
             IUserSession userSession,
             IImportReceiptRepository ImportReceiptRepository,
             ILogger<UpdateImportReceiptHandler> logger)
         {
+            _unitOfWork = unitOfWork;
             _detailRepository = detailRepository;
             _productRepository = productRepository;
             _userSession = userSession;
@@ -38,7 +42,7 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateImportRecei
                 var userId = _userSession.UserId;
 
                 #region check ImportReceipt exist
-                var importReceipt = await _importReceiptRepository.GetByIdAsync(request.Id);
+                var importReceipt = await _importReceiptRepository.GetByIdAsync(request.Id, cancellationToken);
                 if (importReceipt == null)
                 {
                     var message = ValidationMessage.LocalizedStrings.DataNotExist;
@@ -56,56 +60,35 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateImportRecei
                 }
                 #endregion
 
-                #region update data
-                // Cập nhật phiếu
+                #region Update via Stored Procedure
                 importReceipt.SupplierName = request.SupplierName;
                 importReceipt.DeliveryAddress = request.DeliveryAddress;
                 importReceipt.Description = request.Description;
                 importReceipt.UpdatedDate = DateTime.UtcNow;
                 importReceipt.UpdatedBy = Guid.Parse(userId);
-                importReceipt.RowVersion = Guid.NewGuid();
+                // RowVersion sẽ do store tự sinh
 
-                // Xóa và thêm lại chi tiết
-                var existingDetails = await _detailRepository.GetByReceiptIdAsync(request.Id);
-
-                // So sánh
-                var requestProductIds = request.Details.Select(d => d.ProductId).ToList();
-
-                // Update hoặc Add
+                // Map details để truyền vào store
+                var details = new List<ImportReceiptDetail>();
                 foreach (var item in request.Details)
                 {
-                    var existing = existingDetails.FirstOrDefault(d => d.ProductId == item.ProductId);
-                    if (existing != null)
+                    var product = await _productRepository.GetByIdAsync(item.ProductId);
+                    details.Add(new ImportReceiptDetail
                     {
-                        existing.Quantity = item.Quantity;
-                        await _detailRepository.UpdateAsync(existing);
-                    }
-                    else
-                    {
-                        var product = await _productRepository.GetByIdAsync(item.ProductId);
-                        await _detailRepository.AddAsync(new ImportReceiptDetail
-                        {
-                            Id = Guid.NewGuid(),
-                            ProductId = item.ProductId,
-                            Quantity = item.Quantity,
-                            ImportReceiptId = request.Id,
-                            ProductName = product.Name,
-                            ProductCode = product.Code,
-                            Unit = product.Unit
-                        });
-                    }
+                        ProductId = item.ProductId,
+                        Quantity = item.Quantity,
+                        ProductName = product.Name,
+                        ProductCode = product.Code,
+                        Unit = product.Unit
+                    });
                 }
 
-                // Xóa
-                var toDelete = existingDetails.Where(d => !requestProductIds.Contains(d.ProductId)).ToList();
-                await _detailRepository.DeleteRangeAsync(toDelete.Select(x => x.Id).ToList());
+                await _importReceiptRepository.UpdateWithDetailsAsync(importReceipt, details, cancellationToken);
 
-
-
-                await _importReceiptRepository.UpdateAsync(importReceipt);
-                #endregion
+                await _unitOfWork.CommitAsync(cancellationToken);
 
                 return new UpdateImportReceiptResponse(true, "Cập nhật phiếu nhập kho thành công.");
+                #endregion
             }
             catch (Exception ex)
             {
@@ -113,5 +96,6 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateImportRecei
                 return new UpdateImportReceiptResponse(false, "Không thể cập nhật phiếu nhập kho. Vui lòng thử lại.");
             }
         }
+
     }
 }

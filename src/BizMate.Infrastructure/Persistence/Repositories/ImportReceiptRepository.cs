@@ -1,8 +1,14 @@
 ﻿using BizMate.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using SqlKata.Execution;
+using Dapper;
+using Npgsql;
+using System.Data;
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Dto.CoreDto;
+using Microsoft.EntityFrameworkCore.Storage;
+using System.Data.Common;
+using System.Text.Json;
 
 namespace BizMate.Infrastructure.Persistence.Repositories
 {
@@ -15,54 +21,65 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             _context = context;
         }
 
-        public async Task AddAsync(ImportReceipt receipt, CancellationToken cancellationToken)
+        public async Task UpdateWithDetailsAsync(
+      ImportReceipt receipt,
+      IEnumerable<ImportReceiptDetail> details,
+      CancellationToken cancellationToken = default)
         {
+            await using var conn = (NpgsqlConnection)_context.Database.GetDbConnection();
+            if (conn.State != ConnectionState.Open)
+                await conn.OpenAsync(cancellationToken);
 
-            await _context.ImportReceipts.AddAsync(receipt);
-            await _context.SaveChangesAsync(cancellationToken);
+            await using var cmd = new NpgsqlCommand("CALL sp_update_import_receipt(@p_receipt_id, @p_supplier_name, @p_delivery_address, @p_description, @p_row_version, @p_updated_by, @p_details)", conn);
+
+            cmd.Parameters.AddWithValue("p_receipt_id", receipt.Id);
+            cmd.Parameters.AddWithValue("p_supplier_name", receipt.SupplierName ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("p_delivery_address", receipt.DeliveryAddress ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("p_description", receipt.Description ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("p_row_version", receipt.RowVersion);
+            cmd.Parameters.AddWithValue("p_updated_by", receipt.UpdatedBy);
+
+            var detailsJson = JsonSerializer.Serialize(details);
+            cmd.Parameters.Add("p_details", NpgsqlTypes.NpgsqlDbType.Jsonb).Value = detailsJson;
+
+            await cmd.ExecuteNonQueryAsync(cancellationToken);
         }
 
-        public async Task UpdateAsync(ImportReceipt receipt)
+
+
+        public async Task AddAsync(ImportReceipt receipt, CancellationToken cancellationToken = default)
         {
-            // Update Receipt
+            await _context.ImportReceipts.AddAsync(receipt, cancellationToken);
+        }
+
+        public Task UpdateAsync(ImportReceipt receipt, CancellationToken cancellationToken = default)
+        {
             _context.ImportReceipts.Update(receipt);
-
-            // Update Details
-            foreach (var detail in receipt.Details)
-            {
-                if (_context.Entry(detail).State == EntityState.Detached)
-                {
-                    _context.ImportReceiptDetails.Attach(detail);
-                }
-
-                _context.Entry(detail).State = EntityState.Modified;
-            }
-
-            // Save changes
-            await _context.SaveChangesAsync();
+            return Task.CompletedTask;
         }
 
 
 
-        public async Task DeleteAsync(Guid id)
+
+        public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            var receipt = await _context.ImportReceipts.Include(r => r.Details).FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
+            var receipt = await _context.ImportReceipts
+                .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted, cancellationToken);
             if (receipt != null)
             {
                 receipt.IsDeleted = true;
                 receipt.DeletedAt = DateTime.UtcNow;
                 _context.ImportReceipts.Update(receipt);
-                await _context.SaveChangesAsync();
             }
         }
 
-        public async Task<ImportReceipt?> GetByIdAsync(Guid id)
+        public async Task<ImportReceipt?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             return await _context.ImportReceipts
                 .AsNoTracking()
                 .Include(r => r.Details)
                 .Include(r => r.Status)
-                .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
+                .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted, cancellationToken);
         }
 
         public async Task<List<ImportReceipt>> SearchReceipts(Guid storeId, int? type, string? keyword, QueryFactory queryFactory)
@@ -104,10 +121,10 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             }
 
             if (dateFrom.HasValue)
-                baseQuery.Where("r.Date", ">=", dateFrom.Value);
+                baseQuery.Where("r.CreatedDate", ">=", dateFrom.Value);
 
             if (dateTo.HasValue)
-                baseQuery.Where("r.Date", "<=", dateTo.Value);
+                baseQuery.Where("r.CreatedDate", "<=", dateTo.Value);
 
             if (statusIds != null && statusIds.Any())
                 baseQuery.WhereIn("s.Id", statusIds);
@@ -129,11 +146,10 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                     Code = row.Code,
                     SupplierName = row.SupplierName,
                     DeliveryAddress = row.DeliveryAddress,
-                    TotalAmount = row.TotalAmount,
                     StatusId = row.StatusId,
                     IsDraft = row.IsDraft,
                     IsCancelled = row.IsCancelled,
-
+                    Description = row.Description,
                     Status = row.Status_Id != null
                         ? new Status
                         {

@@ -23,8 +23,7 @@ namespace BizMate.Application.Common.Mappings
               .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
               .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.Status.Name))
               .ForMember(dest => dest.StatusId, opt => opt.MapFrom(src => src.StatusId))
-              .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive))
-              .ForMember(dest => dest.Details, opt => opt.MapFrom(src => src.Details));
+              .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive));
 
 
             CreateMap<OrderDetail, OrderDetailDto>().IgnoreAllMembers()

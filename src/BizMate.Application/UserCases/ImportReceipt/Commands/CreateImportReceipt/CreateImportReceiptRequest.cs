@@ -7,8 +7,6 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.CreateImportRecei
         public string? SupplierName { get; set; }
         public string? DeliveryAddress { get; set; }
 
-        public decimal TotalAmount { get; set; }
-
         public bool IsDraft { get; set; } = false;
         public bool IsCancelled { get; set; } = false;
         public string? Description { get; set; }

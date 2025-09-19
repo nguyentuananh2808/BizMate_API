@@ -10,7 +10,6 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateImportRecei
         {
             RuleFor(x => x.Id).NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty]);
             RuleFor(x => x.RowVersion).NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty]);
-            RuleFor(x => x.TotalAmount).NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty]);
         }
     }
 }

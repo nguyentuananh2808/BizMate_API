@@ -44,7 +44,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
 
         public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            var detail = await _context.OrderDetails.FindAsync(new object[] { id }, cancellationToken);
+            var detail = await _context.OrderDetails.FindAsync(id, cancellationToken);
             if (detail != null)
             {
                 _context.OrderDetails.Remove(detail);

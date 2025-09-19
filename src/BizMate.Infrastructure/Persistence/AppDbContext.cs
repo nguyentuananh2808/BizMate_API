@@ -14,6 +14,7 @@ namespace BizMate.Infrastructure.Persistence
             _userSession = userSession;
         }
 
+        #region DbSet
         public DbSet<User> Users => Set<User>();
         public DbSet<Store> Stores => Set<Store>();
         public DbSet<Customer> Customers => Set<Customer>();
@@ -33,5 +34,18 @@ namespace BizMate.Infrastructure.Persistence
         public DbSet<DealerPrice> DealerPrices => Set<DealerPrice>();
         public DbSet<Status> Statuses => Set<Status>();
         public DbSet<Notification> Notifications => Set<Notification>();
+        #endregion
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<Order>()
+                .HasMany(o => o.Details)
+                .WithOne(d => d.Order)
+                .HasForeignKey(d => d.OrderId)
+                .OnDelete(DeleteBehavior.Restrict); // ← quan trọng: giữ Order khi xóa Detail
+        }
+
     }
 }

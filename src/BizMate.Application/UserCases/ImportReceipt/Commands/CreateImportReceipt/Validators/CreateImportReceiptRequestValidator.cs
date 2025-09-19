@@ -8,7 +8,6 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.CreateImportRecei
     {
         public CreateImportReceiptRequestValidator(IStringLocalizer<CreateImportReceiptRequestValidator> localizer)
         {
-            RuleFor(x => x.TotalAmount).NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty]);
             RuleFor(x => x.Details).NotEmpty().WithMessage(localizer[ValidationMessage.LocalizedStrings.MustNotEmpty]);
             // Validate từng chi tiết
             RuleForEach(x => x.Details).ChildRules(detail =>

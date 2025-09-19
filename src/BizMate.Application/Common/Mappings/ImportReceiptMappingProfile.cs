@@ -16,9 +16,12 @@ namespace BizMate.Application.Common.Mappings
                 .ForMember(dest => dest.SupplierName, opt => opt.MapFrom(src => src.SupplierName))
                 .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion))
                 .ForMember(dest => dest.DeliveryAddress, opt => opt.MapFrom(src => src.DeliveryAddress))
+                .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.Status.Name))
                 .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
                 .ForMember(dest => dest.StatusId, opt => opt.MapFrom(src => src.StatusId))
-                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive));
+                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive))
+                .ForMember(dest => dest.Details, opt => opt.MapFrom(src => src.Details));
+
 
             CreateMap<ImportReceiptDetail, ImportReceiptDetailDto>().IgnoreAllMembers()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
