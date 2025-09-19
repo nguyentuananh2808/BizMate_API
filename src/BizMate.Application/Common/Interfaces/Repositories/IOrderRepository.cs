@@ -14,7 +14,7 @@ namespace BizMate.Application.Common.Interfaces.Repositories
         /// <summary>
         /// Cập nhật thông tin đơn hàng (không save changes ngay)
         /// </summary>
-        Task UpdateAsync(Order order, CancellationToken cancellationToken = default);
+        Task UpdateWithDetailsAsync(Order order, IEnumerable<OrderDetail> details, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Cập nhật trạng thái đơn hàng nhanh (không load toàn bộ entity)

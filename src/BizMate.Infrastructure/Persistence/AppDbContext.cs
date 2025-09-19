@@ -36,16 +36,5 @@ namespace BizMate.Infrastructure.Persistence
         public DbSet<Notification> Notifications => Set<Notification>();
         #endregion
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            base.OnModelCreating(modelBuilder);
-
-            modelBuilder.Entity<Order>()
-                .HasMany(o => o.Details)
-                .WithOne(d => d.Order)
-                .HasForeignKey(d => d.OrderId)
-                .OnDelete(DeleteBehavior.Restrict); // ← quan trọng: giữ Order khi xóa Detail
-        }
-
     }
 }

@@ -50,6 +50,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
         public async Task AddAsync(ImportReceipt receipt, CancellationToken cancellationToken = default)
         {
             await _context.ImportReceipts.AddAsync(receipt, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
         public Task UpdateAsync(ImportReceipt receipt, CancellationToken cancellationToken = default)

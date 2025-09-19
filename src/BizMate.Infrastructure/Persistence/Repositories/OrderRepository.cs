@@ -1,8 +1,12 @@
 ﻿using BizMate.Application.Common.Dto.CoreDto;
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Domain.Entities;
+using Dapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+using Npgsql;
 using SqlKata.Execution;
+using System.Text.Json;
 
 namespace BizMate.Infrastructure.Persistence.Repositories
 {
@@ -17,34 +21,62 @@ namespace BizMate.Infrastructure.Persistence.Repositories
 
         public async Task AddAsync(Order receipt, CancellationToken cancellationToken = default)
         {
-            // Thêm entity nhưng không save changes - để caller quyết định commit
             await _context.Orders.AddAsync(receipt, cancellationToken);
+            await _context.SaveChangesAsync();
         }
-
-        public async Task UpdateAsync(Order receipt, CancellationToken cancellationToken = default)
+        public async Task UpdateWithDetailsAsync(Order order, IEnumerable<OrderDetail> details, CancellationToken cancellationToken = default)
         {
-            // Update Receipt (EF sẽ track entities; nếu entity detached, attach trước)
-            if (_context.Entry(receipt).State == EntityState.Detached)
-            {
-                _context.Orders.Attach(receipt);
-            }
-            _context.Entry(receipt).State = EntityState.Modified;
+            // Lấy connection từ DbContext
+            var conn = _context.Database.GetDbConnection();
 
-            // Update Details: ensure each detail is tracked with correct state
-            foreach (var detail in receipt.Details)
-            {
-                if (_context.Entry(detail).State == EntityState.Detached)
+            if (conn.State != System.Data.ConnectionState.Open)
+                await conn.OpenAsync(cancellationToken);
+
+            // Detach order + chi tiết khỏi EF Core tracking
+            // để EF không can thiệp khi gọi store procedure
+            _context.Entry(order).State = EntityState.Detached;
+            foreach (var d in order.Details)
+                _context.Entry(d).State = EntityState.Detached;
+
+            // Serialize chi tiết thành JSON
+            var detailsJson = JsonSerializer.Serialize(details);
+
+            // Lấy transaction hiện tại nếu có (EF quản lý)
+            var dbTransaction = _context.Database.CurrentTransaction?.GetDbTransaction();
+
+            // Gọi store procedure bằng Dapper
+            await conn.ExecuteAsync(
+                @"CALL sp_update_order(
+            @p_order_id,
+            @p_customer_id,
+            @p_customer_type,
+            @p_customer_phone,
+            @p_customer_name,
+            @p_delivery_address,
+            @p_description,
+            @p_status_id,
+            @p_row_version,
+            @p_updated_by,
+            @p_details::jsonb
+        )",
+                new
                 {
-                    _context.OrderDetails.Attach(detail);
-                }
-
-                // if id empty => treat as added (should be set by caller)
-                _context.Entry(detail).State = detail.Id == Guid.Empty ? EntityState.Added : EntityState.Modified;
-            }
-
-            // NOTE: Không gọi SaveChanges ở đây để handler quản lý transaction và 1 lần SaveChanges
-            await Task.CompletedTask;
+                    p_order_id = order.Id,
+                    p_customer_id = order.CustomerId,
+                    p_customer_type = order.CustomerType,
+                    p_customer_phone = order.CustomerPhone,
+                    p_customer_name = order.CustomerName,
+                    p_delivery_address = order.DeliveryAddress,
+                    p_description = order.Description,
+                    p_status_id = order.StatusId,
+                    p_row_version = order.RowVersion,
+                    p_updated_by = order.UpdatedBy,
+                    p_details = detailsJson
+                },
+                dbTransaction
+            );
         }
+
 
         public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
@@ -96,7 +128,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
         }
 
         public async Task<(List<OrderCoreDto> Receipts, int TotalCount)> SearchReceiptsWithPaging(
-            Guid storeId, DateTime? dateFrom, DateTime? dateTo, IEnumerable<Guid>? statusIds, string? keyword, int pageIndex, int pageSize, QueryFactory queryFactory,CancellationToken cancellationToken)
+            Guid storeId, DateTime? dateFrom, DateTime? dateTo, IEnumerable<Guid>? statusIds, string? keyword, int pageIndex, int pageSize, QueryFactory queryFactory, CancellationToken cancellationToken)
         {
             var baseQuery = queryFactory.Query("Orders as r")
                 .LeftJoin("Statuses as s", "r.StatusId", "s.Id")
