@@ -6,8 +6,7 @@ using BizMate.Domain.Entities;
 using BizMate.Public.Message;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using _Order = BizMate.Domain.Entities.Order;
+using _Order = BizMate.Application.Common.Dto.CoreDto.OrderCoreDto;
 
 namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
 {
@@ -138,7 +137,7 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
         /// <summary>
         /// Cập nhật tồn kho theo phiếu xuất
         /// </summary>
-        public async Task DeductStockAsync(Guid storeId, IEnumerable<OrderDetail> orderDetails, Guid userId, CancellationToken cancellationToken)
+        public async Task DeductStockAsync(Guid storeId, IEnumerable<OrderDetailDto> orderDetails, Guid userId, CancellationToken cancellationToken)
         {
             var productIds = orderDetails.Select(d => d.ProductId).Distinct().ToList();
             var stocks = await _stockRepository.GetByStoreAndProductAsync(storeId, productIds);

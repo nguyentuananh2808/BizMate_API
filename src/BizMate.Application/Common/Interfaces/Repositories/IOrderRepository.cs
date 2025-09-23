@@ -14,7 +14,7 @@ namespace BizMate.Application.Common.Interfaces.Repositories
         /// <summary>
         /// Cập nhật thông tin đơn hàng (không save changes ngay)
         /// </summary>
-        Task UpdateWithDetailsAsync(Order order, IEnumerable<OrderDetail> details, CancellationToken cancellationToken = default);
+        Task UpdateWithDetailsAsync(OrderCoreDto order, IEnumerable<OrderDetail> details, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Cập nhật trạng thái đơn hàng nhanh (không load toàn bộ entity)
@@ -29,7 +29,7 @@ namespace BizMate.Application.Common.Interfaces.Repositories
         /// <summary>
         /// Lấy đơn hàng theo Id, kèm option include chi tiết
         /// </summary>
-        Task<Order?> GetByIdAsync(Guid id, bool includeDetails = true, CancellationToken cancellationToken = default);
+        Task<OrderCoreDto?> GetByIdAsync(Guid id, bool includeDetails = true, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Lấy nhiều đơn hàng theo danh sách Ids

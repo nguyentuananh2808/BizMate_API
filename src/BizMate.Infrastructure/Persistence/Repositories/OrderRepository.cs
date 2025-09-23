@@ -4,7 +4,6 @@ using BizMate.Domain.Entities;
 using Dapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
-using Npgsql;
 using SqlKata.Execution;
 using System.Text.Json;
 
@@ -18,14 +17,50 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             _context = context;
         }
 
+        private Order MapToOrder(OrderCoreDto dto)
+        {
+            var order = new Order
+            {
+                Id = dto.Id,
+                OrderDate = dto.OrderDate,
+                CustomerType = dto.CustomerType,
+                CustomerId = dto.CustomerId,
+                CustomerName = dto.CustomerName,
+                CustomerPhone = dto.CustomerPhone,
+                DeliveryAddress = dto.DeliveryAddress,
+                StatusId = dto.StatusId,
+                Status = dto.Status,
+                RowVersion = dto.RowVersion,
+                UpdatedBy = dto.UpdatedBy,
+                Details = dto.Details?.Select(d => new OrderDetail
+                {
+                    Id = d.Id,
+                    ProductId = d.ProductId,
+                    ProductName = d.ProductName,
+                    Quantity = d.Quantity,
+                    UnitPrice = d.UnitPrice,
+                    Total = d.Total
+                }).ToList() ?? new List<OrderDetail>()
+            };
+
+            // Tính lại TotalAmount từ Details
+            order.RecalculateTotal();
+
+            return order;
+        }
+
+
 
         public async Task AddAsync(Order receipt, CancellationToken cancellationToken = default)
         {
             await _context.Orders.AddAsync(receipt, cancellationToken);
             await _context.SaveChangesAsync();
         }
-        public async Task UpdateWithDetailsAsync(Order order, IEnumerable<OrderDetail> details, CancellationToken cancellationToken = default)
+
+
+        public async Task UpdateWithDetailsAsync(OrderCoreDto orderDto, IEnumerable<OrderDetail> details, CancellationToken cancellationToken = default)
         {
+            var order = MapToOrder(orderDto);
             // Lấy connection từ DbContext
             var conn = _context.Database.GetDbConnection();
 
@@ -89,16 +124,63 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             }
         }
 
-        public async Task<Order?> GetByIdAsync(Guid id, bool includeDetails = true, CancellationToken cancellationToken = default)
+        public async Task<OrderCoreDto?> GetByIdAsync(Guid id, bool includeDetails = true, CancellationToken cancellationToken = default)
         {
-            IQueryable<Order> query = _context.Orders.Where(r => r.Id == id && !r.IsDeleted);
+            var order = await _context.Orders
+                .Where(r => r.Id == id && !r.IsDeleted)
+                .Include(r => r.Details)
+                .Include(r => r.Status)
+                .Include(r => r.Customer)
+                .FirstOrDefaultAsync(cancellationToken);
 
-            if (includeDetails)
-                query = query.Include(r => r.Details)
-                             .Include(r => r.Status);
+            if (order == null) return null;
 
-            return await query.FirstOrDefaultAsync(cancellationToken);
+            var productIds = order.Details.Select(d => d.ProductId).ToList();
+
+            var stocks = await _context.Stocks
+                 .Where(s => productIds.Contains(s.ProductId))
+                 .Select(s => new
+                 {
+                     s.ProductId,
+                     Available = s.Quantity - s.Reserved
+                 })
+                 .ToDictionaryAsync(x => x.ProductId, x => x.Available, cancellationToken);
+
+            var dto = new OrderCoreDto
+            {
+                Id = order.Id,
+                Code = order.Code,
+                OrderDate = order.OrderDate,
+                CustomerType = order.CustomerType,
+                CustomerId = order.CustomerId,
+                Customer = order.Customer,
+                CustomerName = order.CustomerName,
+                CustomerPhone = order.CustomerPhone,
+                DeliveryAddress = order.DeliveryAddress,
+                TotalAmount = order.TotalAmount,
+                StatusId = order.StatusId,
+                StatusName = order.Status.Name,
+                RowVersion = order.RowVersion,
+                Status = order.Status,
+                Details = order.Details.Select(d => new OrderDetailDto
+                {
+                    Id = d.Id,
+                    ProductId = d.ProductId,
+                    ProductCode = d.ProductCode,
+                    ProductName = d.ProductName,
+                    Quantity = d.Quantity,
+                    Unit = d.Unit,
+                    UnitPrice = d.UnitPrice,
+                    Total = d.Total,
+                    Available = stocks.TryGetValue(d.ProductId, out var available) ? available : 0
+                }).ToList()
+            };
+
+            dto.RecalculateTotal();
+
+            return dto;
         }
+
 
         public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
         {

@@ -1,4 +1,6 @@
-﻿namespace BizMate.Domain.Entities
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace BizMate.Domain.Entities
 {
     public class OrderDetail : BaseCoreEntity
     {
@@ -12,6 +14,8 @@
 
         public int Quantity { get; set; }
         public decimal UnitPrice { get; set; }
+        [NotMapped]
+        public decimal Available { get; set; }
         public decimal Total { get; set; }
 
     }

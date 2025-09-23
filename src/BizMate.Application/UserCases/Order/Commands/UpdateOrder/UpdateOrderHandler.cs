@@ -3,12 +3,11 @@ using BizMate.Application.Common.Security;
 using BizMate.Domain.Entities;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using _Order = BizMate.Domain.Entities.Order;
+using _Order = BizMate.Application.Common.Dto.CoreDto.OrderCoreDto;
 using _Status = BizMate.Domain.Entities.Status;
 using _DealerLevel = BizMate.Domain.Entities.DealerLevel;
 using BizMate.Application.Common.Dto.CoreDto;
 using BizMate.Public.Message;
-using BizMate.Application.Common.Interfaces;
 
 namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
 {
@@ -70,15 +69,15 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
 
             try
             {
-                // 1️⃣ Cập nhật thông tin đơn hàng
+                // 1️ Cập nhật thông tin đơn hàng
                 UpdateOrderInfo(order, request, userId);
 
-                // 2️⃣ Validate tồn kho theo status
+                // 2️ Validate tồn kho theo status
                 var stockResult = await HandleStatusTransitionAsync(order, currentStatus, newStatus, userId, storeId, cancellationToken);
                 if (!stockResult.Success)
                     return new UpdateOrderResponse(false, stockResult.ErrorMessage);
 
-                // 3️⃣ Lấy customer & dealer level nếu cần
+                // 3️ Lấy customer & dealer level nếu cần
                 var customer = request.CustomerId != null
                     ? await _customerRepository.GetByIdAsync(request.CustomerId.Value, cancellationToken)
                     : null;
@@ -87,7 +86,7 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
                 if (request.CustomerType == 2 && customer?.DealerLevelId != null)
                     dealerLevel = await _dealerLevelRepository.GetByIdAsync(customer.DealerLevelId.Value, cancellationToken);
 
-                // 4️⃣ Build danh sách chi tiết mới
+                // 4️ Build danh sách chi tiết mới
                 var productIds = request.Details.Select(d => d.ProductId).ToList();
                 var products = await _productRepository.GetByIdsAsync(productIds, cancellationToken);
                 var productDict = products.ToDictionary(p => p.Id);
@@ -122,13 +121,21 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
                     };
                 }).ToList();
 
-                // 5️⃣ Gọi repository cập nhật + thay thế chi tiết
+                // 5️ Gọi repository cập nhật + thay thế chi tiết
                 await _orderRepository.UpdateWithDetailsAsync(order, newDetails, cancellationToken);
 
-                // 6️⃣ Tính lại tổng đơn hàng
+                // 6️ Tính lại tổng đơn hàng
                 order.RecalculateTotal();
 
-                // 7️⃣ Thêm notification
+                //7 cập nhật lại số lượng sản phẩm giữ chỗ 
+                await ReserveStockAsync(
+                    storeId,
+                    order.Details,   // chi tiết cũ từ DB
+                    newDetails,      // chi tiết mới vừa build
+                    userId,
+                    cancellationToken);
+
+                // 8 Thêm notification
                 await AddNotificationAsync(order, newStatus, userId, storeId);
             }
             catch (Exception ex)
@@ -141,6 +148,63 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
         }
 
         #region Helpers
+
+        public async Task ReserveStockAsync(
+              Guid storeId,
+              IEnumerable<OrderDetailDto> oldDetails,
+              IEnumerable<OrderDetail> newDetails,
+              Guid userId,
+              CancellationToken cancellationToken)
+        {
+            var productIds = oldDetails.Select(d => d.ProductId)
+                .Union(newDetails.Select(d => d.ProductId))
+                .Distinct()
+                .ToList();
+
+            var stocks = await _stockRepository.GetByStoreAndProductAsync(storeId, productIds);
+            var stockDict = stocks.ToDictionary(s => s.ProductId);
+
+            foreach (var newDetail in newDetails)
+            {
+                var productId = newDetail.ProductId;
+
+                if (!stockDict.TryGetValue(productId, out var stock))
+                    throw new InvalidOperationException($"Không tìm thấy tồn kho cho sản phẩm {productId}");
+
+                var oldQty = oldDetails.FirstOrDefault(d => d.ProductId == productId)?.Quantity ?? 0;
+                var diff = newDetail.Quantity - oldQty; // số lượng thay đổi
+
+                // Nếu cần thêm hàng mà không đủ Available
+                if (diff > 0 && stock.Available < diff)
+                {
+                    throw new InvalidOperationException(
+                        $"Sản phẩm {productId} không đủ tồn. Khả dụng {stock.Available}, cần thêm {diff}");
+                }
+
+                // Cập nhật lại Reserved = Reserved cũ - oldQty + newQty
+                stock.Reserved = stock.Reserved - oldQty + newDetail.Quantity;
+                stock.UpdatedBy = userId;
+                stock.UpdatedDate = DateTime.UtcNow;
+            }
+
+            // Nếu có sản phẩm bị remove trong newDetails thì trả lại reserved
+            foreach (var oldDetail in oldDetails)
+            {
+                if (!newDetails.Any(d => d.ProductId == oldDetail.ProductId))
+                {
+                    if (stockDict.TryGetValue(oldDetail.ProductId, out var stock))
+                    {
+                        stock.Reserved -= oldDetail.Quantity;
+                        stock.UpdatedBy = userId;
+                        stock.UpdatedDate = DateTime.UtcNow;
+                    }
+                }
+            }
+
+            await _stockRepository.UpdateAsync(stockDict.Values, cancellationToken);
+        }
+
+
         private async Task<(bool Success, string? ErrorMessage)> HandleStatusTransitionAsync(
             _Order order,
             _Status currentStatus,

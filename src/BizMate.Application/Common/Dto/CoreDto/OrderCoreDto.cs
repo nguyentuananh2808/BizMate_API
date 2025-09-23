@@ -25,7 +25,10 @@ namespace BizMate.Application.Common.Dto.CoreDto
         public string? StatusName { get; set; }
 
         public Status Status { get; set; } = default!;
-
+        public void RecalculateTotal()
+        {
+            TotalAmount = Details?.Sum(d => d.Total) ?? 0;
+        }
         public ICollection<OrderDetailDto> Details { get; set; } = new List<OrderDetailDto>();
     }
 }

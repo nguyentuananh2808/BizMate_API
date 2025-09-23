@@ -13,6 +13,7 @@ namespace BizMate.Application.Common.Dto.CoreDto
         public int Unit { get; set; }
         public int Quantity { get; set; }
         public decimal UnitPrice { get; set; }
+        public decimal  Available { get; set; }
         public decimal Total { get; set; }
     }
 }

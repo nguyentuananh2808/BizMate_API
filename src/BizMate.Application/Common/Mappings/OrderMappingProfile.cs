@@ -36,6 +36,7 @@ namespace BizMate.Application.Common.Mappings
             .ForMember(dest => dest.Unit, opt => opt.MapFrom(src => src.Unit))
             .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Quantity))
             .ForMember(dest => dest.Total, opt => opt.MapFrom(src => src.Total))
+            .ForMember(dest => dest.Available, opt => opt.MapFrom(src => src.Available))
             .ForMember(dest => dest.UnitPrice, opt => opt.MapFrom(src => src.UnitPrice));
 
 
