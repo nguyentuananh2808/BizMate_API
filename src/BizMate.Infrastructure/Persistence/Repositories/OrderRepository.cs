@@ -28,6 +28,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                 CustomerName = dto.CustomerName,
                 CustomerPhone = dto.CustomerPhone,
                 DeliveryAddress = dto.DeliveryAddress,
+                Description = dto.Description,
                 StatusId = dto.StatusId,
                 Status = dto.Status,
                 RowVersion = dto.RowVersion,
@@ -159,6 +160,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                 DeliveryAddress = order.DeliveryAddress,
                 TotalAmount = order.TotalAmount,
                 StatusId = order.StatusId,
+                Description = order.Description,
                 StatusName = order.Status.Name,
                 RowVersion = order.RowVersion,
                 Status = order.Status,
@@ -278,6 +280,33 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                     .SetProperty(x => x.UpdatedBy, statusOrder.UpdatedBy)
                     .SetProperty(x => x.UpdatedDate, statusOrder.UpdatedDate), cancellationToken);
         }
+
+        public async Task UpdateOrderAsync(OrderCoreDto orderDto, CancellationToken cancellationToken)
+        {
+            // Lấy entity gốc từ DbContext (EF Core tracking)
+            var trackedOrder = await _context.Orders
+                .Include(o => o.Details)
+                .FirstOrDefaultAsync(o => o.Id == orderDto.Id, cancellationToken);
+
+            if (trackedOrder == null)
+                throw new InvalidOperationException($"Order {orderDto.Id} không tồn tại.");
+
+            // Cập nhật các trường cha
+            trackedOrder.CustomerId = orderDto.CustomerId;
+            trackedOrder.CustomerType = orderDto.CustomerType;
+            trackedOrder.CustomerName = orderDto.CustomerName;
+            trackedOrder.CustomerPhone = orderDto.CustomerPhone;
+            trackedOrder.DeliveryAddress = orderDto.DeliveryAddress;
+            trackedOrder.Description = orderDto.Description;
+            trackedOrder.StatusId = orderDto.StatusId;
+            trackedOrder.RowVersion = orderDto.RowVersion;
+            trackedOrder.UpdatedBy = orderDto.UpdatedBy;
+            trackedOrder.UpdatedDate = DateTime.UtcNow;
+
+            // Không gọi _context.Update(trackedOrder) nữa, EF đang track sẵn
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+
 
     }
 }

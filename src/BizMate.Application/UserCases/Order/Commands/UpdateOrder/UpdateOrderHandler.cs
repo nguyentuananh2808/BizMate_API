@@ -72,6 +72,8 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
                 // 1️ Cập nhật thông tin đơn hàng
                 UpdateOrderInfo(order, request, userId);
 
+                await _orderRepository.UpdateOrderAsync(order, cancellationToken);
+
                 // 2️ Validate tồn kho theo status
                 var stockResult = await HandleStatusTransitionAsync(order, currentStatus, newStatus, userId, storeId, cancellationToken);
                 if (!stockResult.Success)
@@ -280,7 +282,7 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
                 UserId = null,
                 OrderId = order.Id,
                 StoreId = storeId,
-                Message = $"Đơn hàng #{order.Code} đã được cập nhật: {status.Name}",
+                Message = $"{order.Id} | {order.Code}",
                 Type = "order"
             };
 

@@ -73,7 +73,7 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
                     return new UpdateStatusOrderResponse(false, message);
                 }
                 ///lấy id trạng thái hiện tại
-                var currentStatus = await _statusRepository.GetIdById(request.StatusId,cancellationToken);
+                var currentStatus = await _statusRepository.GetIdById(request.StatusId, cancellationToken);
                 if (currentStatus == null)
                 {
                     var message = ValidationMessage.LocalizedStrings.DataNotExist2;
@@ -92,19 +92,28 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
 
                 #region logic check 
                 //nếu là trạng thái hiện tại là "Hủy" hoặc "Hoàn thành" thì không được đổi trạng thái
-                if (currentStatus.Code == "CANCELLED" || currentStatus.Code =="COMPLETED")
+                if (currentStatus.Code == "CANCELLED" || currentStatus.Code == "COMPLETED")
                 {
                     var message = ValidationMessage.LocalizedStrings.RoleWithoutAuthority;
                     _logger.LogWarning(message);
                     return new UpdateStatusOrderResponse(false, message);
                 }
 
+                //nếu trạng thái cập nhật là Hủy thì trả lại số lượng đã giữ chỗ về tồn kho
+                if (updateStatus?.Code == "CANCELLED")
+                {
+                    await ReleaseReservedStockAsync(storeId, order.Details.Select(d => new OrderDetail
+                    {
+                        ProductId = d.ProductId,
+                        Quantity = d.Quantity
+                    }), userId, cancellationToken);
+                }
 
                 //nếu trạng thái hiện tại là "Đã đóng hàng" cập nhật thành "Hoàn thành"
                 //thì thực hiện trừ tồn kho và tạo tự động phiếu xuất kho
                 if (currentStatus.Code == "PACKED" && updateStatus?.Code == "COMPLETED")
                 {
-                    await CreateExportReceipt(order,cancellationToken);
+                    await CreateExportReceipt(order, cancellationToken);
                     await DeductStockAsync(storeId, order.Details, userId, cancellationToken);
                 }
 

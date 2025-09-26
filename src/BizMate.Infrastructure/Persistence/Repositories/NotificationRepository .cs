@@ -50,16 +50,17 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<IEnumerable<Notification>> GetUnreadNotificationsAsync(Guid storeId, Guid userId, DateTime lastChecked, CancellationToken cancellationToken)
+        public async Task<IEnumerable<Notification>> GetUnreadNotificationsAsync(Guid storeId, Guid userId, CancellationToken cancellationToken)
         {
-            var query = _context.Notifications
-                                .Where(n => n.UserId == userId && !n.IsRead && n.StoreId == storeId);
+            var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
 
-
-            query = query.Where(n => n.CreatedAt > lastChecked);
-
-            return await query.ToListAsync(cancellationToken);
+            return await _context.Notifications
+                .Where(n => n.UserId == userId && n.StoreId == storeId && !n.IsRead)
+                .Where(n => n.CreatedAt >= sevenDaysAgo)
+                .OrderByDescending(n => n.CreatedAt)
+                .ToListAsync(cancellationToken);
         }
+
 
         public async Task MarkAsReadAsync(IEnumerable<Guid> notificationIds)
         {

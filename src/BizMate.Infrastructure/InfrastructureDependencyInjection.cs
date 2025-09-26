@@ -53,6 +53,7 @@ public static class InfrastructureDependencyInjection
         services.AddAutoMapper(typeof(ProductCategoryMappingProfile));
         services.AddAutoMapper(typeof(ExportReceiptMappingProfile));
         services.AddAutoMapper(typeof(ImportReceiptMappingProfile));
+        services.AddAutoMapper(typeof(NotificationMappingProfile));
 
         // Security
         services.AddScoped<IJwtFactory, JwtFactory>();

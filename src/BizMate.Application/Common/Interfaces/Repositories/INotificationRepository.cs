@@ -7,7 +7,7 @@ namespace BizMate.Application.Common.Interfaces.Repositories
     {
         Task SendAsync(NotificationDto notification);
         Task BroadcastAsync(NotificationDto notification);
-        Task<IEnumerable<Notification>> GetUnreadNotificationsAsync(Guid storeId, Guid userId, DateTime lastChecked,CancellationToken cancellationToken);
+        Task<IEnumerable<Notification>> GetUnreadNotificationsAsync(Guid storeId, Guid userId,CancellationToken cancellationToken);
         Task MarkAsReadAsync(IEnumerable<Guid> notificationIds);
     }
 

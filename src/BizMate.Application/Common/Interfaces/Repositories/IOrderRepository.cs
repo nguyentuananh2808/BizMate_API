@@ -46,6 +46,8 @@ namespace BizMate.Application.Common.Interfaces.Repositories
             QueryFactory queryFactory,
             CancellationToken cancellationToken = default);
 
+        Task UpdateOrderAsync(OrderCoreDto? order, CancellationToken cancellationToken);
+
         /// <summary>
         /// Tìm kiếm đơn hàng có phân trang
         /// </summary>

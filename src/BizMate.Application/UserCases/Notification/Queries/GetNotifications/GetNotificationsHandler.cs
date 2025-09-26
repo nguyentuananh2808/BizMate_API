@@ -38,7 +38,6 @@ namespace BizMate.Application.UserCases.Notification.Queries.GetNotifications
                 var notifications = await _notificationRepository.GetUnreadNotificationsAsync(
                     storeId: storeId,
                     userId: Guid.Parse(userId),
-                    lastChecked: request.lastChecked,
                     cancellationToken);
 
                 var mappedNotifications = _mapper.Map<List<NotificationDto>>(notifications);
