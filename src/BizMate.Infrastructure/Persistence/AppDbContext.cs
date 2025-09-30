@@ -34,6 +34,7 @@ namespace BizMate.Infrastructure.Persistence
         public DbSet<DealerPrice> DealerPrices => Set<DealerPrice>();
         public DbSet<Status> Statuses => Set<Status>();
         public DbSet<Notification> Notifications => Set<Notification>();
+        public DbSet<OrderStatusHistory> OrderStatusHistories => Set<OrderStatusHistory>();
         #endregion
 
     }

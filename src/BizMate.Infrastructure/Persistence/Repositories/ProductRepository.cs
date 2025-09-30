@@ -83,8 +83,25 @@ public class ProductRepository : IProductRepository
 
         if (!string.IsNullOrWhiteSpace(keyword))
         {
-            var kw = $"%{keyword.ToLower()}%";
-            baseQuery.WhereRaw(@"LOWER(p.""Name"") LIKE ? OR LOWER(p.""Code"") LIKE ?", kw, kw);
+            var normalizedKeyword = keyword.ToLower().Replace("-", "").Trim();
+            var kw = $"%{normalizedKeyword}%";
+
+            string vietnameseChars = "áàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđ";
+            string noSignChars = "aaaaaaaaaaaaaaaaaeeeeeeeeeeiiiiiooooooooooooooooouuuuuuuuuuuyyyyyd";
+
+            baseQuery.Where(q =>
+                q.WhereRaw(
+                    $@"TRANSLATE(LOWER(REPLACE(p.""Name"", '-', '')),
+                '{vietnameseChars}',
+                '{noSignChars}'
+            ) LIKE ?", kw
+                ).OrWhereRaw(
+                    $@"TRANSLATE(LOWER(REPLACE(p.""Code"", '-', '')),
+                '{vietnameseChars}',
+                '{noSignChars}'
+            ) LIKE ?", kw
+                )
+            );
         }
 
 

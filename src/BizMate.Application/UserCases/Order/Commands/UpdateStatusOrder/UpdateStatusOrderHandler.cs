@@ -14,6 +14,7 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
     {
         private readonly IMediator _mediator;
         private readonly IStatusRepository _statusRepository;
+        private readonly IOrderStatusHistoryRepository _orderStatusHistoryRepository;
         private readonly IStockRepository _stockRepository;
         private readonly IOrderRepository _orderRepository;
         private readonly IUserSession _userSession;
@@ -21,6 +22,7 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
 
         #region constructor
         public UpdateStatusOrderHandler(
+            IOrderStatusHistoryRepository orderStatusHistoryRepository,
             IMediator mediator,
             IStockRepository stockRepository,
             IStatusRepository statusRepository,
@@ -28,6 +30,7 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
             IOrderRepository OrderRepository,
             ILogger<UpdateStatusOrderHandler> logger)
         {
+            _orderStatusHistoryRepository = orderStatusHistoryRepository;
             _mediator = mediator;
             _stockRepository = stockRepository;
             _statusRepository = statusRepository;
@@ -131,6 +134,15 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
                 };
 
                 await _orderRepository.UpdateStatusAsync(statusOrder, cancellationToken);
+                #endregion
+                #region update status & log history
+                await _orderStatusHistoryRepository.UpdateOrderStatus(
+                    request.Id,
+                    statusId,
+                    userId,
+                    _userSession.UserName ?? "Unknown",
+                    "Đổi trạng thái từ " + currentStatus.Name + " thành " + updateStatus?.Name
+                );
                 #endregion
 
 

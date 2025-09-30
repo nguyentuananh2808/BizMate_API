@@ -163,6 +163,8 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                 Description = order.Description,
                 StatusName = order.Status.Name,
                 RowVersion = order.RowVersion,
+                CreatedDate = order.CreatedDate,
+                UpdatedDate = order.UpdatedDate,
                 Status = order.Status,
                 Details = order.Details.Select(d => new OrderDetailDto
                 {
@@ -242,6 +244,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
 
             var rows = await baseQuery
                 .Select("r.*", "s.Id as Status_Id", "s.Name as Status_Name", "s.Code as Status_Code")
+                .OrderByDesc("r.Code")
                 .Offset((pageIndex - 1) * pageSize)
                 .Limit(pageSize)
                 .GetAsync();
@@ -260,7 +263,9 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                 TotalAmount = row.TotalAmount,
                 StatusId = row.StatusId,
                 Description = row.Description,
-                StatusName = row.Status_Name
+                StatusName = row.Status_Name,
+                CreatedDate = row.CreatedDate,
+                UpdatedDate = row.UpdateDate
             }).ToList();
 
 

@@ -39,14 +39,14 @@ namespace BizMate.Infrastructure.Persistence.Repositories
           .FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task<List<Customer>> SearchCustomers(Guid storeId, string? name, string? phone, QueryFactory queryFactory)
+        public async Task<List<Customer>> SearchCustomers(Guid storeId, string? phone, string? name, QueryFactory queryFactory)
         {
             var query = queryFactory.Query("Customers as c")
                 .Where("c.StoreId", storeId)
                 .Where("c.IsDeleted", false)
                 .Where("c.IsActive", false);
-            if (name != null)
-                query.Where("Name", name);
+            //if (name != null)
+            //    query.Where("Name", name);
 
             if (phone != null)
                 query.Where("Phone", phone);
