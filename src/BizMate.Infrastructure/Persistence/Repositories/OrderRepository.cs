@@ -214,34 +214,47 @@ namespace BizMate.Infrastructure.Persistence.Repositories
         }
 
         public async Task<(List<OrderCoreDto> Receipts, int TotalCount)> SearchReceiptsWithPaging(
-            Guid storeId, DateTime? dateFrom, DateTime? dateTo, IEnumerable<Guid>? statusIds, string? keyword, int pageIndex, int pageSize, QueryFactory queryFactory, CancellationToken cancellationToken)
+            Guid storeId,
+            DateTime? dateFrom,
+            DateTime? dateTo,
+            IEnumerable<Guid>? statusIds,
+            string? keyword,
+            int pageIndex,
+            int pageSize,
+            QueryFactory queryFactory,
+            CancellationToken cancellationToken)
         {
             var baseQuery = queryFactory.Query("Orders as r")
                 .LeftJoin("Statuses as s", "r.StatusId", "s.Id")
                 .Where("r.StoreId", storeId)
                 .WhereFalse("r.IsDeleted");
 
-
+            //  Search linh hoạt: bỏ dấu + lowercase
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 var keywordLower = keyword.ToLower();
+
                 baseQuery.Where(q =>
-                    q.WhereRaw(@"LOWER(r.""Code"") LIKE ?", $"%{keywordLower}%")
-                     .OrWhereRaw(@"LOWER(r.""CustomerName"") LIKE ?", $"%{keywordLower}%")
-                     .OrWhereRaw(@"LOWER(r.""CustomerPhone"") LIKE ?", $"%{keywordLower}%"));
+                    q.WhereRaw(@"LOWER(unaccent(r.""Code"")) LIKE unaccent(?)", $"%{keywordLower}%")
+                     .OrWhereRaw(@"LOWER(unaccent(r.""CustomerName"")) LIKE unaccent(?)", $"%{keywordLower}%")
+                     .OrWhereRaw(@"LOWER(unaccent(r.""CustomerPhone"")) LIKE unaccent(?)", $"%{keywordLower}%"));
             }
 
+            // Filter ngày
             if (dateFrom.HasValue)
                 baseQuery.Where("r.OrderDate", ">=", dateFrom.Value);
 
             if (dateTo.HasValue)
                 baseQuery.Where("r.OrderDate", "<=", dateTo.Value);
 
+            //  Filter status
             if (statusIds != null && statusIds.Any())
                 baseQuery.WhereIn("s.Id", statusIds);
 
+            // Tổng số record
             var totalCount = await baseQuery.Clone().CountAsync<int>();
 
+            // Lấy danh sách có phân trang
             var rows = await baseQuery
                 .Select("r.*", "s.Id as Status_Id", "s.Name as Status_Name", "s.Code as Status_Code")
                 .OrderByDesc("r.Code")
@@ -251,7 +264,6 @@ namespace BizMate.Infrastructure.Persistence.Repositories
 
             var results = rows.Select(row => new OrderCoreDto
             {
-
                 Id = row.Id,
                 StoreId = row.StoreId,
                 Code = row.Code,
@@ -268,9 +280,9 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                 UpdatedDate = row.UpdateDate
             }).ToList();
 
-
             return (results, totalCount);
         }
+
 
 
         public async Task UpdateStatusAsync(UpdateOrderStatusDto statusOrder, CancellationToken cancellationToken)

@@ -83,27 +83,23 @@ public class ProductRepository : IProductRepository
 
         if (!string.IsNullOrWhiteSpace(keyword))
         {
-            var normalizedKeyword = keyword.ToLower().Replace("-", "").Trim();
+            // Chuẩn hóa keyword (bỏ khoảng trắng và dấu "-"), vẫn để nguyên dấu
+            var normalizedKeyword = keyword.ToLower()
+                .Replace("-", "")
+                .Replace(" ", "")
+                .Trim();
+
             var kw = $"%{normalizedKeyword}%";
 
-            string vietnameseChars = "áàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđ";
-            string noSignChars = "aaaaaaaaaaaaaaaaaeeeeeeeeeeiiiiiooooooooooooooooouuuuuuuuuuuyyyyyd";
+            // Dùng unaccent để bỏ dấu trong DB khi so sánh
+            var nameField = @"unaccent(lower(replace(replace(p.""Name"", '-', ''), ' ', '')))";
+            var codeField = @"unaccent(lower(replace(replace(p.""Code"", '-', ''), ' ', '')))";
 
             baseQuery.Where(q =>
-                q.WhereRaw(
-                    $@"TRANSLATE(LOWER(REPLACE(p.""Name"", '-', '')),
-                '{vietnameseChars}',
-                '{noSignChars}'
-            ) LIKE ?", kw
-                ).OrWhereRaw(
-                    $@"TRANSLATE(LOWER(REPLACE(p.""Code"", '-', '')),
-                '{vietnameseChars}',
-                '{noSignChars}'
-            ) LIKE ?", kw
-                )
+                q.WhereRaw($"{nameField} LIKE unaccent(?)", kw)
+                 .OrWhereRaw($"{codeField} LIKE unaccent(?)", kw)
             );
         }
-
 
         baseQuery
             .Select("p.*")
@@ -111,8 +107,13 @@ public class ProductRepository : IProductRepository
             .SelectRaw(@"COALESCE(s.""Quantity"", 0) - COALESCE(s.""Reserved"", 0) as Available")
             .Select("pc.Name as ProductCategoryName");
 
+        // Clone để lấy total count
         var totalQuery = baseQuery.Clone();
         var totalCount = await totalQuery.CountAsync<int>();
+
+        // Sắp xếp theo tên sản phẩm (bỏ dấu, bỏ khoảng trắng, bỏ "-")
+        var orderField = @"unaccent(lower(replace(replace(p.""Name"", '-', ''), ' ', '')))";
+        baseQuery.OrderByRaw($"{orderField} ASC");
 
         var results = await baseQuery
             .Offset((pageIndex - 1) * pageSize)
@@ -121,6 +122,7 @@ public class ProductRepository : IProductRepository
 
         return (results.ToList(), totalCount);
     }
+
 
     public async Task AddAsync(Product product, CancellationToken cancellationToken)
     {
