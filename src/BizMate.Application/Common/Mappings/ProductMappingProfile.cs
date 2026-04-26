@@ -22,6 +22,7 @@ namespace BizMate.Application.Common.Mappings
                 .ForMember(dest => dest.SupplierId, opt => opt.MapFrom(src => src.SupplierId))
                 .ForMember(dest => dest.SupplierName, opt => opt.MapFrom(src => src.Supplier.Name))
                 .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
+                .ForMember(dest => dest.IsSerialTracked, opt => opt.MapFrom(src => src.IsSerialTracked))
                 .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive));
         }
     }

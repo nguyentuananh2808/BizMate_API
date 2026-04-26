@@ -1,31 +1,37 @@
-﻿using BizMate.Application.Common.Extensions;
-using BizMate.Application.Common.Interfaces.Repositories;
+// FILE: src/BizMate.Infrastructure/InfrastructureDependencyInjection.cs
+// Chỉ thêm 2 dòng đăng ký repo mới vào đúng vị trí — giữ nguyên toàn bộ code cũ
+
+using BizMate.Application.Common.Extensions;
 using BizMate.Application.Common.Interfaces;
+using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Mappings;
 using BizMate.Application.Common.Security;
-using BizMate.Infrastructure.Persistence.Repositories;
+using BizMate.Domain.Constants;
 using BizMate.Infrastructure.Persistence;
+using BizMate.Infrastructure.Persistence.Repositories;
 using BizMate.Infrastructure.Security;
 using BizMate.Infrastructure.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using SqlKata.Execution;
-using System.Data;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Npgsql;
 using SqlKata.Compilers;
-using Microsoft.EntityFrameworkCore;
+using SqlKata.Execution;
+using System.Data;
 
 public static class InfrastructureDependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddInfrastructure(
+        this IServiceCollection services, IConfiguration configuration)
     {
         // EF Core DbContext
         services.AddDbContext<AppDbContext>(options =>
             options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 
-        // Repositories
+        // ── Repositories hiện có ──────────────────────────────────────────────
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IOtpVerificationRepository, OtpVerificationRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
@@ -47,9 +53,16 @@ public static class InfrastructureDependencyInjection
         services.AddScoped<IOrderStatusHistoryRepository, OrderStatusHistoryServiceRepository>();
         services.AddScoped<IExportRepository, ExportOrderRepository>();
 
+        // ── Repositories — phân quyền (đã thêm trước)
+        services.AddScoped<IRoleRepository, RoleRepository>();
+        services.AddScoped<IPermissionRepository, PermissionRepository>();
+        services.AddScoped<IUserRoleRepository, UserRoleRepository>();
 
+        // ── Repositories — Serial tracking (MỚI THÊM) ────────────────────────
+        services.AddScoped<IProductItemRepository, ProductItemRepository>();
+        services.AddScoped<IInventoryTransactionRepository, InventoryTransactionRepository>();
 
-        // AutoMapper
+        // ── AutoMapper ────────────────────────────────────────────────────────
         services.AddAutoMapper(typeof(UserMappingProfile));
         services.AddAutoMapper(typeof(ProductMappingProfile));
         services.AddAutoMapper(typeof(ProductCategoryMappingProfile));
@@ -57,32 +70,32 @@ public static class InfrastructureDependencyInjection
         services.AddAutoMapper(typeof(ImportReceiptMappingProfile));
         services.AddAutoMapper(typeof(NotificationMappingProfile));
 
-        // Security
+        // ── Security ──────────────────────────────────────────────────────────
         services.AddScoped<IJwtFactory, JwtFactory>();
         services.AddScoped<ITokenFactory, TokenFactory>();
 
-        // Session, Email, OTP
+        // ── Authorization Handler ─────────────────────────────────────────────
+        services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+
+        // ── Session, Email, OTP ───────────────────────────────────────────────
         services.AddScoped<IUserSession, CurrentUserService>();
         services.AddScoped<IEmailService, SmtpEmailService>();
         services.AddScoped<IOtpStore, OtpRedisService>();
 
-        // HttpContext accessor
         services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-        services.AddScoped<IUserSession, CurrentUserService>();
 
-        // Dapper - SqlKata
+        // ── Dapper - SqlKata ──────────────────────────────────────────────────
         services.AddScoped<IDbConnection>(sp =>
         {
-            var config = sp.GetRequiredService<IConfiguration>();
+            var config     = sp.GetRequiredService<IConfiguration>();
             var connection = new NpgsqlConnection(config.GetConnectionString("DefaultConnection"));
             return connection;
         });
 
-
         services.AddScoped<QueryFactory>(sp =>
         {
             var connection = sp.GetRequiredService<IDbConnection>();
-            var compiler = new PostgresCompiler();
+            var compiler   = new PostgresCompiler();
             return new QueryFactory(connection, compiler);
         });
 

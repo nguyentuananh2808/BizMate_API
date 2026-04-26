@@ -130,6 +130,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             var order = await _context.Orders
                 .Where(r => r.Id == id && !r.IsDeleted)
                 .Include(r => r.Details)
+                    .ThenInclude(d => d.ProductItems)
                 .Include(r => r.Status)
                 .Include(r => r.Customer)
                 .FirstOrDefaultAsync(cancellationToken);
@@ -176,7 +177,8 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                     Unit = d.Unit,
                     UnitPrice = d.UnitPrice,
                     Total = d.Total,
-                    Available = stocks.TryGetValue(d.ProductId, out var available) ? available : 0
+                    Available = stocks.TryGetValue(d.ProductId, out var available) ? available : 0,
+                    SerialNumbers = d.ProductItems.Select(x => x.SerialNumber).ToList()
                 }).ToList()
             };
 

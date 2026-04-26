@@ -13,13 +13,15 @@ using Microsoft.OpenApi.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
+using BizMate.Domain.Constants;
 
 internal class Program
 {
     private static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-        builder.WebHost.UseUrls("http://+:80");
+         builder.WebHost.UseUrls("http://+:80");
+        builder.WebHost.UseUrls("http://192.168.1.130:8088");
         JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
         builder.Services.AddControllers();
@@ -53,6 +55,7 @@ internal class Program
                 }
             });
         });
+
 
         builder.Services.AddHttpClient<IImageUploader, ImageBBUploader>();
         builder.Services.AddScoped<IAppMessageService, CommonAppMessageUtils>();
@@ -96,6 +99,15 @@ internal class Program
             };
         });
 
+        builder.Services.AddAuthorization(options =>
+        {
+            foreach (var (name, _, _) in PermissionConstants.GetAll())
+            {
+                options.AddPolicy(name, policy =>
+                    policy.Requirements.Add(new PermissionRequirement(name)));
+            }
+        });
+
         builder.Services.Scan(scan => scan
             .FromAssemblyOf<UserLoginPresenter>()
             .AddClasses(classes => classes.AssignableTo(typeof(IOutputPort<>)))
@@ -126,7 +138,8 @@ internal class Program
         using (var scope = app.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            db.Database.EnsureCreated();
+           // db.Database.EnsureCreated();
+            await db.Database.MigrateAsync();
             await AppDbContextSeed.SeedAsync(db);
         }
 

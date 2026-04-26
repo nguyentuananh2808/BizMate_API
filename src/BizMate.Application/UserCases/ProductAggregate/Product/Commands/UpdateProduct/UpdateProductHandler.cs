@@ -16,17 +16,23 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Update
         private readonly QueryFactory _db;
         private readonly ILogger<UpdateProductHandler> _logger;
         private readonly IMapper _mapper;
+        private readonly IProductItemRepository _productItemRepository;
+        private readonly IStockRepository _stockRepository;
 
         #region constructor
         public UpdateProductHandler(
             IUserSession userSession,
             IProductRepository productRepository,
+            IProductItemRepository productItemRepository,
+            IStockRepository stockRepository,
             QueryFactory db,
             ILogger<UpdateProductHandler> logger,
             IMapper mapper)
         {
             _userSession = userSession;
             _productRepository = productRepository;
+            _productItemRepository = productItemRepository;
+            _stockRepository = stockRepository;
             _db = db;
             _logger = logger;
             _mapper = mapper;
@@ -68,6 +74,35 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Update
                 }
                 #endregion
 
+                #region Serial tracking guards
+                if (product.IsSerialTracked && !request.IsSerialTracked)
+                {
+                    var (_, totalItems) = await _productItemRepository.GetByProductAsync(
+                        storeId,
+                        product.Id,
+                        null,
+                        pageIndex: 1,
+                        pageSize: 1,
+                        ct: cancellationToken);
+
+                    if (totalItems > 0)
+                    {
+                        return new UpdateProductResponse(false, "Khong the tat quan ly serial khi san pham da co SN.");
+                    }
+                }
+
+                if (!product.IsSerialTracked && request.IsSerialTracked)
+                {
+                    var stocks = await _stockRepository.GetByStoreAndProductAsync(storeId, new List<Guid> { product.Id });
+                    var currentStock = stocks.FirstOrDefault();
+
+                    if (currentStock is not null && currentStock.Quantity > 0)
+                    {
+                        return new UpdateProductResponse(false, "Chi co the bat quan ly serial khi ton kho hien tai bang 0.");
+                    }
+                }
+                #endregion
+
                 #region update data
                 product.Name = request.Name.Trim();
                 product.Unit = request.Unit;
@@ -80,6 +115,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Update
                 product.UpdatedBy = Guid.Parse(userId);
                 product.UpdatedDate = DateTime.UtcNow;
                 product.IsActive = request.IsActive;
+                product.IsSerialTracked = request.IsSerialTracked;
                 product.RowVersion = Guid.NewGuid();
 
                 await _productRepository.UpdateAsync(product);

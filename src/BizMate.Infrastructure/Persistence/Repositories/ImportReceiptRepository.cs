@@ -79,6 +79,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             return await _context.ImportReceipts
                 .AsNoTracking()
                 .Include(r => r.Details)
+                    .ThenInclude(d => d.ProductItems)
                 .Include(r => r.Status)
                 .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted, cancellationToken);
         }

@@ -17,6 +17,7 @@ namespace BizMate.Domain.Entities
         [NotMapped]
         public decimal Available { get; set; }
         public decimal Total { get; set; }
+        public ICollection<ProductItem> ProductItems { get; set; } = new List<ProductItem>();
 
     }
 }

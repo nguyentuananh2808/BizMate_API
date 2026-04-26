@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace BizMate.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class initdatabase : Migration
+    public partial class initDb : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -64,6 +64,50 @@ namespace BizMate.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Permissions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    DisplayName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Group = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    UpdatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    RowVersion = table.Column<Guid>(type: "uuid", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Permissions", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Roles",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    DisplayName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    IsSystem = table.Column<bool>(type: "boolean", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    UpdatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    RowVersion = table.Column<Guid>(type: "uuid", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Roles", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Statuses",
                 columns: table => new
                 {
@@ -103,6 +147,63 @@ namespace BizMate.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Stores", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "WarrantyCodes",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    WarrantyCodeValue = table.Column<string>(type: "text", nullable: false),
+                    ProductName = table.Column<string>(type: "text", nullable: false),
+                    WarrantyStartDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    WarrantyDays = table.Column<int>(type: "integer", nullable: false),
+                    WarrantyEndDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    TotalWarrantyTimes = table.Column<int>(type: "integer", nullable: false),
+                    UsedWarrantyTimes = table.Column<int>(type: "integer", nullable: false),
+                    isAvailable = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    UpdatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WarrantyCodes", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RolePermissions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    RoleId = table.Column<Guid>(type: "uuid", nullable: false),
+                    PermissionId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    UpdatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    RowVersion = table.Column<Guid>(type: "uuid", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RolePermissions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RolePermissions_Permissions_PermissionId",
+                        column: x => x.PermissionId,
+                        principalTable: "Permissions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_RolePermissions_Roles_RoleId",
+                        column: x => x.RoleId,
+                        principalTable: "Roles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -419,6 +520,7 @@ namespace BizMate.Infrastructure.Migrations
                     ProductCategoryId = table.Column<Guid>(type: "uuid", nullable: true),
                     IsDiscountable = table.Column<bool>(type: "boolean", nullable: false),
                     DiscountPercent = table.Column<decimal>(type: "numeric", nullable: true),
+                    IsSerialTracked = table.Column<bool>(type: "boolean", nullable: false),
                     Description = table.Column<string>(type: "text", nullable: true),
                     CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uuid", nullable: true),
@@ -450,6 +552,46 @@ namespace BizMate.Infrastructure.Migrations
                         column: x => x.SupplierId,
                         principalTable: "Suppliers",
                         principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserRoles",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    RoleId = table.Column<Guid>(type: "uuid", nullable: false),
+                    StoreId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    UpdatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    RowVersion = table.Column<Guid>(type: "uuid", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserRoles", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserRoles_Roles_RoleId",
+                        column: x => x.RoleId,
+                        principalTable: "Roles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_UserRoles_Stores_StoreId",
+                        column: x => x.StoreId,
+                        principalTable: "Stores",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_UserRoles_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -632,6 +774,87 @@ namespace BizMate.Infrastructure.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "ProductItems",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    ProductId = table.Column<Guid>(type: "uuid", nullable: false),
+                    SerialNumber = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    QrRawContent = table.Column<string>(type: "text", nullable: true),
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    ImportReceiptDetailId = table.Column<Guid>(type: "uuid", nullable: true),
+                    OrderDetailId = table.Column<Guid>(type: "uuid", nullable: true),
+                    SoldAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    UpdatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    RowVersion = table.Column<Guid>(type: "uuid", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    StoreId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProductItems", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ProductItems_ImportReceiptDetails_ImportReceiptDetailId",
+                        column: x => x.ImportReceiptDetailId,
+                        principalTable: "ImportReceiptDetails",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_ProductItems_OrderDetails_OrderDetailId",
+                        column: x => x.OrderDetailId,
+                        principalTable: "OrderDetails",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_ProductItems_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ProductItems_Stores_StoreId",
+                        column: x => x.StoreId,
+                        principalTable: "Stores",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "InventoryTransactions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    ProductItemId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Type = table.Column<int>(type: "integer", nullable: false),
+                    FromStatus = table.Column<int>(type: "integer", nullable: true),
+                    ToStatus = table.Column<int>(type: "integer", nullable: false),
+                    Note = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    UpdatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    RowVersion = table.Column<Guid>(type: "uuid", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_InventoryTransactions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_InventoryTransactions_ProductItems_ProductItemId",
+                        column: x => x.ProductItemId,
+                        principalTable: "ProductItems",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_Customers_DealerLevelId",
                 table: "Customers",
@@ -693,6 +916,11 @@ namespace BizMate.Infrastructure.Migrations
                 column: "StoreId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_InventoryTransactions_ProductItemId",
+                table: "InventoryTransactions",
+                column: "ProductItemId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_OrderDetails_OrderId",
                 table: "OrderDetails",
                 column: "OrderId");
@@ -718,9 +946,41 @@ namespace BizMate.Infrastructure.Migrations
                 column: "OrderId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Permissions_Name",
+                table: "Permissions",
+                column: "Name",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ProductCategories_StoreId",
                 table: "ProductCategories",
                 column: "StoreId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductItems_ImportReceiptDetailId",
+                table: "ProductItems",
+                column: "ImportReceiptDetailId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductItems_OrderDetailId",
+                table: "ProductItems",
+                column: "OrderDetailId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductItems_ProductId",
+                table: "ProductItems",
+                column: "ProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductItems_SerialNumber",
+                table: "ProductItems",
+                column: "SerialNumber",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductItems_Store_Product_Status",
+                table: "ProductItems",
+                columns: new[] { "StoreId", "ProductId", "Status" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Products_ProductCategoryId",
@@ -738,6 +998,17 @@ namespace BizMate.Infrastructure.Migrations
                 column: "SupplierId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_RolePermissions_PermissionId",
+                table: "RolePermissions",
+                column: "PermissionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RolePermissions_RoleId_PermissionId",
+                table: "RolePermissions",
+                columns: new[] { "RoleId", "PermissionId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Stocks_ProductId",
                 table: "Stocks",
                 column: "ProductId");
@@ -753,9 +1024,31 @@ namespace BizMate.Infrastructure.Migrations
                 column: "StoreId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_UserRoles_RoleId",
+                table: "UserRoles",
+                column: "RoleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserRoles_StoreId",
+                table: "UserRoles",
+                column: "StoreId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserRoles_UserId_RoleId_StoreId",
+                table: "UserRoles",
+                columns: new[] { "UserId", "RoleId", "StoreId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Users_StoreId",
                 table: "Users",
                 column: "StoreId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WarrantyCodes_WarrantyCodeValue",
+                table: "WarrantyCodes",
+                column: "WarrantyCodeValue",
+                unique: true);
         }
 
         /// <inheritdoc />
@@ -771,13 +1064,10 @@ namespace BizMate.Infrastructure.Migrations
                 name: "ExportReceiptDetails");
 
             migrationBuilder.DropTable(
-                name: "ImportReceiptDetails");
+                name: "InventoryTransactions");
 
             migrationBuilder.DropTable(
                 name: "Notifications");
-
-            migrationBuilder.DropTable(
-                name: "OrderDetails");
 
             migrationBuilder.DropTable(
                 name: "OrderStatusHistories");
@@ -786,13 +1076,40 @@ namespace BizMate.Infrastructure.Migrations
                 name: "OtpVerifications");
 
             migrationBuilder.DropTable(
+                name: "RolePermissions");
+
+            migrationBuilder.DropTable(
                 name: "Stocks");
+
+            migrationBuilder.DropTable(
+                name: "UserRoles");
+
+            migrationBuilder.DropTable(
+                name: "WarrantyCodes");
+
+            migrationBuilder.DropTable(
+                name: "ExportReceipts");
+
+            migrationBuilder.DropTable(
+                name: "ProductItems");
+
+            migrationBuilder.DropTable(
+                name: "Permissions");
+
+            migrationBuilder.DropTable(
+                name: "Roles");
 
             migrationBuilder.DropTable(
                 name: "Users");
 
             migrationBuilder.DropTable(
-                name: "ExportReceipts");
+                name: "ImportReceiptDetails");
+
+            migrationBuilder.DropTable(
+                name: "OrderDetails");
+
+            migrationBuilder.DropTable(
+                name: "Products");
 
             migrationBuilder.DropTable(
                 name: "ImportReceipts");
@@ -801,19 +1118,16 @@ namespace BizMate.Infrastructure.Migrations
                 name: "Orders");
 
             migrationBuilder.DropTable(
-                name: "Products");
+                name: "ProductCategories");
+
+            migrationBuilder.DropTable(
+                name: "Suppliers");
 
             migrationBuilder.DropTable(
                 name: "Customers");
 
             migrationBuilder.DropTable(
                 name: "Statuses");
-
-            migrationBuilder.DropTable(
-                name: "ProductCategories");
-
-            migrationBuilder.DropTable(
-                name: "Suppliers");
 
             migrationBuilder.DropTable(
                 name: "DealerLevels");

@@ -15,5 +15,6 @@ namespace BizMate.Application.Common.Dto.CoreDto
         public decimal UnitPrice { get; set; }
         public decimal  Available { get; set; }
         public decimal Total { get; set; }
+        public ICollection<string> SerialNumbers { get; set; } = new List<string>();
     }
 }

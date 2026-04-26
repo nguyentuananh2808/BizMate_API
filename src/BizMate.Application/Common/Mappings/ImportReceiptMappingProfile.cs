@@ -30,7 +30,9 @@ namespace BizMate.Application.Common.Mappings
                 .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.ProductName))
                 .ForMember(dest => dest.Code, opt => opt.MapFrom(src => src.ProductCode))
                 .ForMember(dest => dest.Unit, opt => opt.MapFrom(src => src.Unit))
-                .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Quantity));
+                .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Quantity))
+                .ForMember(dest => dest.SerialNumbers, opt => opt.MapFrom(src =>
+                    src.ProductItems.Select(x => x.SerialNumber)));
         }
     }
 }

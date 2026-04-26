@@ -8,5 +8,6 @@ namespace BizMate.Application.Common.Dto.CoreDto
         public string ProductName { get; set; } = default!;
         public int Quantity { get; set; }
         public int Unit { get; set; }
+        public ICollection<string> SerialNumbers { get; set; } = new List<string>();
     }
 }

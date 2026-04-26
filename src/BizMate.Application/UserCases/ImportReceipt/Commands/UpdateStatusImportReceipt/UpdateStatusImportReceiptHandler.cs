@@ -1,4 +1,5 @@
-﻿using BizMate.Application.Common.Dto.CoreDto;
+using BizMate.Application.Common.Dto.CoreDto;
+using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Security;
 using BizMate.Domain.Entities;
@@ -13,73 +14,75 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateStatusImpor
     {
         private readonly IStatusRepository _statusRepository;
         private readonly IStockRepository _stockRepository;
+        private readonly IProductRepository _productRepository;
+        private readonly IProductItemRepository _productItemRepository;
+        private readonly IInventoryTransactionRepository _inventoryTransactionRepository;
         private readonly IImportReceiptRepository _importReceiptRepository;
         private readonly IUserSession _userSession;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<UpdateStatusImportReceiptHandler> _logger;
 
-        #region constructor
         public UpdateStatusImportReceiptHandler(
             IStockRepository stockRepository,
+            IProductRepository productRepository,
+            IProductItemRepository productItemRepository,
+            IInventoryTransactionRepository inventoryTransactionRepository,
             IStatusRepository statusRepository,
             IUserSession userSession,
+            IUnitOfWork unitOfWork,
             IImportReceiptRepository importReceiptRepository,
             ILogger<UpdateStatusImportReceiptHandler> logger)
         {
             _stockRepository = stockRepository;
+            _productRepository = productRepository;
+            _productItemRepository = productItemRepository;
+            _inventoryTransactionRepository = inventoryTransactionRepository;
             _statusRepository = statusRepository;
             _userSession = userSession;
+            _unitOfWork = unitOfWork;
             _importReceiptRepository = importReceiptRepository;
             _logger = logger;
         }
-        #endregion
 
-        public async Task<UpdateStatusImportReceiptResponse> Handle(UpdateStatusImportReceiptRequest request, CancellationToken cancellationToken)
+        public async Task<UpdateStatusImportReceiptResponse> Handle(
+            UpdateStatusImportReceiptRequest request,
+            CancellationToken cancellationToken)
         {
+            await _unitOfWork.BeginTransactionAsync(cancellationToken);
+
             try
             {
                 var storeId = _userSession.StoreId;
                 var userId = Guid.Parse(_userSession.UserId);
                 var role = _userSession.Role;
 
-                #region check importReceipt exist
-                var importReceipt = await _importReceiptRepository.GetByIdAsync(request.Id,cancellationToken);
+                var importReceipt = await _importReceiptRepository.GetByIdAsync(request.Id, cancellationToken);
                 if (importReceipt == null)
-                {
-                    var message = ValidationMessage.LocalizedStrings.DataNotExist;
-                    _logger.LogWarning(message);
-                    return new UpdateStatusImportReceiptResponse(false, message);
-                }
-                #endregion
+                    return await RollbackResponseAsync(ValidationMessage.LocalizedStrings.DataNotExist, cancellationToken);
 
-                #region check rowversion
                 if (importReceipt.RowVersion != request.RowVersion)
-                {
-                    var message = ValidationMessage.LocalizedStrings.NotValidRowversion;
-                    _logger.LogWarning(message);
-                    return new UpdateStatusImportReceiptResponse(false, message);
-                }
-                #endregion
+                    return await RollbackResponseAsync(ValidationMessage.LocalizedStrings.NotValidRowversion, cancellationToken);
 
-                #region get status
                 var statusId = await _statusRepository.GetIdByGroupAndCodeAsync(request.CodeStatus, "ImportReceipt");
                 if (statusId == Guid.Empty)
-                {
-                    var message = ValidationMessage.LocalizedStrings.DataNotExist2;
-                    _logger.LogWarning(message);
-                    return new UpdateStatusImportReceiptResponse(false, message);
-                }
-                #endregion
+                    return await RollbackResponseAsync(ValidationMessage.LocalizedStrings.DataNotExist2, cancellationToken);
 
-                #region check role
                 if (role == "Staff" && request.CodeStatus == "APPROVED")
-                {
-                    var message = ValidationMessage.LocalizedStrings.RoleWithoutAuthority;
-                    _logger.LogWarning(message);
-                    return new UpdateStatusImportReceiptResponse(false, message);
-                }
-                #endregion
+                    return await RollbackResponseAsync(ValidationMessage.LocalizedStrings.RoleWithoutAuthority, cancellationToken);
 
-                #region update status
+                var shouldImportStock = request.CodeStatus == "APPROVED"
+                    && importReceipt.Status?.Code != "APPROVED";
+
+                if (shouldImportStock && importReceipt.Details.Any())
+                {
+                    var serialValidationMessage = await ValidatePendingSerialItemsAsync(
+                        importReceipt.Details,
+                        cancellationToken);
+
+                    if (serialValidationMessage is not null)
+                        return await RollbackResponseAsync(serialValidationMessage, cancellationToken);
+                }
+
                 var statusImportReceipt = new UpdateImportReceiptStatusDto
                 {
                     Id = request.Id,
@@ -91,71 +94,152 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateStatusImpor
                 };
 
                 await _importReceiptRepository.UpdateStatusAsync(statusImportReceipt, cancellationToken);
-                #endregion
 
-                #region import stock if APPROVED
-                if (request.CodeStatus == "APPROVED" && importReceipt.Details.Any())
+                if (shouldImportStock && importReceipt.Details.Any())
                 {
                     await ImportStockAsync(importReceipt.Details, storeId, userId, cancellationToken);
+                    await ActivatePendingSerialItemsAsync(importReceipt, userId, cancellationToken);
                 }
-                #endregion
+
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                await _unitOfWork.CommitAsync(cancellationToken);
 
                 return new UpdateStatusImportReceiptResponse(true, "Cập nhật phiếu nhập kho thành công.");
             }
             catch (Exception ex)
             {
+                await _unitOfWork.RollbackAsync(cancellationToken);
                 _logger.LogError(ex, "Lỗi khi cập nhật trạng thái phiếu nhập kho.");
                 return new UpdateStatusImportReceiptResponse(false, "Không thể cập nhật phiếu nhập kho. Vui lòng thử lại.");
             }
         }
 
-        /// <summary>
-        /// Cập nhật tồn kho theo phiếu nhập
-        /// </summary>
+        private async Task<UpdateStatusImportReceiptResponse> RollbackResponseAsync(
+            string message,
+            CancellationToken cancellationToken)
+        {
+            await _unitOfWork.RollbackAsync(cancellationToken);
+            _logger.LogWarning(message);
+            return new UpdateStatusImportReceiptResponse(false, message);
+        }
+
         private async Task ImportStockAsync(
             IEnumerable<ImportReceiptDetail> receiptDetails,
             Guid storeId,
             Guid userId,
             CancellationToken cancellationToken = default)
         {
-            // 1. Lấy danh sách ProductId
-            var productIds = receiptDetails.Select(d => d.ProductId).Distinct().ToList();
+            var details = receiptDetails.ToList();
+            var productIds = details.Select(d => d.ProductId).Distinct().ToList();
 
-            // 2. Lấy toàn bộ tồn kho hiện có cho các sản phẩm
             var existingStocks = await _stockRepository.GetByStoreAndProductAsync(storeId, productIds);
             var stockDict = existingStocks.ToDictionary(s => s.ProductId, s => s);
+            var stocksToUpdate = new List<Stock>();
 
-            // 3. Xử lý từng chi tiết phiếu nhập
-            foreach (var detail in receiptDetails)
+            foreach (var detail in details)
             {
                 if (stockDict.TryGetValue(detail.ProductId, out var stock))
                 {
-                    // Đã có tồn kho → update
                     stock.Quantity += detail.Quantity;
                     stock.UpdatedBy = userId;
                     stock.UpdatedDate = DateTime.UtcNow;
-
-                    await _stockRepository.UpdateAsync(new[] { stock }, cancellationToken);
+                    stocksToUpdate.Add(stock);
+                    continue;
                 }
-                else
+
+                var newStock = new Stock
                 {
-                    // Chưa có tồn kho → tạo mới
-                    var newStock = new Stock
-                    {
-                        Id = Guid.NewGuid(),
-                        StoreId = storeId,
-                        ProductId = detail.ProductId,
-                        Quantity = detail.Quantity,
-                        CreatedBy = userId,
-                        CreatedDate = DateTime.UtcNow,
-                        UpdatedBy = userId,
-                        UpdatedDate = DateTime.UtcNow
-                    };
+                    Id = Guid.NewGuid(),
+                    StoreId = storeId,
+                    ProductId = detail.ProductId,
+                    Quantity = detail.Quantity,
+                    CreatedBy = userId,
+                    CreatedDate = DateTime.UtcNow,
+                    UpdatedBy = userId,
+                    UpdatedDate = DateTime.UtcNow
+                };
 
-                    await _stockRepository.AddAsync(newStock);
-                    stockDict[detail.ProductId] = newStock;
-                }
+                await _stockRepository.AddAsync(newStock);
+                stockDict[detail.ProductId] = newStock;
             }
+
+            if (stocksToUpdate.Count > 0)
+                await _stockRepository.UpdateAsync(stocksToUpdate, cancellationToken);
+        }
+
+        private async Task<string?> ValidatePendingSerialItemsAsync(
+            IEnumerable<ImportReceiptDetail> receiptDetails,
+            CancellationToken cancellationToken)
+        {
+            var details = receiptDetails.ToList();
+            var productIds = details.Select(x => x.ProductId).Distinct().ToList();
+            var products = await _productRepository.GetByIdsAsync(productIds, cancellationToken);
+            var productDict = products.ToDictionary(x => x.Id);
+
+            var pendingItems = await _productItemRepository.GetByImportReceiptDetailIdsAsync(
+                details.Select(x => x.Id),
+                ProductItemStatus.PendingImport,
+                cancellationToken);
+
+            var itemsByDetailId = pendingItems
+                .Where(x => x.ImportReceiptDetailId.HasValue)
+                .GroupBy(x => x.ImportReceiptDetailId!.Value)
+                .ToDictionary(x => x.Key, x => x.Count());
+
+            foreach (var detail in details)
+            {
+                if (!productDict.TryGetValue(detail.ProductId, out var product))
+                    return $"San pham {detail.ProductId} khong ton tai.";
+
+                if (!product.IsSerialTracked)
+                    continue;
+
+                var serialCount = itemsByDetailId.GetValueOrDefault(detail.Id);
+                if (serialCount != detail.Quantity)
+                    return $"San pham {detail.ProductCode} can {detail.Quantity} SN de duyet nhap kho.";
+            }
+
+            return null;
+        }
+
+        private async Task ActivatePendingSerialItemsAsync(
+            BizMate.Domain.Entities.ImportReceipt importReceipt,
+            Guid userId,
+            CancellationToken cancellationToken)
+        {
+            var items = await _productItemRepository.GetByImportReceiptDetailIdsAsync(
+                importReceipt.Details.Select(x => x.Id),
+                ProductItemStatus.PendingImport,
+                cancellationToken);
+
+            if (items.Count == 0)
+                return;
+
+            var now = DateTime.UtcNow;
+            var transactions = new List<InventoryTransaction>();
+
+            foreach (var item in items)
+            {
+                var fromStatus = item.Status;
+                item.Status = ProductItemStatus.InStock;
+                item.UpdatedBy = userId;
+                item.UpdatedDate = now;
+
+                transactions.Add(new InventoryTransaction
+                {
+                    Id = Guid.NewGuid(),
+                    ProductItemId = item.Id,
+                    Type = InventoryTransactionType.Import,
+                    FromStatus = fromStatus,
+                    ToStatus = ProductItemStatus.InStock,
+                    CreatedBy = userId,
+                    CreatedDate = now,
+                    Note = $"Import receipt {importReceipt.Code}"
+                });
+            }
+
+            await _productItemRepository.UpdateRangeAsync(items, cancellationToken);
+            await _inventoryTransactionRepository.AddRangeAsync(transactions, cancellationToken);
         }
     }
 }

@@ -14,6 +14,8 @@ namespace BizMate.Application.Common.Dto.UserAggregate
         public Guid ProductCategoryId { get; set; }
         public decimal? CostPrice { get; set; } // Giá nhập 
         public decimal? SalePrice { get; set; } // Giá bán
-        public string? ProductCategoryName { get; set; } 
+        public string? ProductCategoryName { get; set; }
+        public bool IsSerialTracked { get; set; }
+
     }
 }

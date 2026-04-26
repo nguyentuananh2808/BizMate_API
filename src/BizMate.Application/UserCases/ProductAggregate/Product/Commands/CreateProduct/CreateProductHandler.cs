@@ -75,6 +75,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Create
                     ProductCategoryId = request.ProductCategoryId,
                     SupplierId = request.SupplierId,
                     Description = request.Description,
+                    IsSerialTracked = request.IsSerialTracked,
                     CreatedBy = Guid.Parse(userId),
                 };
 

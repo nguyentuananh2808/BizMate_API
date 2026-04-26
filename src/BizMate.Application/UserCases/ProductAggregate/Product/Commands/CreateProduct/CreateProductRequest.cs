@@ -16,5 +16,6 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Create
         public string? Description { get; set; }
         public decimal? CostPrice { get; set; } // Giá nhập 
         public decimal? SalePrice { get; set; } // Giá bán
+        public bool IsSerialTracked { get; set; }
     }
 }

@@ -16,5 +16,6 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.CreateImportRecei
     {
         public Guid ProductId { get; set; }
         public int Quantity { get; set; }
+        public ICollection<string> SerialNumbers { get; set; } = new List<string>();
     }
 }
