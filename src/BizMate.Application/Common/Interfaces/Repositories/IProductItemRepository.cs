@@ -16,6 +16,7 @@ namespace BizMate.Application.Common.Interfaces.Repositories
             Guid storeId,
             Guid productId,
             ProductItemStatus? status,
+            string? keyword,
             int pageIndex,
             int pageSize,
             CancellationToken ct = default);

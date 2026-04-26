@@ -24,6 +24,7 @@ namespace BizMate.Api.UserCases.ProductAggregate.ProductItem.GetProductItems
         public async Task<IActionResult> GetProductItems(
             [FromQuery] Guid productId,
             [FromQuery] int? status,
+            [FromQuery] string? keyword,
             [FromQuery] int pageIndex = 1,
             [FromQuery] int pageSize = 20)
         {
@@ -31,6 +32,7 @@ namespace BizMate.Api.UserCases.ProductAggregate.ProductItem.GetProductItems
             {
                 ProductId = productId,
                 Status = status,
+                Keyword = keyword,
                 PageIndex = pageIndex,
                 PageSize = pageSize
             };

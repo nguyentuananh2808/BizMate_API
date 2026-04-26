@@ -45,6 +45,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             Guid storeId,
             Guid productId,
             ProductItemStatus? status,
+            string? keyword,
             int pageIndex,
             int pageSize,
             CancellationToken ct = default)
@@ -57,6 +58,12 @@ namespace BizMate.Infrastructure.Persistence.Repositories
 
             if (status.HasValue)
                 query = query.Where(i => i.Status == status.Value);
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                var normalizedKeyword = keyword.Trim();
+                query = query.Where(i => EF.Functions.ILike(i.SerialNumber, $"%{normalizedKeyword}%"));
+            }
 
             var total = await query.CountAsync(ct);
 

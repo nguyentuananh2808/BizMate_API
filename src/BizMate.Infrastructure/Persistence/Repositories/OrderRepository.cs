@@ -140,7 +140,9 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             var productIds = order.Details.Select(d => d.ProductId).ToList();
 
             var stocks = await _context.Stocks
-                 .Where(s => productIds.Contains(s.ProductId))
+                 .Where(s => s.StoreId == order.StoreId
+                          && productIds.Contains(s.ProductId)
+                          && !s.IsDeleted)
                  .Select(s => new
                  {
                      s.ProductId,

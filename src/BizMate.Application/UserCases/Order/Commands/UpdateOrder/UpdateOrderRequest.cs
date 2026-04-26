@@ -30,5 +30,6 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
     {
         public Guid ProductId { get; set; }
         public int Quantity { get; set; }
+        public ICollection<string> SerialNumbers { get; set; } = new List<string>();
     }
 }

@@ -74,13 +74,25 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
                 if (statusId == Guid.Empty)
                     return await RollbackResponseAsync(ValidationMessage.LocalizedStrings.DataNotExist2, cancellationToken);
 
-                var currentStatus = await _statusRepository.GetIdById(request.StatusId, cancellationToken);
+                if (order.StatusId != request.StatusId)
+                    return await RollbackResponseAsync("Trạng thái đơn hàng đã thay đổi, vui lòng tải lại dữ liệu.", cancellationToken);
+
+                var currentStatus = await _statusRepository.GetIdById(order.StatusId, cancellationToken);
                 var updateStatus = await _statusRepository.GetIdById(statusId, cancellationToken);
                 if (currentStatus == null || updateStatus == null)
                     return await RollbackResponseAsync(ValidationMessage.LocalizedStrings.DataNotExist2, cancellationToken);
 
+                if (currentStatus.Id == updateStatus.Id)
+                {
+                    await _unitOfWork.RollbackAsync(cancellationToken);
+                    return new UpdateStatusOrderResponse(true, "Trạng thái đơn hàng không thay đổi.");
+                }
+
                 if (currentStatus.Code is "CANCELLED" or "COMPLETED")
                     return await RollbackResponseAsync(ValidationMessage.LocalizedStrings.RoleWithoutAuthority, cancellationToken);
+
+                if (updateStatus.Code == "COMPLETED" && currentStatus.Code != "PACKED")
+                    return await RollbackResponseAsync("Đơn hàng phải ở trạng thái PACKED trước khi hoàn thành và xuất kho.", cancellationToken);
 
                 if (updateStatus.Code == "PACKED")
                 {
@@ -245,11 +257,18 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
         {
             var serialMap = BuildSerialMapByOrderDetail(order.Details, requestDetails);
             var products = await GetProductsAsync(order.Details, cancellationToken);
-            var allSerials = serialMap.Values.SelectMany(x => x).ToList();
-            var items = await _productItemRepository.GetBySerialNumbersAsync(allSerials, cancellationToken);
-            var itemBySerial = items.ToDictionary(x => x.SerialNumber, StringComparer.OrdinalIgnoreCase);
+            var orderDetailIds = order.Details.Select(x => x.Id).ToList();
+            var existingReservedItems = await _productItemRepository.GetByOrderDetailIdsAsync(
+                orderDetailIds,
+                ProductItemStatus.Reserved,
+                cancellationToken);
 
-            ValidateRequiredSerials(order.Details, products, serialMap);
+            var reservedByDetailId = existingReservedItems
+                .Where(x => x.OrderDetailId.HasValue)
+                .GroupBy(x => x.OrderDetailId!.Value)
+                .ToDictionary(x => x.Key, x => x.ToList());
+
+            var serialsToReserve = new Dictionary<Guid, List<string>>();
 
             var now = DateTime.UtcNow;
             var itemsToUpdate = new List<ProductItem>();
@@ -258,9 +277,41 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
             foreach (var detail in order.Details)
             {
                 if (!products[detail.ProductId].IsSerialTracked)
+                {
+                    if (serialMap.TryGetValue(detail.Id, out var ignoredSerials) && ignoredSerials.Count > 0)
+                        throw new InvalidOperationException($"San pham {detail.ProductCode} khong bat quan ly SN.");
+
+                    continue;
+                }
+
+                var existingReservedForDetail = reservedByDetailId.GetValueOrDefault(detail.Id) ?? new List<ProductItem>();
+                if (existingReservedForDetail.Count == detail.Quantity)
+                {
+                    if (serialMap.TryGetValue(detail.Id, out var requestedSerials) && requestedSerials.Count > 0)
+                        EnsureRequestedSerialsMatchReserved(detail, requestedSerials, existingReservedForDetail);
+
+                    continue;
+                }
+
+                if (existingReservedForDetail.Count > 0)
+                    throw new InvalidOperationException($"Du lieu SN cua san pham {detail.ProductCode} khong khop so luong giu cho.");
+
+                if (!serialMap.TryGetValue(detail.Id, out var serials) || serials.Count != detail.Quantity)
+                    throw new InvalidOperationException($"San pham {detail.ProductCode} can {detail.Quantity} SN.");
+
+                serialsToReserve[detail.Id] = serials;
+            }
+
+            var allSerials = serialsToReserve.Values.SelectMany(x => x).ToList();
+            var items = await _productItemRepository.GetBySerialNumbersAsync(allSerials, cancellationToken);
+            var itemBySerial = items.ToDictionary(x => x.SerialNumber, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var detail in order.Details)
+            {
+                if (!serialsToReserve.TryGetValue(detail.Id, out var serials))
                     continue;
 
-                foreach (var serial in serialMap[detail.Id])
+                foreach (var serial in serials)
                 {
                     var item = GetValidatedItem(itemBySerial, serial, detail, storeId, ProductItemStatus.InStock);
                     var fromStatus = item.Status;
@@ -311,13 +362,21 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
             foreach (var detail in order.Details)
             {
                 if (!products[detail.ProductId].IsSerialTracked)
+                {
+                    if (serialMap.TryGetValue(detail.Id, out var ignoredSerials) && ignoredSerials.Count > 0)
+                        throw new InvalidOperationException($"San pham {detail.ProductCode} khong bat quan ly SN.");
+
                     continue;
+                }
 
                 var detailReservedItems = reservedByDetailId.GetValueOrDefault(detail.Id) ?? new List<ProductItem>();
                 var selectedItems = new List<ProductItem>();
 
                 if (detailReservedItems.Count == detail.Quantity)
                 {
+                    if (serialMap.TryGetValue(detail.Id, out var requestedSerials) && requestedSerials.Count > 0)
+                        EnsureRequestedSerialsMatchReserved(detail, requestedSerials, detailReservedItems);
+
                     selectedItems.AddRange(detailReservedItems);
                 }
                 else
@@ -450,7 +509,12 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
             foreach (var detail in orderDetails)
             {
                 if (!products[detail.ProductId].IsSerialTracked)
+                {
+                    if (serialMap.TryGetValue(detail.Id, out var ignoredSerials) && ignoredSerials.Count > 0)
+                        throw new InvalidOperationException($"San pham {detail.ProductCode} khong bat quan ly SN.");
+
                     continue;
+                }
 
                 if (!serialMap.TryGetValue(detail.Id, out var serials) || serials.Count != detail.Quantity)
                     throw new InvalidOperationException($"San pham {detail.ProductCode} can {detail.Quantity} SN.");
@@ -491,9 +555,40 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
                 throw new InvalidOperationException($"SN {serial} khong thuoc san pham {detail.ProductCode}.");
 
             if (item.Status != expectedStatus)
-                throw new InvalidOperationException($"SN {serial} khong o trang thai hop le.");
+            {
+                if (item.Status == ProductItemStatus.Reserved)
+                {
+                    var ownerMessage = item.OrderDetailId == detail.Id
+                        ? "SN nay da duoc giu cho dong san pham hien tai."
+                        : "SN nay da duoc giu cho don hang khac.";
+
+                    throw new InvalidOperationException($"SN {serial} khong kha dung. {ownerMessage}");
+                }
+
+                throw new InvalidOperationException($"SN {serial} khong kha dung de xuat. Trang thai hien tai: {item.Status}.");
+            }
 
             return item;
+        }
+
+        private static void EnsureRequestedSerialsMatchReserved(
+            OrderDetailDto detail,
+            IReadOnlyCollection<string> requestedSerials,
+            IReadOnlyCollection<ProductItem> reservedItems)
+        {
+            if (requestedSerials.Count != detail.Quantity)
+                throw new InvalidOperationException($"San pham {detail.ProductCode} can dung {detail.Quantity} SN.");
+
+            var reservedSerials = reservedItems
+                .Select(x => x.SerialNumber)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var invalidSerials = requestedSerials
+                .Where(x => !reservedSerials.Contains(x))
+                .ToList();
+
+            if (invalidSerials.Count > 0)
+                throw new InvalidOperationException($"SN da giu cua san pham {detail.ProductCode} khong khop: {string.Join(", ", invalidSerials)}.");
         }
 
         private static InventoryTransaction CreateTransaction(

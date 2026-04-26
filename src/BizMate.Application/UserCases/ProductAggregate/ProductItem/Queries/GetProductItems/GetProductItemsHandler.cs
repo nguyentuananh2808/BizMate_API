@@ -39,12 +39,13 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductItem.Queries.Get
                 }
 
                 var pageIndex = request.PageIndex <= 0 ? 1 : request.PageIndex;
-                var pageSize = request.PageSize <= 0 ? 20 : request.PageSize;
+                var pageSize = request.PageSize <= 0 ? 20 : Math.Min(request.PageSize, 200);
 
                 var (items, totalCount) = await _productItemRepository.GetByProductAsync(
                     _userSession.StoreId,
                     request.ProductId,
                     status,
+                    request.Keyword,
                     pageIndex,
                     pageSize,
                     cancellationToken);

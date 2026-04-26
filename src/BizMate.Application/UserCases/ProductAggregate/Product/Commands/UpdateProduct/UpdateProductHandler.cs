@@ -81,6 +81,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Update
                         storeId,
                         product.Id,
                         null,
+                        null,
                         pageIndex: 1,
                         pageSize: 1,
                         ct: cancellationToken);
