@@ -21,6 +21,7 @@ namespace BizMate.Api.UserCases.ProductAggregate.ProductItem.GetProductItems
         }
 
         [HttpGet]
+        [HasPermission(PermissionConstants.Stock.View)]
         public async Task<IActionResult> GetProductItems(
             [FromQuery] Guid productId,
             [FromQuery] int? status,

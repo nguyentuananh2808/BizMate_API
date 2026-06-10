@@ -22,6 +22,7 @@ namespace BizMate.Api.UserCases.DealerLevel.GetDealerLevel
         }
 
         [HttpGet("{id:guid}")]
+        [HasPermission(PermissionConstants.DealerLevel.View)]
         public async Task<IActionResult> GetDealerLevel(Guid id)
         {
             var request = new GetDealerLevelRequest(id);

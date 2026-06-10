@@ -21,6 +21,7 @@ namespace BizMate.Api.UserCases.Export.ExportOrder
         }
 
         [HttpPost("export-order")]
+        [HasPermission(PermissionConstants.Report.Export)]
         public async Task<IActionResult> ExportOrders(ExportOrdersRequest request)
         {
             var response = await _mediator.Send(request);

@@ -22,6 +22,7 @@ namespace BizMate.Api.UserCases.InventoryReceipt.DeleteInventoryReceipt
 
 
         [HttpDelete("{id:guid}")]
+        [HasPermission(PermissionConstants.Stock.Adjust)]
         public async Task<IActionResult> Delete(Guid id)
         {
             var request = new DeleteInventoryReceiptRequest(id);

@@ -22,6 +22,7 @@ namespace BizMate.Api.UserCases.Customer.DeleteCustomer
 
 
         [HttpDelete("{id:guid}")]
+        [HasPermission(PermissionConstants.Customer.Delete)]
         public async Task<IActionResult> Delete(Guid id)
         {
             var request = new DeleteCustomerRequest(id);

@@ -20,6 +20,13 @@ namespace BizMate.Application.Common.Dto.CoreDto
 
         public decimal TotalAmount { get; set; }
 
+        public Guid? TechnicianId { get; set; }
+        public string? TechnicianName { get; set; }
+        public List<Guid> TechnicianIds { get; set; } = [];
+        public ICollection<OrderTechnicianDto> Technicians { get; set; } = new List<OrderTechnicianDto>();
+        public DateTime? InstallationDate { get; set; }
+        public DateTime? TechnicianExportedAt { get; set; }
+
         // Trạng thái đơn hàng
         public Guid StatusId { get; set; }
         public string? StatusName { get; set; }
@@ -30,5 +37,12 @@ namespace BizMate.Application.Common.Dto.CoreDto
             TotalAmount = Details?.Sum(d => d.Total) ?? 0;
         }
         public ICollection<OrderDetailDto> Details { get; set; } = new List<OrderDetailDto>();
+    }
+
+    public class OrderTechnicianDto
+    {
+        public Guid TechnicianId { get; set; }
+        public string TechnicianName { get; set; } = default!;
+        public string? Phone { get; set; }
     }
 }

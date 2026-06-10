@@ -1,7 +1,3 @@
-// FILE: src/BizMate.Infrastructure/Security/PermissionAuthorizationHandler.cs
-// BugFix: Thêm đầy đủ using directives cho Microsoft.AspNetCore.Authorization
-// Cần package: Microsoft.AspNetCore.Authorization (thêm vào BizMate.Infrastructure.csproj)
-
 using Microsoft.AspNetCore.Authorization;
 
 namespace BizMate.Infrastructure.Security

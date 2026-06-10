@@ -1,11 +1,8 @@
 ﻿using BizMate.Application.Common.Dto.CoreDto;
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Domain.Entities;
-using Dapper;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using SqlKata.Execution;
-using System.Text.Json;
 
 namespace BizMate.Infrastructure.Persistence.Repositories
 {
@@ -17,37 +14,95 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             _context = context;
         }
 
-        private Order MapToOrder(OrderCoreDto dto)
+        private static List<OrderTechnicianDto> ToOrderTechnicianDtos(Order order)
         {
-            var order = new Order
-            {
-                Id = dto.Id,
-                OrderDate = dto.OrderDate,
-                CustomerType = dto.CustomerType,
-                CustomerId = dto.CustomerId,
-                CustomerName = dto.CustomerName,
-                CustomerPhone = dto.CustomerPhone,
-                DeliveryAddress = dto.DeliveryAddress,
-                Description = dto.Description,
-                StatusId = dto.StatusId,
-                Status = dto.Status,
-                RowVersion = dto.RowVersion,
-                UpdatedBy = dto.UpdatedBy,
-                Details = dto.Details?.Select(d => new OrderDetail
+            var technicians = order.OrderTechnicians
+                .Where(x => x.Technician != null)
+                .OrderBy(x => x.AssignedAt)
+                .Select(x => new OrderTechnicianDto
                 {
-                    Id = d.Id,
-                    ProductId = d.ProductId,
-                    ProductName = d.ProductName,
-                    Quantity = d.Quantity,
-                    UnitPrice = d.UnitPrice,
-                    Total = d.Total
-                }).ToList() ?? new List<OrderDetail>()
-            };
+                    TechnicianId = x.TechnicianId,
+                    TechnicianName = x.Technician.Name,
+                    Phone = x.Technician.Phone
+                })
+                .ToList();
 
-            // Tính lại TotalAmount từ Details
-            order.RecalculateTotal();
+            if (technicians.Count > 0)
+                return technicians;
 
-            return order;
+            return order.TechnicianId.HasValue && order.Technician != null
+                ? new List<OrderTechnicianDto>
+                {
+                    new()
+                    {
+                        TechnicianId = order.TechnicianId.Value,
+                        TechnicianName = order.Technician.Name,
+                        Phone = order.Technician.Phone
+                    }
+                }
+                : new List<OrderTechnicianDto>();
+        }
+
+        private async Task AttachTechniciansAsync(
+            IEnumerable<OrderCoreDto> orders,
+            CancellationToken cancellationToken)
+        {
+            var orderList = orders.ToList();
+            var orderIds = orderList.Select(x => x.Id).ToList();
+            if (orderIds.Count == 0)
+                return;
+
+            var mappings = await _context.OrderTechnicians
+                .Include(x => x.Technician)
+                .Where(x => orderIds.Contains(x.OrderId))
+                .OrderBy(x => x.AssignedAt)
+                .ToListAsync(cancellationToken);
+
+            var mappedByOrder = mappings
+                .GroupBy(x => x.OrderId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(x => new OrderTechnicianDto
+                    {
+                        TechnicianId = x.TechnicianId,
+                        TechnicianName = x.Technician.Name,
+                        Phone = x.Technician.Phone
+                    }).ToList());
+
+            var legacyTechnicianIds = orderList
+                .Where(x => !mappedByOrder.ContainsKey(x.Id) && x.TechnicianId.HasValue)
+                .Select(x => x.TechnicianId!.Value)
+                .Distinct()
+                .ToList();
+
+            var legacyTechnicians = legacyTechnicianIds.Count == 0
+                ? new Dictionary<Guid, Technician>()
+                : await _context.Technicians
+                    .Where(x => legacyTechnicianIds.Contains(x.Id))
+                    .ToDictionaryAsync(x => x.Id, cancellationToken);
+
+            foreach (var order in orderList)
+            {
+                if (mappedByOrder.TryGetValue(order.Id, out var technicians))
+                {
+                    order.Technicians = technicians;
+                    continue;
+                }
+
+                if (order.TechnicianId.HasValue
+                    && legacyTechnicians.TryGetValue(order.TechnicianId.Value, out var technician))
+                {
+                    order.Technicians = new List<OrderTechnicianDto>
+                    {
+                        new()
+                        {
+                            TechnicianId = technician.Id,
+                            TechnicianName = technician.Name,
+                            Phone = technician.Phone
+                        }
+                    };
+                }
+            }
         }
 
 
@@ -61,56 +116,41 @@ namespace BizMate.Infrastructure.Persistence.Repositories
 
         public async Task UpdateWithDetailsAsync(OrderCoreDto orderDto, IEnumerable<OrderDetail> details, CancellationToken cancellationToken = default)
         {
-            var order = MapToOrder(orderDto);
-            // Lấy connection từ DbContext
-            var conn = _context.Database.GetDbConnection();
+            var order = await _context.Orders
+                .Include(x => x.Details)
+                .FirstOrDefaultAsync(x => x.Id == orderDto.Id && !x.IsDeleted, cancellationToken);
 
-            if (conn.State != System.Data.ConnectionState.Open)
-                await conn.OpenAsync(cancellationToken);
+            if (order == null)
+                throw new InvalidOperationException($"Order {orderDto.Id} không tồn tại.");
 
-            // Detach order + chi tiết khỏi EF Core tracking
-            // để EF không can thiệp khi gọi store procedure
-            _context.Entry(order).State = EntityState.Detached;
-            foreach (var d in order.Details)
-                _context.Entry(d).State = EntityState.Detached;
+            var now = DateTime.UtcNow;
 
-            // Serialize chi tiết thành JSON
-            var detailsJson = JsonSerializer.Serialize(details);
+            order.CustomerId = orderDto.CustomerId;
+            order.CustomerType = orderDto.CustomerType;
+            order.CustomerName = orderDto.CustomerName;
+            order.CustomerPhone = orderDto.CustomerPhone;
+            order.DeliveryAddress = orderDto.DeliveryAddress;
+            order.TechnicianId = orderDto.TechnicianId;
+            order.InstallationDate = orderDto.InstallationDate;
+            order.TechnicianExportedAt = orderDto.TechnicianExportedAt;
+            order.Description = orderDto.Description;
+            order.StatusId = orderDto.StatusId;
+            order.RowVersion = orderDto.RowVersion;
+            order.UpdatedBy = orderDto.UpdatedBy;
+            order.UpdatedDate = now;
 
-            // Lấy transaction hiện tại nếu có (EF quản lý)
-            var dbTransaction = _context.Database.CurrentTransaction?.GetDbTransaction();
+            _context.OrderDetails.RemoveRange(order.Details);
 
-            // Gọi store procedure bằng Dapper
-            await conn.ExecuteAsync(
-                @"CALL sp_update_order(
-            @p_order_id,
-            @p_customer_id,
-            @p_customer_type,
-            @p_customer_phone,
-            @p_customer_name,
-            @p_delivery_address,
-            @p_description,
-            @p_status_id,
-            @p_row_version,
-            @p_updated_by,
-            @p_details::jsonb
-        )",
-                new
-                {
-                    p_order_id = order.Id,
-                    p_customer_id = order.CustomerId,
-                    p_customer_type = order.CustomerType,
-                    p_customer_phone = order.CustomerPhone,
-                    p_customer_name = order.CustomerName,
-                    p_delivery_address = order.DeliveryAddress,
-                    p_description = order.Description,
-                    p_status_id = order.StatusId,
-                    p_row_version = order.RowVersion,
-                    p_updated_by = order.UpdatedBy,
-                    p_details = detailsJson
-                },
-                dbTransaction
-            );
+            var newDetails = details.Select(d =>
+            {
+                d.OrderId = order.Id;
+                d.Order = order;
+                return d;
+            }).ToList();
+
+            await _context.OrderDetails.AddRangeAsync(newDetails, cancellationToken);
+            order.Details = newDetails;
+            order.RecalculateTotal();
         }
 
 
@@ -128,11 +168,15 @@ namespace BizMate.Infrastructure.Persistence.Repositories
         public async Task<OrderCoreDto?> GetByIdAsync(Guid id, bool includeDetails = true, CancellationToken cancellationToken = default)
         {
             var order = await _context.Orders
+                .AsNoTracking()
                 .Where(r => r.Id == id && !r.IsDeleted)
                 .Include(r => r.Details)
                     .ThenInclude(d => d.ProductItems)
                 .Include(r => r.Status)
                 .Include(r => r.Customer)
+                .Include(r => r.Technician)
+                .Include(r => r.OrderTechnicians)
+                    .ThenInclude(x => x.Technician)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (order == null) return null;
@@ -162,6 +206,11 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                 CustomerPhone = order.CustomerPhone,
                 DeliveryAddress = order.DeliveryAddress,
                 TotalAmount = order.TotalAmount,
+                TechnicianId = order.TechnicianId,
+                TechnicianName = order.Technician?.Name,
+                Technicians = ToOrderTechnicianDtos(order),
+                InstallationDate = order.InstallationDate,
+                TechnicianExportedAt = order.TechnicianExportedAt,
                 StatusId = order.StatusId,
                 Description = order.Description,
                 StatusName = order.Status.Name,
@@ -178,6 +227,8 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                     Quantity = d.Quantity,
                     Unit = d.Unit,
                     UnitPrice = d.UnitPrice,
+                    BorrowedQuantity = d.BorrowedQuantity,
+                    UsedBorrowedQuantity = d.UsedBorrowedQuantity,
                     Total = d.Total,
                     Available = stocks.TryGetValue(d.ProductId, out var available) ? available : 0,
                     SerialNumbers = d.ProductItems.Select(x => x.SerialNumber).ToList()
@@ -277,12 +328,17 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                 CustomerId = row.CustomerId,
                 DeliveryAddress = row.DeliveryAddress,
                 TotalAmount = row.TotalAmount,
+                TechnicianId = row.TechnicianId,
+                InstallationDate = row.InstallationDate,
+                TechnicianExportedAt = row.TechnicianExportedAt,
                 StatusId = row.StatusId,
                 Description = row.Description,
                 StatusName = row.Status_Name,
                 CreatedDate = row.CreatedDate,
                 UpdatedDate = row.UpdateDate
             }).ToList();
+
+            await AttachTechniciansAsync(results, cancellationToken);
 
             return (results, totalCount);
         }
@@ -292,40 +348,115 @@ namespace BizMate.Infrastructure.Persistence.Repositories
         public async Task UpdateStatusAsync(UpdateOrderStatusDto statusOrder, CancellationToken cancellationToken)
         {
             // Lưu ý: ExecuteUpdateAsync sẽ áp dụng trực tiếp trên DB; handler hiện tại dùng phương thức SaveChangesAsync chung nên
-            // nếu bạn muốn dùng ExecuteUpdateAsync, phải hiểu hành vi transaction của EF. Ở đây vẫn giữ cho các thao tác do handler quản lý.
-            await _context.Orders
+            // nếu muốn dùng ExecuteUpdateAsync, phải hiểu hành vi transaction của EF. Ở đây vẫn giữ cho các thao tác do handler quản lý.
+            var affectedRows = await _context.Orders
                 .Where(r => r.StoreId == statusOrder.StoreId && r.Id == statusOrder.Id && !r.IsDeleted)
                 .ExecuteUpdateAsync(r => r
                     .SetProperty(x => x.StatusId, statusOrder.StatusId)
                     .SetProperty(x => x.RowVersion, statusOrder.RowVersion)
                     .SetProperty(x => x.UpdatedBy, statusOrder.UpdatedBy)
                     .SetProperty(x => x.UpdatedDate, statusOrder.UpdatedDate), cancellationToken);
+
+            if (affectedRows == 0)
+                throw new InvalidOperationException("Khong the cap nhat trang thai don hang. Vui long tai lai du lieu.");
         }
 
-        public async Task UpdateOrderAsync(OrderCoreDto orderDto, CancellationToken cancellationToken)
+        public async Task UpdateOrderAsync(
+        OrderCoreDto orderDto,
+        CancellationToken cancellationToken)
         {
-            // Lấy entity gốc từ DbContext (EF Core tracking)
             var trackedOrder = await _context.Orders
                 .Include(o => o.Details)
-                .FirstOrDefaultAsync(o => o.Id == orderDto.Id, cancellationToken);
+                .FirstOrDefaultAsync(
+                    o => o.Id == orderDto.Id,
+                    cancellationToken);
 
             if (trackedOrder == null)
-                throw new InvalidOperationException($"Order {orderDto.Id} không tồn tại.");
+                throw new InvalidOperationException(
+                    $"Order {orderDto.Id} không tồn tại.");
 
-            // Cập nhật các trường cha
             trackedOrder.CustomerId = orderDto.CustomerId;
             trackedOrder.CustomerType = orderDto.CustomerType;
             trackedOrder.CustomerName = orderDto.CustomerName;
             trackedOrder.CustomerPhone = orderDto.CustomerPhone;
             trackedOrder.DeliveryAddress = orderDto.DeliveryAddress;
+
+            trackedOrder.TechnicianId =
+                orderDto.TechnicianIds.FirstOrDefault();
+
+            trackedOrder.InstallationDate = orderDto.InstallationDate;
             trackedOrder.Description = orderDto.Description;
             trackedOrder.StatusId = orderDto.StatusId;
-            trackedOrder.RowVersion = orderDto.RowVersion;
+
             trackedOrder.UpdatedBy = orderDto.UpdatedBy;
             trackedOrder.UpdatedDate = DateTime.UtcNow;
 
-            // Không gọi _context.Update(trackedOrder) nữa, EF đang track sẵn
             await _context.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task<int> UpdateDescriptionAsync(
+            Guid storeId,
+            Guid id,
+            Guid rowVersion,
+            string? description,
+            Guid updatedBy,
+            CancellationToken cancellationToken)
+        {
+            var now = DateTime.UtcNow;
+
+            return await _context.Orders
+                .Where(x => x.StoreId == storeId
+                    && x.Id == id
+                    && x.RowVersion == rowVersion
+                    && !x.IsDeleted)
+                .ExecuteUpdateAsync(x => x
+                    .SetProperty(o => o.Description, description)
+                    .SetProperty(o => o.RowVersion, Guid.NewGuid())
+                    .SetProperty(o => o.UpdatedBy, updatedBy)
+                    .SetProperty(o => o.UpdatedDate, now), cancellationToken);
+        }
+
+        public async Task ReplaceOrderTechniciansAsync(
+            Guid orderId,
+            IEnumerable<Guid> technicianIds,
+            CancellationToken cancellationToken = default)
+        {
+            var desiredIds = technicianIds
+                .Where(x => x != Guid.Empty)
+                .Distinct()
+                .ToList();
+
+            var existing = await _context.OrderTechnicians
+                .Where(x => x.OrderId == orderId)
+                .ToListAsync(cancellationToken);
+
+            var desiredSet = desiredIds.ToHashSet();
+            var toRemove = existing
+                .Where(x => !desiredSet.Contains(x.TechnicianId))
+                .ToList();
+
+            if (toRemove.Count > 0)
+                _context.OrderTechnicians.RemoveRange(toRemove);
+
+            var existingIds = existing
+                .Select(x => x.TechnicianId)
+                .ToHashSet();
+
+            var now = DateTime.UtcNow;
+            var toAdd = desiredIds
+                .Where(x => !existingIds.Contains(x))
+                .Select(x => new OrderTechnician
+                {
+                    Id = Guid.NewGuid(),
+                    OrderId = orderId,
+                    TechnicianId = x,
+                    AssignedAt = now,
+                    CreatedDate = now
+                })
+                .ToList();
+
+            if (toAdd.Count > 0)
+                await _context.OrderTechnicians.AddRangeAsync(toAdd, cancellationToken);
         }
 
 

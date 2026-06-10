@@ -23,6 +23,7 @@ namespace BizMate.Api.UserCases.DealerPrice.CreateDealerPrice
 
 
         [HttpPost]
+        [HasPermission(PermissionConstants.DealerLevel.Edit)]
         public async Task<IActionResult> Create(CreateDealerPriceRequest request)
         {
             var response = await _mediator.Send(request);

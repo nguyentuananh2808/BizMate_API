@@ -18,7 +18,7 @@ namespace BizMate.Api.UserCases.Order.UpdateOrder
         {
             ContentResult.StatusCode = (int)(response.Success ? HttpStatusCode.OK : HttpStatusCode.BadRequest);
             ContentResult.Content = response.Success
-                ? CommonJsonSerializer.SerializeObject(new UpdateOrderResponseViewModel(false, response.Message))
+                ? CommonJsonSerializer.SerializeObject(new UpdateOrderResponseViewModel(true, response.Message))
                 : CommonJsonSerializer.SerializeObject(response);
         }
     }

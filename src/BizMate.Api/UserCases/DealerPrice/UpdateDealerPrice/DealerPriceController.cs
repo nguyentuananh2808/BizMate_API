@@ -22,6 +22,7 @@ namespace BizMate.Api.UserCases.DealerPrice.UpdateDealerPrice
 
 
         [HttpPut]
+        [HasPermission(PermissionConstants.DealerLevel.Edit)]
         public async Task<IActionResult> Update(UpdateDealerPriceRequest request)
         {
             var response = await _mediator.Send(request);

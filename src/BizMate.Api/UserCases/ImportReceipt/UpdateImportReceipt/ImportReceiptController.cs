@@ -22,6 +22,7 @@ namespace BizMate.Api.UserCases.ImportReceipt.UpdateImportReceipt
 
 
         [HttpPut]
+        [HasPermission(PermissionConstants.ImportReceipt.Edit)]
         public async Task<IActionResult> Update(UpdateImportReceiptRequest request)
         {
             var response = await _mediator.Send(request);

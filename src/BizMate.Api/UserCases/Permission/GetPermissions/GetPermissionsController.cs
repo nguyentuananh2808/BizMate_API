@@ -1,6 +1,5 @@
 using BizMate.Application.UserCases.RoleAggregate.Permission.Queries.GetPermissions;
 using BizMate.Domain.Constants;
-using BizMate.Infrastructure.Security;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 

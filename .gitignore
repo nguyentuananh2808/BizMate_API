@@ -1,6 +1,9 @@
 # Build results
 bin/
 obj/
+artifacts/
+.appdata/
+.dotnet_home/
 
 # User-specific files
 *.user

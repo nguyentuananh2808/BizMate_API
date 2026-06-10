@@ -26,12 +26,24 @@ namespace BizMate.Infrastructure.Security
         {
             // 1. Query tất cả permission của user trong store này
             //    UserRole → Role → RolePermission → Permission.Name
-            var permissions = await _context.UserRoles
+            var rolePermissions = _context.UserRoles
                 .Where(ur => ur.UserId == user.Id
                           && ur.StoreId == user.StoreId
-                          && !ur.IsDeleted)
-                .SelectMany(ur => ur.Role.RolePermissions)
-                .Select(rp => rp.Permission.Name)
+                          && !ur.IsDeleted
+                          && !ur.Role.IsDeleted)
+                .SelectMany(ur => ur.Role.RolePermissions
+                    .Where(rp => !rp.IsDeleted && !rp.Permission.IsDeleted))
+                .Select(rp => rp.Permission.Name);
+
+            var directPermissions = _context.UserPermissions
+                .Where(up => up.UserId == user.Id
+                          && up.StoreId == user.StoreId
+                          && !up.IsDeleted
+                          && !up.Permission.IsDeleted)
+                .Select(up => up.Permission.Name);
+
+            var permissions = await rolePermissions
+                .Concat(directPermissions)
                 .Distinct()
                 .ToListAsync();
 

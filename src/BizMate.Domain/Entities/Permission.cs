@@ -7,5 +7,6 @@
         public string Group { get; set; } = default!;       // "order", "product"...
 
         public ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
+        public ICollection<UserPermission> UserPermissions { get; set; } = new List<UserPermission>();
     }
 }

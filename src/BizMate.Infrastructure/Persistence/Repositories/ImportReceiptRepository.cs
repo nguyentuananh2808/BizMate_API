@@ -59,6 +59,28 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             return Task.CompletedTask;
         }
 
+        public async Task<int> UpdateDescriptionAsync(
+            Guid storeId,
+            Guid id,
+            Guid rowVersion,
+            string? description,
+            Guid updatedBy,
+            CancellationToken cancellationToken)
+        {
+            var now = DateTime.UtcNow;
+
+            return await _context.ImportReceipts
+                .Where(x => x.StoreId == storeId
+                    && x.Id == id
+                    && x.RowVersion == rowVersion
+                    && !x.IsDeleted)
+                .ExecuteUpdateAsync(x => x
+                    .SetProperty(r => r.Description, description)
+                    .SetProperty(r => r.RowVersion, Guid.NewGuid())
+                    .SetProperty(r => r.UpdatedBy, updatedBy)
+                    .SetProperty(r => r.UpdatedDate, now), cancellationToken);
+        }
+
 
 
 

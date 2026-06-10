@@ -37,8 +37,8 @@ namespace BizMate.Infrastructure.Persistence
             {
                 new Status { Id = Guid.NewGuid(), Name = "Nháp", Code = "DRAFT", Group = "Order", IsActive = false },
                 new Status { Id = Guid.NewGuid(), Name = "Tạo mới", Code = "NEW", Group = "Order", IsActive = false },
-                new Status { Id = Guid.NewGuid(), Name = "Đang đóng hàng", Code = "PACKING", Group = "Order", IsActive = false },
-                new Status { Id = Guid.NewGuid(), Name = "Đã đóng hàng", Code = "PACKED", Group = "Order", IsActive = false },
+                new Status { Id = Guid.NewGuid(), Name = "Đang lắp đặt", Code = "PACKING", Group = "Order", IsActive = false },
+                new Status { Id = Guid.NewGuid(), Name = "Đã lắp đặt", Code = "PACKED", Group = "Order", IsActive = false },
                 new Status { Id = Guid.NewGuid(), Name = "Hủy", Code = "CANCELLED", Group = "Order", IsActive = false },
                 new Status { Id = Guid.NewGuid(), Name = "Hoàn thành", Code = "COMPLETED", Group = "Order", IsActive = false },
 

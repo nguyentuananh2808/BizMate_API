@@ -22,6 +22,7 @@ namespace BizMate.Api.UserCases.InventoryReceipt.UpdateInventoryReceipt
 
 
         [HttpPut]
+        [HasPermission(PermissionConstants.Stock.Adjust)]
         public async Task<IActionResult> Update(UpdateInventoryReceiptRequest request)
         {
             var response = await _mediator.Send(request);

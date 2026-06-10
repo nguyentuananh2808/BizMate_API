@@ -22,6 +22,7 @@ namespace BizMate.Api.UserCases.DealerLevel.UpdateDealerLevel
 
 
         [HttpPut]
+        [HasPermission(PermissionConstants.DealerLevel.Edit)]
         public async Task<IActionResult> Update(UpdateDealerLevelRequest request)
         {
             var response = await _mediator.Send(request);

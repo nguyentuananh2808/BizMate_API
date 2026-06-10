@@ -17,12 +17,18 @@
         public string DeliveryAddress { get; set; } = default!;
         public decimal TotalAmount { get; set; }
 
+        public Guid? TechnicianId { get; set; }
+        public Technician? Technician { get; set; }
+        public DateTime? InstallationDate { get; set; }
+        public DateTime? TechnicianExportedAt { get; set; }
+
         // Trạng thái đơn hàng
         public Guid StatusId { get; set; }
 
         public Status Status { get; set; } = default!;
 
         public ICollection<OrderDetail> Details { get; set; } = new List<OrderDetail>();
+        public ICollection<OrderTechnician> OrderTechnicians { get; set; } = new List<OrderTechnician>();
         //  tính lại TotalAmount từ Details
         public void RecalculateTotal()
         {

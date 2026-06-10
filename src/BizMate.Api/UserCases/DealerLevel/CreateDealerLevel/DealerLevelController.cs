@@ -23,6 +23,7 @@ namespace BizMate.Api.UserCases.DealerLevel.CreateDealerLevel
 
 
         [HttpPost]
+        [HasPermission(PermissionConstants.DealerLevel.Create)]
         public async Task<IActionResult> Create(CreateDealerLevelRequest request)
         {
             var response = await _mediator.Send(request);

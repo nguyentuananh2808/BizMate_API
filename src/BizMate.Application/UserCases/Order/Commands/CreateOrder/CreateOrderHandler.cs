@@ -1,4 +1,4 @@
-using BizMate.Application.Common.Extensions;
+﻿using BizMate.Application.Common.Extensions;
 using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Security;
@@ -21,6 +21,7 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
         private readonly IProductRepository _productRepository;
         private readonly IProductItemRepository _productItemRepository;
         private readonly IInventoryTransactionRepository _inventoryTransactionRepository;
+        private readonly ITechnicianHoldingRepository _technicianHoldingRepository;
         private readonly IStatusRepository _statusRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<CreateOrderHandler> _logger;
@@ -33,6 +34,7 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
             IProductRepository productRepository,
             IProductItemRepository productItemRepository,
             IInventoryTransactionRepository inventoryTransactionRepository,
+            ITechnicianHoldingRepository technicianHoldingRepository,
             ICodeGeneratorService codeGeneratorService,
             IUserSession userSession,
             IUnitOfWork unitOfWork,
@@ -45,6 +47,7 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
             _productRepository = productRepository;
             _productItemRepository = productItemRepository;
             _inventoryTransactionRepository = inventoryTransactionRepository;
+            _technicianHoldingRepository = technicianHoldingRepository;
             _statusRepository = statusRepository;
             _codeGeneratorService = codeGeneratorService;
             _userSession = userSession;
@@ -62,12 +65,14 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
                 var storeId = _userSession.StoreId;
                 var userId = Guid.Parse(_userSession.UserId);
                 var requestDetails = request.Details.ToList();
+                var technicianIds = NormalizeTechnicianIds(request.TechnicianIds, request.TechnicianId);
+                await ValidateTechniciansAsync(storeId, technicianIds, cancellationToken);
 
                 var orderId = Guid.NewGuid();
                 var statusCode = request.IsDraft ? "DRAFT" : "NEW";
                 var statusId = await _statusRepository.GetIdByGroupAndCodeAsync(statusCode, "Order");
                 if (statusId == Guid.Empty)
-                    throw new InvalidOperationException("Trang thai don hang khong hop le.");
+                    throw new InvalidOperationException("Trạng thái đơn hàng không hợp lệ.");
 
                 var code = await _codeGeneratorService.GenerateCodeAsync("#DH", 5);
                 var customer = request.CustomerId != null
@@ -99,8 +104,13 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
                     CustomerPhone = request.CustomerPhone,
                     CustomerType = request.CustomerType,
                     DeliveryAddress = request.DeliveryAddress,
+                    TechnicianId = technicianIds.FirstOrDefault() == Guid.Empty ? null : technicianIds.First(),
+                    InstallationDate = request.InstallationDate.HasValue
+                    ? DateTime.SpecifyKind(request.InstallationDate.Value, DateTimeKind.Utc)
+                    : null,
                     StatusId = statusId,
                     Description = request.Description,
+                    OrderTechnicians = BuildOrderTechnicians(orderId, technicianIds),
                     Details = BuildOrderDetails(
                         orderId,
                         requestDetails,
@@ -122,9 +132,10 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
                     cancellationToken);
 
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
+
                 await _unitOfWork.CommitAsync(cancellationToken);
 
-                return new CreateOrderResponse(true, "Tao don hang thanh cong.");
+                return new CreateOrderResponse(true, "Tạo đơn hàng thành công.");
             }
             catch (InvalidOperationException ex)
             {
@@ -135,9 +146,76 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
             catch (Exception ex)
             {
                 await _unitOfWork.RollbackAsync(cancellationToken);
-                _logger.LogError(ex, "Loi khi tao don hang.");
-                return new CreateOrderResponse(false, "Khong the tao don hang. Vui long thu lai.");
+                _logger.LogError(ex, "Lỗi khi tạo đơn hàng.");
+                return new CreateOrderResponse(false, "Không thể tạo đơn hàng. Vui lòng thử lại.");
             }
+        }
+
+        private async Task ValidateTechniciansAsync(
+            Guid storeId,
+            IReadOnlyList<Guid> technicianIds,
+            CancellationToken cancellationToken)
+        {
+            if (technicianIds.Count == 0)
+                return;
+
+            var technicians = await _technicianHoldingRepository.GetTechniciansByIdsAsync(
+                storeId,
+                technicianIds,
+                cancellationToken);
+
+            if (technicians.Count != technicianIds.Count)
+                throw new InvalidOperationException("Danh sach ky thuat co nguoi khong ton tai trong store hien tai.");
+
+            if (technicians.Any(x => !x.IsActive))
+                throw new InvalidOperationException("Danh sach ky thuat co nguoi dang ngung hoat dong.");
+        }
+
+        private static List<Guid> NormalizeTechnicianIds(
+            IEnumerable<Guid>? technicianIds,
+            Guid? technicianId)
+        {
+            var result = new List<Guid>();
+            var ids = technicianIds?.ToList();
+
+            if (ids is { Count: > 0 })
+            {
+                foreach (var id in ids)
+                    Add(id);
+
+                return result;
+            }
+
+            if (technicianId.HasValue)
+                Add(technicianId.Value);
+
+            return result;
+
+            void Add(Guid id)
+            {
+                if (id == Guid.Empty)
+                    throw new InvalidOperationException("TechnicianId khong hop le.");
+
+                if (!result.Contains(id))
+                    result.Add(id);
+            }
+        }
+
+        private static List<OrderTechnician> BuildOrderTechnicians(
+            Guid orderId,
+            IReadOnlyList<Guid> technicianIds)
+        {
+            var now = DateTime.UtcNow;
+            return technicianIds
+                .Select(technicianId => new OrderTechnician
+                {
+                    Id = Guid.NewGuid(),
+                    OrderId = orderId,
+                    TechnicianId = technicianId,
+                    AssignedAt = now,
+                    CreatedDate = now
+                })
+                .ToList();
         }
 
         public async Task ReserveStockAsync(
@@ -154,11 +232,11 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
             foreach (var detailGroup in details.GroupBy(d => d.ProductId))
             {
                 if (!stockDict.TryGetValue(detailGroup.Key, out var stock))
-                    throw new InvalidOperationException($"Khong tim thay ton kho cho san pham {detailGroup.Key}.");
+                    throw new InvalidOperationException($"Không tìm thấy tồn kho cho sản phẩm  {detailGroup.Key}.");
 
                 var quantity = detailGroup.Sum(x => x.Quantity);
                 if (stock.Available < quantity)
-                    throw new InvalidOperationException($"San pham {detailGroup.Key} khong du ton. Kha dung {stock.Available}, can {quantity}.");
+                    throw new InvalidOperationException($"Sản phẩm {detailGroup.Key} không dư tồn. Khả dụng {stock.Available}, cần {quantity}.");
 
                 stock.Reserved += quantity;
                 stock.UpdatedBy = userId;
@@ -178,7 +256,7 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
             return requestDetails.Select(d =>
             {
                 if (!productDict.TryGetValue(d.ProductId, out var product))
-                    throw new InvalidOperationException($"San pham {d.ProductId} khong ton tai.");
+                    throw new InvalidOperationException($"Sản phẩm {d.ProductId} không tồn tại.");
 
                 var unitPrice = product.SalePrice.GetValueOrDefault(0);
                 if (customerType == 2 && dealerLevel != null)
@@ -219,10 +297,10 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
             foreach (var detail in details)
             {
                 if (detail.Quantity <= 0)
-                    throw new InvalidOperationException($"So luong san pham {detail.ProductId} phai lon hon 0.");
+                    throw new InvalidOperationException($"Số lượng sản phẩm {detail.ProductId} phải lớn hơn 0.");
 
                 if (!productDict.TryGetValue(detail.ProductId, out var product))
-                    throw new InvalidOperationException($"San pham {detail.ProductId} khong ton tai.");
+                    throw new InvalidOperationException($"Sản phẩm {detail.ProductId} không tồn tại.");
 
                 var duplicates = SerialNumberNormalizer.FindDuplicates(detail.SerialNumbers);
                 if (duplicates.Count > 0)

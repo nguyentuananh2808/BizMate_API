@@ -3,34 +3,40 @@ using BizMate.Application.Common.Extensions;
 using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Message;
 using BizMate.Application.Common.Requests.Validators;
+using BizMate.Domain.Constants;
 using BizMate.Infrastructure.Persistence;
 using BizMate.Infrastructure.Security;
-using FluentValidation.AspNetCore;
 using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
-using Microsoft.EntityFrameworkCore;
-using BizMate.Domain.Constants;
 
 internal class Program
 {
     private static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-         builder.WebHost.UseUrls("http://+:80");
-        builder.WebHost.UseUrls("http://192.168.1.130:8088");
+
         JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+
+        // Logging
+        builder.Logging.ClearProviders();
+        builder.Logging.AddConsole();
+        builder.Logging.AddDebug();
+        builder.Logging.SetMinimumLevel(LogLevel.Information);
 
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
 
-        // Đăng ký Swagger, JWT, Redis, FluentValidation... như cũ
         builder.Services.AddSwaggerGen(c =>
         {
             c.SwaggerDoc("v1", new OpenApiInfo { Title = "BizMate API", Version = "v1" });
+
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
                 Name = "Authorization",
@@ -40,6 +46,7 @@ internal class Program
                 In = ParameterLocation.Header,
                 Description = "Nhập token vào đây: Bearer {your token}"
             });
+
             c.AddSecurityRequirement(new OpenApiSecurityRequirement
             {
                 {
@@ -56,12 +63,33 @@ internal class Program
             });
         });
 
-
         builder.Services.AddHttpClient<IImageUploader, ImageBBUploader>();
         builder.Services.AddScoped<IAppMessageService, CommonAppMessageUtils>();
         builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
         builder.Services.AddDistributedMemoryCache();
+
         builder.Services.AddInfrastructure(builder.Configuration);
+
+        // Override AppDbContext để bật log EF Core rõ hơn.
+        // Nếu trong AddInfrastructure đã AddDbContext<AppDbContext>,
+        // đoạn này có thể gây đăng ký trùng. Nếu bị lỗi, nên chuyển phần options này vào AddInfrastructure.
+        builder.Services.AddDbContext<AppDbContext>((sp, options) =>
+        {
+            options.UseNpgsql(
+                builder.Configuration.GetConnectionString("DefaultConnection"));
+
+            options.EnableDetailedErrors();
+            options.EnableSensitiveDataLogging();
+
+            options.LogTo(
+                Console.WriteLine,
+                new[]
+                {
+                    DbLoggerCategory.Database.Command.Name,
+                    DbLoggerCategory.Update.Name
+                },
+                LogLevel.Information);
+        });
 
         builder.Services.Configure<JwtOptions>(
             builder.Configuration.GetSection("JwtOptions"));
@@ -92,7 +120,7 @@ internal class Program
                 ValidateAudience = true,
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
-                ValidIssuer = jwtOptions.Issuer,
+                ValidIssuer = jwtOptions!.Issuer,
                 ValidAudience = jwtOptions.Audience,
                 IssuerSigningKey = new SymmetricSecurityKey(
                     Encoding.UTF8.GetBytes(jwtOptions.SecretKey))
@@ -134,17 +162,14 @@ internal class Program
 
         var app = builder.Build();
 
-        // Apply migration và seed data
         using (var scope = app.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-           // db.Database.EnsureCreated();
+
             await db.Database.MigrateAsync();
             await AppDbContextSeed.SeedAsync(db);
         }
 
-
-        // Middleware
         app.UseSwagger();
         app.UseSwaggerUI(c =>
         {

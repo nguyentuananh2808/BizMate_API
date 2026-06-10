@@ -22,6 +22,7 @@ namespace BizMate.Api.UserCases.DealerLevel.DeleteDealerLevel
 
 
         [HttpDelete("{id:guid}")]
+        [HasPermission(PermissionConstants.DealerLevel.Delete)]
         public async Task<IActionResult> Delete(Guid id)
         {
             var request = new DeleteDealerLevelRequest(id);

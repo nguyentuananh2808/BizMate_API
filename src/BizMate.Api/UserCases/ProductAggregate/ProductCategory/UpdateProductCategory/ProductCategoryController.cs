@@ -22,6 +22,7 @@ namespace BizMate.Api.UserCases.ProductAggregate.ProductCategory.UpdateProductCa
 
 
         [HttpPut]
+        [HasPermission(PermissionConstants.ProductCategory.Edit)]
         public async Task<IActionResult> Update(UpdateProductCategoryRequest request)
         {
             var response = await _mediator.Send(request);

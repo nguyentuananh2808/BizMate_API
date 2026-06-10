@@ -22,6 +22,7 @@ namespace BizMate.Api.UserCases.ImportReceipt.GetImportReceipts
         }
 
         [HttpPost("search")]
+        [HasPermission(PermissionConstants.ImportReceipt.View)]
         public async Task<IActionResult> GetImportReceipts(GetImportReceiptsRequest request)
         {
             var response = await _mediator.Send(request);

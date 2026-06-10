@@ -132,8 +132,9 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
 
                 await _orderRepository.UpdateStatusAsync(statusOrder, cancellationToken);
 
-                await _orderStatusHistoryRepository.UpdateOrderStatus(
+                await _orderStatusHistoryRepository.AddOrderStatusHistory(
                     request.Id,
+                    currentStatus.Id,
                     statusId,
                     userId,
                     _userSession.UserName ?? "Unknown",
@@ -174,8 +175,8 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
                 if (!stockDict.TryGetValue(detail.ProductId, out var stock))
                     throw new InvalidOperationException($"Không tìm thấy tồn kho cho sản phẩm {detail.ProductId}");
 
-                if (stock.Reserved < detail.Quantity)
-                    throw new InvalidOperationException($"Dữ liệu lệch: Reserved {stock.Reserved} nhỏ hơn cần xuất {detail.Quantity}");
+                //if (stock.Reserved < detail.Quantity)
+                //    throw new InvalidOperationException($"Dữ liệu lệch: Reserved {stock.Reserved} nhỏ hơn cần xuất {detail.Quantity}");
 
                 stock.Quantity -= detail.Quantity;
                 stock.Reserved -= detail.Quantity;

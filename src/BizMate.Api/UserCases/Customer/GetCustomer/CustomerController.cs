@@ -22,6 +22,7 @@ namespace BizMate.Api.UserCases.Customer.GetCustomer
         }
 
         [HttpGet("{id:guid}")]
+        [HasPermission(PermissionConstants.Customer.View)]
         public async Task<IActionResult> GetCustomer(Guid id)
         {
             var request = new GetCustomerRequest(id);

@@ -17,6 +17,9 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
         public string CustomerName { get; set; } = default!;
         public string CustomerPhone { get; set; } = default!;
         public string DeliveryAddress { get; set; } = default!;
+        public Guid? TechnicianId { get; set; }
+        public ICollection<Guid>? TechnicianIds { get; set; }
+        public DateTime? InstallationDate { get; set; }
         public string? Description { get; set; }
         public ICollection<CreateOrderDetailRequest> Details { get; set; } = new List<CreateOrderDetailRequest>();
     }

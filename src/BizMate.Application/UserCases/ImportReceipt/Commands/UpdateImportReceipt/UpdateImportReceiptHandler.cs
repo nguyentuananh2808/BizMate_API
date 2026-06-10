@@ -60,6 +60,9 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateImportRecei
                 }
                 #endregion
 
+                if (importReceipt.Status?.Code == "APPROVED")
+                    return await UpdateDescriptionOnlyAsync(request, Guid.Parse(userId), _userSession.StoreId, cancellationToken);
+
                 #region Update via Stored Procedure
                 importReceipt.SupplierName = request.SupplierName;
                 importReceipt.DeliveryAddress = request.DeliveryAddress;
@@ -95,6 +98,26 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateImportRecei
                 _logger.LogError(ex, "Lỗi khi cập nhật phiếu nhập kho.");
                 return new UpdateImportReceiptResponse(false, "Không thể cập nhật phiếu nhập kho. Vui lòng thử lại.");
             }
+        }
+
+        private async Task<UpdateImportReceiptResponse> UpdateDescriptionOnlyAsync(
+            UpdateImportReceiptRequest request,
+            Guid userId,
+            Guid storeId,
+            CancellationToken cancellationToken)
+        {
+            var affectedRows = await _importReceiptRepository.UpdateDescriptionAsync(
+                storeId,
+                request.Id,
+                request.RowVersion,
+                request.Description,
+                userId,
+                cancellationToken);
+
+            if (affectedRows == 0)
+                return new UpdateImportReceiptResponse(false, ValidationMessage.LocalizedStrings.NotValidRowversion);
+
+            return new UpdateImportReceiptResponse(true, "Cập nhật ghi chú phiếu nhập kho thành công.");
         }
 
     }

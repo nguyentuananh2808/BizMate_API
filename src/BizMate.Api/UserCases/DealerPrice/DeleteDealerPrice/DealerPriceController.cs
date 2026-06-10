@@ -23,6 +23,7 @@ namespace BizMate.Api.UserCases.DealerPrice.DeleteDealerPrice
 
 
         [HttpDelete("{id:guid}")]
+        [HasPermission(PermissionConstants.DealerLevel.Edit)]
         public async Task<IActionResult> Delete(Guid id)
         {
             var request = new DeleteDealerPriceRequest(id);

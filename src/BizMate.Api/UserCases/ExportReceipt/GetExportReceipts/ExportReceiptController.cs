@@ -21,6 +21,7 @@ namespace BizMate.Api.UserCases.ExportReceipt.GetExportReceipts
         }
 
         [HttpPost("search")]
+        [HasPermission(PermissionConstants.ExportReceipt.View)]
         public async Task<IActionResult> GetExportReceipts(GetExportReceiptsRequest request)
         {
             var response = await _mediator.Send(request);

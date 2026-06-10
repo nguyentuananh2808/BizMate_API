@@ -21,6 +21,7 @@ namespace BizMate.Api.UserCases.DealerLevel.GetDealerLevels
         }
 
         [HttpPost("search")]
+        [HasPermission(PermissionConstants.DealerLevel.View)]
         public async Task<IActionResult> GetDealerLevels(GetDealerLevelsRequest request)
         {
             var response = await _mediator.Send(request);

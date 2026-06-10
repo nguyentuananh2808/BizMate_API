@@ -7,6 +7,13 @@ namespace BizMate.Application.Common.Interfaces.Repositories
     public interface IImportReceiptRepository
     {
         Task UpdateAsync(ImportReceipt receipt, CancellationToken cancellationToken);
+        Task<int> UpdateDescriptionAsync(
+            Guid storeId,
+            Guid id,
+            Guid rowVersion,
+            string? description,
+            Guid updatedBy,
+            CancellationToken cancellationToken);
         Task UpdateStatusAsync(UpdateImportReceiptStatusDto updateImportReceiptStatusDto, CancellationToken cancellationToken);
         Task DeleteAsync(Guid id, CancellationToken cancellationToken);
         Task<List<ImportReceipt>> SearchReceipts(Guid storeId, int? type, string? keyword, QueryFactory queryFactory);

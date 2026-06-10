@@ -22,6 +22,7 @@ namespace BizMate.Api.UserCases.Order.CreateOrder
 
 
         [HttpPost]
+        [HasPermission(PermissionConstants.Order.Create)]
         public async Task<IActionResult> Create(CreateOrderRequest request)
         {
             var response = await _mediator.Send(request);

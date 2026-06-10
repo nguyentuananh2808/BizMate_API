@@ -1,4 +1,4 @@
-using BizMate.Application.Common.Dto.CoreDto;
+﻿using BizMate.Application.Common.Dto.CoreDto;
 using BizMate.Application.Common.Extensions;
 using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Interfaces.Repositories;
@@ -26,6 +26,7 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
         private readonly IDealerLevelRepository _dealerLevelRepository;
         private readonly IProductItemRepository _productItemRepository;
         private readonly IInventoryTransactionRepository _inventoryTransactionRepository;
+        private readonly ITechnicianHoldingRepository _technicianHoldingRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public UpdateOrderHandler(
@@ -40,6 +41,7 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
             IDealerLevelRepository dealerLevelRepository,
             IProductItemRepository productItemRepository,
             IInventoryTransactionRepository inventoryTransactionRepository,
+            ITechnicianHoldingRepository technicianHoldingRepository,
             IUnitOfWork unitOfWork)
         {
             _statusRepository = statusRepository;
@@ -53,6 +55,7 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
             _dealerLevelRepository = dealerLevelRepository;
             _productItemRepository = productItemRepository;
             _inventoryTransactionRepository = inventoryTransactionRepository;
+            _technicianHoldingRepository = technicianHoldingRepository;
             _unitOfWork = unitOfWork;
         }
 
@@ -67,16 +70,39 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
 
             var currentStatus = await _statusRepository.GetIdById(order.StatusId, cancellationToken);
             if (currentStatus == null)
-                return new UpdateOrderResponse(false, "Trang thai hien tai khong hop le.");
+                return new UpdateOrderResponse(false, "Trạng thái hiện tại không hợp lệ.");
 
             if (request.StatusId != Guid.Empty && request.StatusId != order.StatusId)
                 return new UpdateOrderResponse(false, "Khong cap nhat trang thai o API nay. Hay dung endpoint update_status.");
 
-            if (currentStatus.Code is "PACKED" or "COMPLETED" or "CANCELLED")
-                return new UpdateOrderResponse(false, "Don hang da giu SN, hoan thanh hoac huy, khong the cap nhat chi tiet.");
-
             if (order.RowVersion != request.RowVersion)
                 return new UpdateOrderResponse(false, "Du lieu da thay doi, vui long tai lai.");
+
+            if (currentStatus.Code is "PACKED" or "COMPLETED" or "CANCELLED")
+                return await UpdateDescriptionOnlyAsync(request, userId, storeId, cancellationToken);
+
+            if (order.TechnicianExportedAt.HasValue)
+                return await UpdateDescriptionOnlyAsync(request, userId, storeId, cancellationToken);
+
+            try
+            {
+                ValidateMutableOrderRequest(request);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return new UpdateOrderResponse(false, ex.Message);
+            }
+
+            List<Guid> technicianIds;
+            try
+            {
+                technicianIds = NormalizeTechnicianIds(request.TechnicianIds, request.TechnicianId);
+                await ValidateTechniciansAsync(storeId, technicianIds, cancellationToken);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return new UpdateOrderResponse(false, ex.Message);
+            }
 
             await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
@@ -114,8 +140,8 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
 
                 await ReleaseReservedSerialItemsAsync(order.Details, userId, cancellationToken);
 
-                UpdateOrderInfo(order, request, userId);
-                await _orderRepository.UpdateOrderAsync(order, cancellationToken);
+                UpdateOrderInfo(order, request, userId, technicianIds);
+                await _orderRepository.ReplaceOrderTechniciansAsync(order.Id, technicianIds, cancellationToken);
                 await _orderRepository.UpdateWithDetailsAsync(order, newDetails, cancellationToken);
 
                 await ReserveStockAsync(storeId, order.Details, newDetails, userId, cancellationToken);
@@ -146,6 +172,44 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
                 _logger.LogError(ex, "Loi khi cap nhat don hang.");
                 return new UpdateOrderResponse(false, "Khong the cap nhat don hang. Vui long thu lai.");
             }
+        }
+
+        private async Task<UpdateOrderResponse> UpdateDescriptionOnlyAsync(
+            UpdateOrderRequest request,
+            Guid userId,
+            Guid storeId,
+            CancellationToken cancellationToken)
+        {
+            var affectedRows = await _orderRepository.UpdateDescriptionAsync(
+                storeId,
+                request.Id,
+                request.RowVersion,
+                request.Description,
+                userId,
+                cancellationToken);
+
+            if (affectedRows == 0)
+                return new UpdateOrderResponse(false, "Du lieu da thay doi, vui long tai lai.");
+
+            return new UpdateOrderResponse(true, "Cap nhat ghi chu don hang thanh cong.");
+        }
+
+        private static void ValidateMutableOrderRequest(UpdateOrderRequest request)
+        {
+            if (request.CustomerType <= 0)
+                throw new InvalidOperationException("Loai khach hang khong hop le.");
+
+            if (string.IsNullOrWhiteSpace(request.CustomerName))
+                throw new InvalidOperationException("Ten khach hang khong duoc de trong.");
+
+            if (string.IsNullOrWhiteSpace(request.CustomerPhone))
+                throw new InvalidOperationException("So dien thoai khong duoc de trong.");
+
+            if (string.IsNullOrWhiteSpace(request.DeliveryAddress))
+                throw new InvalidOperationException("Dia chi nguoi nhan khong duoc de trong.");
+
+            if (request.Details.Count == 0)
+                throw new InvalidOperationException("Don hang phai co it nhat mot dong san pham.");
         }
 
         public async Task ReserveStockAsync(
@@ -425,13 +489,65 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
             await _inventoryTransactionRepository.AddRangeAsync(transactions, cancellationToken);
         }
 
-        private static void UpdateOrderInfo(_Order order, UpdateOrderRequest request, Guid userId)
+        private async Task ValidateTechniciansAsync(
+            Guid storeId,
+            IReadOnlyList<Guid> technicianIds,
+            CancellationToken cancellationToken)
+        {
+            if (technicianIds.Count == 0)
+                return;
+
+            var technicians = await _technicianHoldingRepository.GetTechniciansByIdsAsync(
+                storeId,
+                technicianIds,
+                cancellationToken);
+
+            if (technicians.Count != technicianIds.Count)
+                throw new InvalidOperationException("Danh sach ky thuat co nguoi khong ton tai trong store hien tai.");
+
+            if (technicians.Any(x => !x.IsActive))
+                throw new InvalidOperationException("Danh sach ky thuat co nguoi dang ngung hoat dong.");
+        }
+
+        private static List<Guid> NormalizeTechnicianIds(
+            IEnumerable<Guid>? technicianIds,
+            Guid? technicianId)
+        {
+            var result = new List<Guid>();
+            var ids = technicianIds?.ToList();
+
+            if (ids is { Count: > 0 })
+            {
+                foreach (var id in ids)
+                    Add(id);
+
+                return result;
+            }
+
+            if (technicianId.HasValue)
+                Add(technicianId.Value);
+
+            return result;
+
+            void Add(Guid id)
+            {
+                if (id == Guid.Empty)
+                    throw new InvalidOperationException("TechnicianId khong hop le.");
+
+                if (!result.Contains(id))
+                    result.Add(id);
+            }
+        }
+
+        private static void UpdateOrderInfo(_Order order, UpdateOrderRequest request, Guid userId, IReadOnlyList<Guid> technicianIds)
         {
             order.CustomerId = request.CustomerId;
             order.CustomerType = request.CustomerType;
             order.CustomerPhone = request.CustomerPhone;
             order.CustomerName = request.CustomerName;
             order.DeliveryAddress = request.DeliveryAddress;
+            order.TechnicianId = technicianIds.FirstOrDefault() == Guid.Empty ? null : technicianIds.First();
+            order.InstallationDate = request.InstallationDate;
             order.Description = request.Description;
             order.UpdatedDate = DateTime.UtcNow;
             order.UpdatedBy = userId;

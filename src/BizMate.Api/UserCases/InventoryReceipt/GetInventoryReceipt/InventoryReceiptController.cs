@@ -21,6 +21,7 @@ namespace BizMate.Api.UserCases.InventoryReceipt.GetInventoryReceipt
         }
 
         [HttpGet("{id:guid}")]
+        [HasPermission(PermissionConstants.Stock.View)]
         public async Task<IActionResult> GetInventoryReceipt(Guid id)
         {
             var request = new GetInventoryReceiptRequest(id);

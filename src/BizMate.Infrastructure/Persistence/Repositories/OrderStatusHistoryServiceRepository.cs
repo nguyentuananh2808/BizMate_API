@@ -10,14 +10,8 @@ namespace BizMate.Infrastructure.Persistence.Repositories
         {
             _dbContext = dbContext;
         }
-        public async Task UpdateOrderStatus(Guid orderId, Guid newStatusId, Guid userId, string userName, string? note = null)
+        public Task AddOrderStatusHistory(Guid orderId, Guid oldStatusId, Guid newStatusId, Guid userId, string userName, string? note = null)
         {
-            var order = await _dbContext.Orders.FindAsync(orderId);
-            if (order == null) throw new Exception("Order not found");
-
-            var oldStatusId = order.StatusId;
-            order.StatusId = newStatusId;
-
             var history = new OrderStatusHistory
             {
                 OrderId = orderId,
@@ -29,7 +23,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             };
 
             _dbContext.OrderStatusHistories.Add(history);
-            await _dbContext.SaveChangesAsync();
+            return Task.CompletedTask;
         }
 
     }

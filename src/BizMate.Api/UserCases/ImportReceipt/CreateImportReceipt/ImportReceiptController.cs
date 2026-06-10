@@ -22,6 +22,7 @@ namespace BizMate.Api.UserCases.ImportReceipt.CreateImportReceipt
 
 
         [HttpPost]
+        [HasPermission(PermissionConstants.ImportReceipt.Create)]
         public async Task<IActionResult> Create(CreateImportReceiptRequest request)
         {
             var response = await _mediator.Send(request);

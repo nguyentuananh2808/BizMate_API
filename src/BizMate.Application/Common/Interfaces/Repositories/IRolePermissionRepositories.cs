@@ -22,9 +22,20 @@ namespace BizMate.Application.Common.Interfaces.Repositories
     public interface IUserRoleRepository
     {
         Task<List<UserRole>> GetByUserIdAndStoreIdAsync(Guid userId, Guid storeId, CancellationToken ct = default);
+        Task<List<UserRole>> GetByUserIdAndStoreIdWithPermissionsAsync(Guid userId, Guid storeId, CancellationToken ct = default);
         Task<List<UserRole>> GetByRoleIdAsync(Guid roleId, CancellationToken ct = default);
         Task<bool> ExistsAsync(Guid userId, Guid roleId, Guid storeId, CancellationToken ct = default);
         Task AddAsync(UserRole userRole, CancellationToken ct = default);
         Task DeleteAsync(UserRole userRole, CancellationToken ct = default);
+        Task DeleteRangeAsync(IEnumerable<UserRole> userRoles, CancellationToken ct = default);
+    }
+
+    public interface IUserPermissionRepository
+    {
+        Task<List<UserPermission>> GetByUserIdAndStoreIdAsync(Guid userId, Guid storeId, CancellationToken ct = default);
+        Task<bool> ExistsAsync(Guid userId, Guid storeId, Guid permissionId, CancellationToken ct = default);
+        Task AddRangeAsync(IEnumerable<UserPermission> userPermissions, CancellationToken ct = default);
+        Task DeleteAsync(UserPermission userPermission, CancellationToken ct = default);
+        Task DeleteRangeAsync(IEnumerable<UserPermission> userPermissions, CancellationToken ct = default);
     }
 }

@@ -52,11 +52,13 @@ public static class InfrastructureDependencyInjection
         services.AddScoped<IUnitOfWork, EfUnitOfWork>();
         services.AddScoped<IOrderStatusHistoryRepository, OrderStatusHistoryServiceRepository>();
         services.AddScoped<IExportRepository, ExportOrderRepository>();
+        services.AddScoped<ITechnicianHoldingRepository, TechnicianHoldingRepository>();
 
         // ── Repositories — phân quyền (đã thêm trước)
         services.AddScoped<IRoleRepository, RoleRepository>();
         services.AddScoped<IPermissionRepository, PermissionRepository>();
         services.AddScoped<IUserRoleRepository, UserRoleRepository>();
+        services.AddScoped<IUserPermissionRepository, UserPermissionRepository>();
 
         // ── Repositories — Serial tracking (MỚI THÊM) ────────────────────────
         services.AddScoped<IProductItemRepository, ProductItemRepository>();

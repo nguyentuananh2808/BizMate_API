@@ -22,6 +22,7 @@ namespace BizMate.Api.UserCases.ProductAggregate.ProductCategory.DeleteProductCa
 
 
         [HttpDelete("{id:guid}")]
+        [HasPermission(PermissionConstants.ProductCategory.Delete)]
         public async Task<IActionResult> Delete(Guid id)
         {
             var request = new DeleteProductCategoryRequest(id);

@@ -21,6 +21,7 @@ namespace BizMate.Api.UserCases.ProductAggregate.Product.GetProducts
         }
 
         [HttpPost("search")]
+        [HasPermission(PermissionConstants.Product.View)]
         public async Task<IActionResult> GetProducts(GetProductsRequest request)
         {
             var response = await _mediator.Send(request);

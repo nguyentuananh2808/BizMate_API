@@ -23,6 +23,7 @@ namespace BizMate.Api.UserCases.InventoryReceipt.CreateInventoryReceipt
 
 
         [HttpPost]
+        [HasPermission(PermissionConstants.Stock.Adjust)]
         public async Task<IActionResult> Create(CreateInventoryReceiptRequest request)
         {
             var response = await _mediator.Send(request);

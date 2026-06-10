@@ -2,7 +2,7 @@
 {
     public interface IOrderStatusHistoryRepository
     {
-        Task UpdateOrderStatus(Guid orderId, Guid newStatusId, Guid userId, string userName, string? note = null);
+        Task AddOrderStatusHistory(Guid orderId, Guid oldStatusId, Guid newStatusId, Guid userId, string userName, string? note = null);
     }
 
 }

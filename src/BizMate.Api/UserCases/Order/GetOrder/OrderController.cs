@@ -21,6 +21,7 @@ namespace BizMate.Api.UserCases.Order.GetOrder
         }
 
         [HttpGet("{id:guid}")]
+        [HasPermission(PermissionConstants.Order.View)]
         public async Task<IActionResult> GetOrder(Guid id)
         {
             var request = new GetOrderRequest(id);

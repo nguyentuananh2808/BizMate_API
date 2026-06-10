@@ -1,6 +1,5 @@
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Domain.Entities;
-using BizMate.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace BizMate.Infrastructure.Persistence.Repositories
@@ -80,6 +79,14 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                 .Where(ur => ur.UserId == userId && ur.StoreId == storeId && !ur.IsDeleted)
                 .ToListAsync(ct);
 
+        public async Task<List<UserRole>> GetByUserIdAndStoreIdWithPermissionsAsync(Guid userId, Guid storeId, CancellationToken ct = default)
+            => await _context.UserRoles
+                .Include(ur => ur.Role)
+                    .ThenInclude(r => r.RolePermissions)
+                    .ThenInclude(rp => rp.Permission)
+                .Where(ur => ur.UserId == userId && ur.StoreId == storeId && !ur.IsDeleted)
+                .ToListAsync(ct);
+
         public async Task<List<UserRole>> GetByRoleIdAsync(Guid roleId, CancellationToken ct = default)
             => await _context.UserRoles
                 .Where(ur => ur.RoleId == roleId && !ur.IsDeleted)
@@ -98,6 +105,68 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             userRole.DeletedAt   = DateTime.UtcNow;
             userRole.UpdatedDate = DateTime.UtcNow;
             _context.UserRoles.Update(userRole);
+            return Task.CompletedTask;
+        }
+
+        public Task DeleteRangeAsync(IEnumerable<UserRole> userRoles, CancellationToken ct = default)
+        {
+            var now = DateTime.UtcNow;
+            foreach (var userRole in userRoles)
+            {
+                userRole.IsDeleted = true;
+                userRole.DeletedAt = now;
+                userRole.UpdatedDate = now;
+            }
+
+            _context.UserRoles.UpdateRange(userRoles);
+            return Task.CompletedTask;
+        }
+    }
+
+    public class UserPermissionRepository : IUserPermissionRepository
+    {
+        private readonly AppDbContext _context;
+        public UserPermissionRepository(AppDbContext context) => _context = context;
+
+        public async Task<List<UserPermission>> GetByUserIdAndStoreIdAsync(Guid userId, Guid storeId, CancellationToken ct = default)
+            => await _context.UserPermissions
+                .Include(up => up.Permission)
+                .Where(up => up.UserId == userId && up.StoreId == storeId && !up.IsDeleted)
+                .OrderBy(up => up.Permission.Group)
+                .ThenBy(up => up.Permission.Name)
+                .ToListAsync(ct);
+
+        public async Task<bool> ExistsAsync(Guid userId, Guid storeId, Guid permissionId, CancellationToken ct = default)
+            => await _context.UserPermissions.AnyAsync(
+                up => up.UserId == userId
+                   && up.StoreId == storeId
+                   && up.PermissionId == permissionId
+                   && !up.IsDeleted,
+                ct);
+
+        public async Task AddRangeAsync(IEnumerable<UserPermission> userPermissions, CancellationToken ct = default)
+            => await _context.UserPermissions.AddRangeAsync(userPermissions, ct);
+
+        public Task DeleteAsync(UserPermission userPermission, CancellationToken ct = default)
+        {
+            userPermission.IsDeleted = true;
+            userPermission.DeletedAt = DateTime.UtcNow;
+            userPermission.UpdatedDate = DateTime.UtcNow;
+            _context.UserPermissions.Update(userPermission);
+            return Task.CompletedTask;
+        }
+
+        public Task DeleteRangeAsync(IEnumerable<UserPermission> userPermissions, CancellationToken ct = default)
+        {
+            var now = DateTime.UtcNow;
+            foreach (var userPermission in userPermissions)
+            {
+                userPermission.IsDeleted = true;
+                userPermission.DeletedAt = now;
+                userPermission.UpdatedDate = now;
+            }
+
+            _context.UserPermissions.UpdateRange(userPermissions);
             return Task.CompletedTask;
         }
     }

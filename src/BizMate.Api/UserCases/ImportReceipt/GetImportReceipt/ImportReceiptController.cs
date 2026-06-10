@@ -21,6 +21,7 @@ namespace BizMate.Api.UserCases.ImportReceipt.GetImportReceipt
         }
 
         [HttpGet("{id:guid}")]
+        [HasPermission(PermissionConstants.ImportReceipt.View)]
         public async Task<IActionResult> GetImportReceipt(Guid id)
         {
             var request = new GetImportReceiptRequest(id);

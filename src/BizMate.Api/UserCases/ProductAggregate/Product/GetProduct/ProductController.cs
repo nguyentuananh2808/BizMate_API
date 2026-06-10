@@ -21,6 +21,7 @@ namespace BizMate.Api.UserCases.ProductAggregate.Product.GetProduct
         }
 
         [HttpGet("{id:guid}")]
+        [HasPermission(PermissionConstants.Product.View)]
         public async Task<IActionResult> GetProduct(Guid id)
         {
             var request = new GetProductRequest(id);

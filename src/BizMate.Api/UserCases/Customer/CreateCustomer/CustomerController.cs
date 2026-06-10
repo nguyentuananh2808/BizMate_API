@@ -22,6 +22,7 @@ namespace BizMate.Api.UserCases.Customer.CreateCustomer
 
 
         [HttpPost]
+        [HasPermission(PermissionConstants.Customer.Create)]
         public async Task<IActionResult> Create(CreateCustomerRequest request)
         {
             var response = await _mediator.Send(request);

@@ -22,6 +22,7 @@ namespace BizMate.Api.UserCases.Order.GetOrders
         }
 
         [HttpPost("search")]
+        [HasPermission(PermissionConstants.Order.View)]
         public async Task<IActionResult> GetOrders(GetOrdersRequest request)
         {
             var response = await _mediator.Send(request);

@@ -8,6 +8,7 @@
         public string PasswordSalt { get; set; } = default!;
         public string Role { get; set; } = "Owner"; // or "Staff"
         public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+        public ICollection<UserPermission> UserPermissions { get; set; } = new List<UserPermission>();
     }
 
 }

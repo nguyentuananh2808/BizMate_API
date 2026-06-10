@@ -48,6 +48,19 @@ namespace BizMate.Application.Common.Interfaces.Repositories
 
         Task UpdateOrderAsync(OrderCoreDto? order, CancellationToken cancellationToken);
 
+        Task<int> UpdateDescriptionAsync(
+            Guid storeId,
+            Guid id,
+            Guid rowVersion,
+            string? description,
+            Guid updatedBy,
+            CancellationToken cancellationToken);
+
+        Task ReplaceOrderTechniciansAsync(
+            Guid orderId,
+            IEnumerable<Guid> technicianIds,
+            CancellationToken cancellationToken = default);
+
         /// <summary>
         /// Tìm kiếm đơn hàng có phân trang
         /// </summary>

@@ -22,6 +22,7 @@ namespace BizMate.Api.UserCases.Customer.GetCustomers
         }
 
         [HttpPost("search")]
+        [HasPermission(PermissionConstants.Customer.View)]
         public async Task<IActionResult> GetCustomers(GetCustomersRequest request)
         {
             var response = await _mediator.Send(request);

@@ -17,7 +17,80 @@ namespace BizMate.Infrastructure.Persistence.Repositories
         {
             return await _context.Users
                 .Include(x => x.Store) 
-                .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+                .FirstOrDefaultAsync(u => u.Email == email && !u.IsDeleted, cancellationToken);
+        }
+
+        public async Task<User?> GetByIdInStoreAsync(
+            Guid userId,
+            Guid storeId,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.Users
+                .Include(x => x.Store)
+                .Include(x => x.UserRoles)
+                .Include(x => x.UserPermissions)
+                .FirstOrDefaultAsync(
+                    u => u.Id == userId && u.StoreId == storeId && !u.IsDeleted,
+                    cancellationToken);
+        }
+
+        public async Task<bool> ExistsInStoreAsync(
+            Guid userId,
+            Guid storeId,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.Users.AnyAsync(
+                u => u.Id == userId && u.StoreId == storeId && !u.IsDeleted,
+                cancellationToken);
+        }
+
+        public async Task<(List<User> Users, int TotalCount)> SearchUsersWithPagingAsync(
+            Guid storeId,
+            string? keyword,
+            int pageIndex,
+            int pageSize,
+            bool? isActive,
+            CancellationToken cancellationToken = default)
+        {
+            var query = _context.Users
+                .Include(u => u.Store)
+                .Include(u => u.UserRoles)
+                .Include(u => u.UserPermissions)
+                .Where(u => u.StoreId == storeId && !u.IsDeleted);
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                var key = keyword.Trim().ToLower();
+                query = query.Where(u =>
+                    u.FullName.ToLower().Contains(key)
+                    || u.Email.ToLower().Contains(key)
+                    || u.Code.ToLower().Contains(key));
+            }
+
+            if (isActive.HasValue)
+                query = query.Where(u => u.IsActive == isActive.Value);
+
+            var totalCount = await query.CountAsync(cancellationToken);
+            var users = await query
+                .OrderByDescending(u => u.CreatedDate)
+                .Skip(pageIndex * pageSize)
+                .Take(pageSize)
+                .ToListAsync(cancellationToken);
+
+            return (users, totalCount);
+        }
+
+        public async Task<bool> ExistsByEmailAsync(
+            string email,
+            Guid? excludeUserId = null,
+            CancellationToken cancellationToken = default)
+        {
+            var normalizedEmail = email.Trim().ToLower();
+            return await _context.Users.AnyAsync(
+                u => u.Email.ToLower() == normalizedEmail
+                   && !u.IsDeleted
+                   && (!excludeUserId.HasValue || u.Id != excludeUserId.Value),
+                cancellationToken);
         }
 
         public async Task AddAsync(User user, CancellationToken cancellationToken = default)
@@ -29,6 +102,21 @@ namespace BizMate.Infrastructure.Persistence.Repositories
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync(cancellationToken); 
+        }
+
+        public Task UpdateAsync(User user, CancellationToken cancellationToken = default)
+        {
+            _context.Users.Update(user);
+            return Task.CompletedTask;
+        }
+
+        public Task DeleteAsync(User user, CancellationToken cancellationToken = default)
+        {
+            user.IsDeleted = true;
+            user.DeletedAt = DateTime.UtcNow;
+            user.UpdatedDate = DateTime.UtcNow;
+            _context.Users.Update(user);
+            return Task.CompletedTask;
         }
     }
 }

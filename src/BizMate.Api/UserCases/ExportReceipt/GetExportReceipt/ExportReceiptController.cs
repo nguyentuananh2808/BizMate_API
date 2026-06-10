@@ -21,6 +21,7 @@ namespace BizMate.Api.UserCases.ExportReceipt.GetExportReceipt
         }
 
         [HttpGet("{id:guid}")]
+        [HasPermission(PermissionConstants.ExportReceipt.View)]
         public async Task<IActionResult> GetExportReceipt(Guid id)
         {
             var request = new GetExportReceiptRequest(id);

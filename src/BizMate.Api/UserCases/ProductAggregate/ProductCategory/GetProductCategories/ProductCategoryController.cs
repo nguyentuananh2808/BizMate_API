@@ -21,6 +21,7 @@ namespace BizMate.Api.UserCases.ProductAggregate.ProductCategory.GetProductCateg
         }
 
         [HttpGet("GetAll")]
+        [HasPermission(PermissionConstants.ProductCategory.View)]
         public async Task<IActionResult> GetProductCategories()
         {
             var request = new GetProductCategoriesRequest();

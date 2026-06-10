@@ -39,13 +39,39 @@ namespace BizMate.Infrastructure.Persistence
         public DbSet<Notification> Notifications => Set<Notification>();
         public DbSet<OrderStatusHistory> OrderStatusHistories => Set<OrderStatusHistory>();
         public DbSet<WarrantyCode> WarrantyCodes => Set<WarrantyCode>();
+        public DbSet<Technician> Technicians => Set<Technician>();
+        public DbSet<OrderTechnician> OrderTechnicians => Set<OrderTechnician>();
+        public DbSet<TechnicianHolding> TechnicianHoldings => Set<TechnicianHolding>();
+        public DbSet<HoldingTransaction> HoldingTransactions => Set<HoldingTransaction>();
         #endregion
+        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            foreach (var entry in ChangeTracker.Entries())
+            {
+                foreach (var property in entry.Properties)
+                {
+                    if (property.CurrentValue is DateTime dt)
+                    {
+                        Console.WriteLine(
+                            $"[DateTime] {entry.Entity.GetType().Name}.{property.Metadata.Name} = {dt:o} | Kind={dt.Kind}");
 
+                        if (dt.Kind == DateTimeKind.Unspecified)
+                        {
+                            throw new Exception(
+                                $"DateTimeKind.Unspecified detected: {entry.Entity.GetType().Name}.{property.Metadata.Name}");
+                        }
+                    }
+                }
+            }
+
+            return await base.SaveChangesAsync(cancellationToken);
+        }
         #region DbSet — phân quyền (đã thêm trước)
         public DbSet<Permission> Permissions => Set<Permission>();
         public DbSet<Role> Roles => Set<Role>();
         public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
         public DbSet<UserRole> UserRoles => Set<UserRole>();
+        public DbSet<UserPermission> UserPermissions => Set<UserPermission>();
         #endregion
 
         #region DbSet — Serial tracking (MỚI THÊM)
@@ -61,6 +87,78 @@ namespace BizMate.Infrastructure.Persistence
             modelBuilder.Entity<WarrantyCode>()
                 .HasIndex(x => x.WarrantyCodeValue)
                 .IsUnique();
+
+            modelBuilder.Entity<Order>(b =>
+            {
+                b.HasOne(x => x.Technician)
+                    .WithMany(x => x.Orders)
+                    .HasForeignKey(x => x.TechnicianId)
+                    .IsRequired(false)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            modelBuilder.Entity<OrderTechnician>(b =>
+            {
+                b.HasKey(x => x.Id);
+                b.HasIndex(x => new { x.OrderId, x.TechnicianId })
+                    .IsUnique()
+                    .HasDatabaseName("IX_OrderTechnicians_Order_Technician");
+                b.HasIndex(x => x.TechnicianId)
+                    .HasDatabaseName("IX_OrderTechnicians_TechnicianId");
+                b.HasOne(x => x.Order)
+                    .WithMany(x => x.OrderTechnicians)
+                    .HasForeignKey(x => x.OrderId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                b.HasOne(x => x.Technician)
+                    .WithMany(x => x.OrderTechnicians)
+                    .HasForeignKey(x => x.TechnicianId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<Technician>(b =>
+            {
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Name).IsRequired().HasMaxLength(200);
+                b.Property(x => x.Phone).HasMaxLength(30);
+                b.Property(x => x.ZaloPhone).HasMaxLength(30);
+                b.HasIndex(x => new { x.StoreId, x.Phone })
+                    .HasDatabaseName("IX_Technicians_Store_Phone");
+            });
+
+            modelBuilder.Entity<TechnicianHolding>(b =>
+            {
+                b.HasKey(x => x.Id);
+                b.HasIndex(x => new { x.StoreId, x.TechnicianId, x.ProductId })
+                    .IsUnique()
+                    .HasFilter("\"IsDeleted\" = false")
+                    .HasDatabaseName("IX_TechnicianHoldings_Store_Technician_Product");
+                b.HasOne(x => x.Technician)
+                    .WithMany(x => x.Holdings)
+                    .HasForeignKey(x => x.TechnicianId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                b.HasOne(x => x.Product)
+                    .WithMany()
+                    .HasForeignKey(x => x.ProductId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<HoldingTransaction>(b =>
+            {
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Type).HasConversion<int>();
+                b.Property(x => x.ReferenceType).HasMaxLength(50);
+                b.Property(x => x.Note).HasMaxLength(500);
+                b.HasIndex(x => new { x.StoreId, x.TechnicianId, x.ProductId, x.CreatedDate })
+                    .HasDatabaseName("IX_HoldingTransactions_Store_Tech_Product_Date");
+                b.HasOne(x => x.Technician)
+                    .WithMany()
+                    .HasForeignKey(x => x.TechnicianId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                b.HasOne(x => x.Product)
+                    .WithMany()
+                    .HasForeignKey(x => x.ProductId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
 
             modelBuilder.Entity<Permission>(b =>
             {
@@ -100,7 +198,22 @@ namespace BizMate.Infrastructure.Persistence
                     .HasForeignKey(x => x.StoreId).OnDelete(DeleteBehavior.Cascade);
             });
 
-            // ── ProductItem (MỚI) ─────────────────────────────────────────────
+            // UserPermission
+            modelBuilder.Entity<UserPermission>(b =>
+            {
+                b.HasKey(x => x.Id);
+                b.HasIndex(x => new { x.UserId, x.StoreId, x.PermissionId })
+                    .IsUnique()
+                    .HasFilter("\"IsDeleted\" = false");
+                b.HasOne(x => x.User).WithMany(x => x.UserPermissions)
+                    .HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+                b.HasOne(x => x.Store).WithMany()
+                    .HasForeignKey(x => x.StoreId).OnDelete(DeleteBehavior.Cascade);
+                b.HasOne(x => x.Permission).WithMany(x => x.UserPermissions)
+                    .HasForeignKey(x => x.PermissionId).OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ProductItem
             modelBuilder.Entity<ProductItem>(b =>
             {
                 b.HasKey(x => x.Id);
