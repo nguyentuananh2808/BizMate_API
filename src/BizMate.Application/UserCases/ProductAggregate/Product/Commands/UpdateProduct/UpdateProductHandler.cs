@@ -88,7 +88,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Update
 
                     if (totalItems > 0)
                     {
-                        return new UpdateProductResponse(false, "Khong the tat quan ly serial khi san pham da co SN.");
+                        return new UpdateProductResponse(false, "Không thể tắt quản lý serial khi sản phẩm đã có SN.");
                     }
                 }
 
@@ -99,7 +99,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Commands.Update
 
                     if (currentStock is not null && currentStock.Quantity > 0)
                     {
-                        return new UpdateProductResponse(false, "Chi co the bat quan ly serial khi ton kho hien tai bang 0.");
+                        return new UpdateProductResponse(false, "Chỉ có thể bật quản lý serial khi tồn kho hiện tại bằng 0.");
                     }
                 }
                 #endregion

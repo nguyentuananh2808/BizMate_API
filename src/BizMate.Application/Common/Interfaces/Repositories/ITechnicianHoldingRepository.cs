@@ -15,6 +15,10 @@ namespace BizMate.Application.Common.Interfaces.Repositories
         Task<List<TechnicianHolding>> GetHoldingsAsync(Guid storeId, Guid? technicianId = null, CancellationToken ct = default);
         Task<List<TechnicianHolding>> GetOverdueHoldingsAsync(Guid storeId, DateTime overdueBefore, CancellationToken ct = default);
         Task<List<SalesByProductReportRow>> GetSalesByProductAsync(Guid storeId, DateTime? dateFrom, DateTime? dateTo, CancellationToken ct = default);
+        Task<int> DecreaseStockAsync(Guid stockId, int quantity, int reservedToRelease, Guid? userId, DateTime now, CancellationToken ct = default);
+        Task<int> IncreaseOrderDetailBorrowedQuantityAsync(Guid orderDetailId, int quantity, Guid? userId, DateTime now, CancellationToken ct = default);
+        Task<int> IncreaseHoldingQuantityAsync(Guid holdingId, int quantity, Guid? userId, DateTime now, CancellationToken ct = default);
+        void AddOrderDetail(OrderDetail detail);
         void AddTechnician(Technician technician);
         void AddHolding(TechnicianHolding holding);
         void AddTransaction(HoldingTransaction transaction);

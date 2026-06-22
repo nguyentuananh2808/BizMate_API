@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BizMate.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260510142736_AddTechnicianBorrowingModule")]
-    partial class AddTechnicianBorrowingModule
+    [Migration("20260614042225_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -647,8 +647,8 @@ namespace BizMate.Infrastructure.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
-                    b.Property<DateTime?>("InstallationDate")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<DateOnly?>("InstallationDate")
+                        .HasColumnType("date");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
@@ -797,6 +797,36 @@ namespace BizMate.Infrastructure.Migrations
                     b.HasIndex("OrderId");
 
                     b.ToTable("OrderStatusHistories");
+                });
+
+            modelBuilder.Entity("BizMate.Domain.Entities.OrderTechnician", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("AssignedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TechnicianId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TechnicianId")
+                        .HasDatabaseName("IX_OrderTechnicians_TechnicianId");
+
+                    b.HasIndex("OrderId", "TechnicianId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_OrderTechnicians_Order_Technician");
+
+                    b.ToTable("OrderTechnicians");
                 });
 
             modelBuilder.Entity("BizMate.Domain.Entities.OtpVerification", b =>
@@ -1941,6 +1971,25 @@ namespace BizMate.Infrastructure.Migrations
                     b.Navigation("Order");
                 });
 
+            modelBuilder.Entity("BizMate.Domain.Entities.OrderTechnician", b =>
+                {
+                    b.HasOne("BizMate.Domain.Entities.Order", "Order")
+                        .WithMany("OrderTechnicians")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BizMate.Domain.Entities.Technician", "Technician")
+                        .WithMany("OrderTechnicians")
+                        .HasForeignKey("TechnicianId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+
+                    b.Navigation("Technician");
+                });
+
             modelBuilder.Entity("BizMate.Domain.Entities.Product", b =>
                 {
                     b.HasOne("BizMate.Domain.Entities.ProductCategory", "ProductCategory")
@@ -2183,6 +2232,8 @@ namespace BizMate.Infrastructure.Migrations
             modelBuilder.Entity("BizMate.Domain.Entities.Order", b =>
                 {
                     b.Navigation("Details");
+
+                    b.Navigation("OrderTechnicians");
                 });
 
             modelBuilder.Entity("BizMate.Domain.Entities.OrderDetail", b =>
@@ -2233,6 +2284,8 @@ namespace BizMate.Infrastructure.Migrations
             modelBuilder.Entity("BizMate.Domain.Entities.Technician", b =>
                 {
                     b.Navigation("Holdings");
+
+                    b.Navigation("OrderTechnicians");
 
                     b.Navigation("Orders");
                 });

@@ -12,6 +12,7 @@ namespace BizMate.Application.Common.Dto.CoreDto
         public string? ProductCode { get; set; }
         public int Unit { get; set; }
         public int Quantity { get; set; }
+        public bool IsSerialTracked { get; set; }
         public int BorrowedQuantity { get; set; }
         public int UsedBorrowedQuantity { get; set; }
         public decimal UnitPrice { get; set; }

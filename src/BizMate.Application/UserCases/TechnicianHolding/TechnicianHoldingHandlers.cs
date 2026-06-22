@@ -4,6 +4,8 @@ using BizMate.Application.Common.Responses;
 using BizMate.Application.Common.Security;
 using BizMate.Domain.Entities;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace BizMate.Application.UserCases.TechnicianHolding
 {
@@ -122,15 +124,18 @@ namespace BizMate.Application.UserCases.TechnicianHolding
         private readonly ITechnicianHoldingRepository _repo;
         private readonly IUserSession _userSession;
         private readonly IUnitOfWork _uow;
+        private readonly ILogger<ExportOrderForTechnicianHandler> _logger;
 
         public ExportOrderForTechnicianHandler(
             ITechnicianHoldingRepository repo,
             IUserSession userSession,
-            IUnitOfWork uow)
+            IUnitOfWork uow,
+            ILogger<ExportOrderForTechnicianHandler> logger)
         {
             _repo = repo;
             _userSession = userSession;
             _uow = uow;
+            _logger = logger;
         }
 
         public async Task<BorrowingMutationResponse> Handle(
@@ -138,21 +143,22 @@ namespace BizMate.Application.UserCases.TechnicianHolding
             CancellationToken ct)
         {
             await _uow.BeginTransactionAsync(ct);
+            var isBorrowMoreRequest = false;
 
             try
             {
                 if (request.OrderId == Guid.Empty)
-                    return await RollbackAsync("OrderId khong hop le.", ct);
+                    return await RollbackAsync("OrderId không hợp lệ.", ct);
 
                 var technicianExports = NormalizeTechnicianExports(request);
                 if (technicianExports.Count == 0)
-                    return await RollbackAsync("Can co it nhat mot ky thuat va san pham de xuat hang.", ct);
+                    return await RollbackAsync("Cần có ít nhất một kỹ thuật và sản phẩm để xuất hàng.", ct);
                 if (technicianExports.Any(x => x.TechnicianId == Guid.Empty))
-                    return await RollbackAsync("TechnicianId khong hop le.", ct);
+                    return await RollbackAsync("TechnicianId không hợp lệ.", ct);
                 if (technicianExports.GroupBy(x => x.TechnicianId).Any(x => x.Count() > 1))
-                    return await RollbackAsync("Payload xuat hang bi trung ky thuat.", ct);
+                    return await RollbackAsync("Payload xuất hàng bị trùng kỹ thuật.", ct);
                 if (technicianExports.Any(x => x.Items.Count == 0))
-                    return await RollbackAsync("Moi ky thuat can co it nhat mot san pham de xuat hang.", ct);
+                    return await RollbackAsync("Mỗi kỹ thuật cần có ít nhất một sản phẩm để xuất hàng.", ct);
                 if (technicianExports
                     .SelectMany(x => x.Items)
                     .Any(x => x.ProductId == Guid.Empty
@@ -160,10 +166,10 @@ namespace BizMate.Application.UserCases.TechnicianHolding
                         || x.BorrowedQuantity < 0
                         || (x.OrderedQuantity == 0 && x.BorrowedQuantity == 0)))
                 {
-                    return await RollbackAsync("Du lieu san pham xuat hang khong hop le.", ct);
+                    return await RollbackAsync("Dữ liệu sản phẩm xuất hàng không hợp lệ.", ct);
                 }
                 if (technicianExports.Any(x => x.Items.GroupBy(i => i.ProductId).Any(g => g.Count() > 1)))
-                    return await RollbackAsync("Payload xuat hang bi trung san pham trong cung ky thuat.", ct);
+                    return await RollbackAsync("Payload xuất hàng bị trùng sản phẩm trong cùng kỹ thuật.", ct);
 
                 var storeId = _userSession.StoreId;
                 var userId = CurrentUserId(_userSession);
@@ -171,21 +177,27 @@ namespace BizMate.Application.UserCases.TechnicianHolding
 
                 var order = await _repo.GetOrderWithDetailsAsync(request.OrderId, storeId, ct);
                 if (order is null)
-                    return await RollbackAsync("Khong tim thay don hang trong store hien tai.", ct);
-                if (order.TechnicianExportedAt.HasValue)
-                    return await RollbackAsync("Don hang da duoc xuat cho ky thuat.", ct);
+                    return await RollbackAsync("Không tìm thấy đơn hàng trong store hiện tại.", ct);
+                if (order.Status?.Code is not ("NEW" or "PACKING" or "PACKED"))
+                    return await RollbackAsync("Chỉ được xuất hoặc mượn thêm cho kỹ thuật khi đơn hàng chưa hoàn thành hoặc chưa hủy.", ct);
+
+                isBorrowMoreRequest = order.TechnicianExportedAt.HasValue;
 
                 var technicianIds = technicianExports.Select(x => x.TechnicianId).ToList();
                 var technicians = await _repo.GetTechniciansByIdsAsync(storeId, technicianIds, ct);
                 if (technicians.Count != technicianIds.Count || technicians.Any(x => !x.IsActive))
-                    return await RollbackAsync("Co ky thuat khong ton tai hoac dang ngung hoat dong trong store hien tai.", ct);
+                    return await RollbackAsync("Có kỹ thuật không tồn tại hoặc đang ngừng hoạt động trong store hiện tại.", ct);
 
                 var details = order.Details.Where(x => !x.IsDeleted).ToList();
                 var duplicateProducts = details.GroupBy(x => x.ProductId).Where(x => x.Count() > 1).Select(x => x.Key).ToList();
                 if (duplicateProducts.Count > 0)
-                    return await RollbackAsync("Flow muon hang yeu cau moi san pham chi co mot dong trong don.", ct);
+                    return await RollbackAsync("Luồng mượn hàng yêu cầu mỗi sản phẩm chỉ có một dòng trong đơn.", ct);
 
                 var detailByProduct = details.ToDictionary(x => x.ProductId);
+                var originalOrderProductIds = details
+                    .Where(x => x.Quantity > 0)
+                    .Select(x => x.ProductId)
+                    .ToHashSet();
                 var aggregateByProduct = technicianExports
                     .SelectMany(x => x.Items)
                     .GroupBy(x => x.ProductId)
@@ -199,16 +211,28 @@ namespace BizMate.Application.UserCases.TechnicianHolding
                         });
 
                 if (aggregateByProduct.Values.Any(x => x.OrderedQuantity > 0 && !detailByProduct.ContainsKey(x.ProductId)))
-                    return await RollbackAsync("San pham xuat ban phai nam trong don hang.", ct);
+                    return await RollbackAsync("Sản phẩm xuất bán phải nằm trong đơn hàng.", ct);
 
-                foreach (var detail in detailByProduct.Values)
+                if (isBorrowMoreRequest)
                 {
-                    if (!aggregateByProduct.TryGetValue(detail.ProductId, out var aggregate)
-                        || aggregate.OrderedQuantity != detail.Quantity)
+                    if (aggregateByProduct.Values.Any(x => x.OrderedQuantity > 0))
                     {
                         return await RollbackAsync(
-                            $"Tổng số lượng bán của sản phẩm {detail.ProductName} phải bằng số lượng trong đơn.",
+                            "Đơn hàng đã xuất cho kỹ thuật; lần mượn thêm chỉ được nhập SL mượn thêm, không nhập lại SL bán.",
                             ct);
+                    }
+                }
+                else
+                {
+                    foreach (var detail in detailByProduct.Values.Where(x => x.Quantity > 0))
+                    {
+                        if (!aggregateByProduct.TryGetValue(detail.ProductId, out var aggregate)
+                            || aggregate.OrderedQuantity != detail.Quantity)
+                        {
+                            return await RollbackAsync(
+                                $"Tổng số lượng bán của sản phẩm {detail.ProductName} phải bằng số lượng trong đơn.",
+                                ct);
+                        }
                     }
                 }
 
@@ -221,12 +245,12 @@ namespace BizMate.Application.UserCases.TechnicianHolding
                     var productCode = detail?.ProductCode ?? aggregate.ProductId.ToString();
 
                     if (!stockByProduct.TryGetValue(aggregate.ProductId, out var stock))
-                        return await RollbackAsync($"Khong tim thay ton kho cho san pham {productCode}.", ct);
+                        return await RollbackAsync($"Không tìm thấy tồn kho cho sản phẩm {productCode}.", ct);
 
                     productCode = stock.Product.Code;
                     if (stock.Product.IsSerialTracked)
                         return await RollbackAsync(
-                            $"Flow xuất/mượn cho kỹ thuật chưa hỗ trợ sản phẩm quản lý serial: {stock.Product.Name}.",
+                            $"Luồng xuất/mượn cho kỹ thuật chưa hỗ trợ sản phẩm quản lý serial: {stock.Product.Name}.",
                             ct);
 
                     var totalExportQuantity = aggregate.OrderedQuantity + aggregate.BorrowedQuantity;
@@ -239,18 +263,97 @@ namespace BizMate.Application.UserCases.TechnicianHolding
                     var availableAfterOrdered = (stock.Quantity - aggregate.OrderedQuantity)
                         - (stock.Reserved - reservedToRelease);
                     if (availableAfterOrdered < aggregate.BorrowedQuantity)
-                        return await RollbackAsync($"San pham {productCode} khong du ton kha dung de cho muon.", ct);
+                        return await RollbackAsync($"Sản phẩm {productCode} không đủ tồn khả dụng để cho mượn.", ct);
+
+                    if (isBorrowMoreRequest)
+                    {
+                        var affectedStockRows = await _repo.DecreaseStockAsync(
+                            stock.Id,
+                            totalExportQuantity,
+                            reservedToRelease,
+                            userId,
+                            now,
+                            ct);
+
+                        if (affectedStockRows == 0)
+                            return await RollbackAsync($"Tồn kho của sản phẩm {productCode} vừa thay đổi. Vui lòng tải lại đơn hàng rồi mượn thêm lại.", ct);
+
+                        if (detail is null)
+                        {
+                            detail = new OrderDetail
+                            {
+                                Id = Guid.NewGuid(),
+                                OrderId = order.Id,
+                                ProductId = stock.ProductId,
+                                ProductName = stock.Product.Name,
+                                ProductCode = stock.Product.Code,
+                                Unit = stock.Product.Unit,
+                                Quantity = 0,
+                                BorrowedQuantity = aggregate.BorrowedQuantity,
+                                UsedBorrowedQuantity = 0,
+                                UnitPrice = stock.Product.SalePrice.GetValueOrDefault(),
+                                Total = 0,
+                                CreatedBy = userId,
+                                CreatedDate = now,
+                                RowVersion = Guid.NewGuid()
+                            };
+
+                            _repo.AddOrderDetail(detail);
+                            detailByProduct[aggregate.ProductId] = detail;
+                        }
+                        else
+                        {
+                            var affectedDetailRows = await _repo.IncreaseOrderDetailBorrowedQuantityAsync(
+                                detail.Id,
+                                aggregate.BorrowedQuantity,
+                                userId,
+                                now,
+                                ct);
+
+                            if (affectedDetailRows == 0)
+                                return await RollbackAsync($"Dòng sản phẩm {productCode} trong đơn vừa thay đổi. Vui lòng tải lại đơn hàng rồi mượn thêm lại.", ct);
+                        }
+
+                        continue;
+                    }
 
                     stock.Quantity -= totalExportQuantity;
                     stock.Reserved -= reservedToRelease;
                     stock.UpdatedBy = userId;
                     stock.UpdatedDate = now;
+                    stock.RowVersion = Guid.NewGuid();
 
-                    if (detail is not null)
+                    if (detail is null)
                     {
-                        detail.BorrowedQuantity = aggregate.BorrowedQuantity;
+                        detail = new OrderDetail
+                        {
+                            Id = Guid.NewGuid(),
+                            OrderId = order.Id,
+                            ProductId = stock.ProductId,
+                            ProductName = stock.Product.Name,
+                            ProductCode = stock.Product.Code,
+                            Unit = stock.Product.Unit,
+                            Quantity = 0,
+                            BorrowedQuantity = aggregate.BorrowedQuantity,
+                            UsedBorrowedQuantity = 0,
+                            UnitPrice = stock.Product.SalePrice.GetValueOrDefault(),
+                            Total = 0,
+                            CreatedBy = userId,
+                            CreatedDate = now,
+                            RowVersion = Guid.NewGuid()
+                        };
+
+                        order.Details.Add(detail);
+                        detailByProduct[aggregate.ProductId] = detail;
+                    }
+                    else
+                    {
+                        detail.BorrowedQuantity = isBorrowMoreRequest
+                            ? detail.BorrowedQuantity + aggregate.BorrowedQuantity
+                            : aggregate.BorrowedQuantity;
                         detail.UpdatedBy = userId;
                         detail.UpdatedDate = now;
+                        detail.RowVersion = Guid.NewGuid();
                     }
                 }
 
@@ -270,16 +373,33 @@ namespace BizMate.Application.UserCases.TechnicianHolding
                                 Quantity = item.BorrowedQuantity,
                                 LastBorrowedAt = now,
                                 CreatedBy = userId,
-                                CreatedDate = now
+                                CreatedDate = now,
+                                RowVersion = Guid.NewGuid()
                             };
                             _repo.AddHolding(holding);
                         }
                         else
                         {
-                            holding.Quantity += item.BorrowedQuantity;
-                            holding.LastBorrowedAt = now;
-                            holding.UpdatedBy = userId;
-                            holding.UpdatedDate = now;
+                            if (isBorrowMoreRequest)
+                            {
+                                var affectedHoldingRows = await _repo.IncreaseHoldingQuantityAsync(
+                                    holding.Id,
+                                    item.BorrowedQuantity,
+                                    userId,
+                                    now,
+                                    ct);
+
+                                if (affectedHoldingRows == 0)
+                                    return await RollbackAsync("Hàng kỹ thuật đang giữ vừa thay đổi. Vui lòng tải lại đơn hàng rồi mượn thêm lại.", ct);
+                            }
+                            else
+                            {
+                                holding.Quantity += item.BorrowedQuantity;
+                                holding.LastBorrowedAt = now;
+                                holding.UpdatedBy = userId;
+                                holding.UpdatedDate = now;
+                                holding.RowVersion = Guid.NewGuid();
+                            }
                         }
 
                         _repo.AddTransaction(NewTransaction(
@@ -290,7 +410,7 @@ namespace BizMate.Application.UserCases.TechnicianHolding
                             item.BorrowedQuantity,
                             "order",
                             order.Id,
-                            detailByProduct.ContainsKey(item.ProductId)
+                            originalOrderProductIds.Contains(item.ProductId)
                                 ? "Borrowed with order export"
                                 : "Borrowed extra product with order export",
                             userId,
@@ -298,20 +418,44 @@ namespace BizMate.Application.UserCases.TechnicianHolding
                     }
                 }
 
-                AddMissingOrderTechnicians(order, technicianIds, now);
-                order.TechnicianId ??= technicianIds.First();
-                order.TechnicianExportedAt = now;
-                order.UpdatedBy = userId;
-                order.UpdatedDate = now;
+                if (!isBorrowMoreRequest)
+                {
+                    AddMissingOrderTechnicians(order, technicianIds, now);
+                    order.TechnicianId ??= technicianIds.First();
+                    order.TechnicianExportedAt = now;
+                    order.UpdatedBy = userId;
+                    order.UpdatedDate = now;
+                    order.RowVersion = Guid.NewGuid();
+                    order.RecalculateTotal();
+                }
 
                 await _uow.SaveChangesAsync(ct);
                 await _uow.CommitAsync(ct);
-                return new BorrowingMutationResponse(true, "Xuat hang va ghi nhan hang muon thanh cong.");
+                return new BorrowingMutationResponse(
+                    true,
+                    isBorrowMoreRequest
+                        ? "Ghi nhận mượn thêm sản phẩm thành công."
+                        : "Xuất hàng và ghi nhận hàng mượn thành công.");
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                await _uow.RollbackAsync(ct);
+                _logger.LogWarning(
+                    ex,
+                    "Concurrency conflict while exporting order {OrderId} for technician. Entries: {@Entries}",
+                    request.OrderId,
+                    DescribeConcurrencyEntries(ex));
+                return new BorrowingMutationResponse(
+                    false,
+                    isBorrowMoreRequest
+                        ? "Dữ liệu đơn hàng hoặc tồn kho vừa thay đổi. Vui lòng tải lại đơn hàng rồi mượn thêm lại."
+                        : "Dữ liệu đơn hàng hoặc tồn kho vừa thay đổi. Vui lòng tải lại đơn hàng rồi xuất lại.");
             }
             catch (Exception ex)
             {
                 await _uow.RollbackAsync(ct);
-                return new BorrowingMutationResponse(false, ex.Message);
+                _logger.LogError(ex, "Failed to export order {OrderId} for technician.", request.OrderId);
+                return new BorrowingMutationResponse(false, "Không thể xuất hàng cho kỹ thuật. Vui lòng kiểm tra tồn kho và thử lại.");
             }
         }
 
@@ -377,6 +521,18 @@ namespace BizMate.Application.UserCases.TechnicianHolding
             public int BorrowedQuantity { get; set; }
         }
 
+        private static List<object> DescribeConcurrencyEntries(DbUpdateConcurrencyException exception)
+            => exception.Entries
+                .Select(entry => new
+                {
+                    Entity = entry.Metadata.ClrType.Name,
+                    State = entry.State.ToString(),
+                    Id = entry.Properties.FirstOrDefault(x => x.Metadata.Name == nameof(BaseCoreEntity.Id))?.CurrentValue,
+                    RowVersion = entry.Properties.FirstOrDefault(x => x.Metadata.Name == nameof(BaseCoreEntity.RowVersion))?.CurrentValue
+                })
+                .Cast<object>()
+                .ToList();
+
         private async Task<BorrowingMutationResponse> RollbackAsync(string message, CancellationToken ct)
         {
             await _uow.RollbackAsync(ct);
@@ -437,11 +593,11 @@ namespace BizMate.Application.UserCases.TechnicianHolding
             try
             {
                 if (request.TechnicianId == Guid.Empty)
-                    return await RollbackAsync("TechnicianId khong hop le.", ct);
+                    return await RollbackAsync("TechnicianId không hợp lệ.", ct);
                 if (request.Items.Count == 0 || request.Items.Any(x => x.ProductId == Guid.Empty || x.Quantity <= 0))
-                    return await RollbackAsync("Du lieu tra hang khong hop le.", ct);
+                    return await RollbackAsync("Dữ liệu trả hàng không hợp lệ.", ct);
                 if (request.Items.GroupBy(x => x.ProductId).Any(x => x.Count() > 1))
-                    return await RollbackAsync("Payload tra hang bi trung san pham.", ct);
+                    return await RollbackAsync("Payload trả hàng bị trùng sản phẩm.", ct);
 
                 var storeId = _userSession.StoreId;
                 var userId = CurrentUserId(_userSession);
@@ -449,7 +605,7 @@ namespace BizMate.Application.UserCases.TechnicianHolding
 
                 var technician = await _repo.GetTechnicianAsync(request.TechnicianId, storeId, ct);
                 if (technician is null)
-                    return await RollbackAsync("Khong tim thay ky thuat trong store hien tai.", ct);
+                    return await RollbackAsync("Không tìm thấy kỹ thuật trong store hiện tại.", ct);
 
                 var productIds = request.Items.Select(x => x.ProductId).Distinct().ToList();
                 var stocks = await _repo.GetStocksAsync(storeId, productIds, ct);
@@ -459,9 +615,9 @@ namespace BizMate.Application.UserCases.TechnicianHolding
                 {
                     var holding = await _repo.GetHoldingAsync(storeId, technician.Id, item.ProductId, ct);
                     if (holding is null || holding.Quantity < item.Quantity)
-                        return await RollbackAsync("So luong tra vuot qua so luong ky thuat dang giu.", ct);
+                        return await RollbackAsync("Số lượng trả vượt quá số lượng kỹ thuật đang giữ.", ct);
                     if (!stockByProduct.TryGetValue(item.ProductId, out var stock))
-                        return await RollbackAsync("Khong tim thay ton kho de nhap lai hang tra.", ct);
+                        return await RollbackAsync("Không tìm thấy tồn kho để nhập lại hàng trả.", ct);
 
                     holding.Quantity -= item.Quantity;
                     holding.UpdatedBy = userId;
@@ -486,7 +642,7 @@ namespace BizMate.Application.UserCases.TechnicianHolding
 
                 await _uow.SaveChangesAsync(ct);
                 await _uow.CommitAsync(ct);
-                return new BorrowingMutationResponse(true, "Tra hang thanh cong.");
+                return new BorrowingMutationResponse(true, "Trả hàng thành công.");
             }
             catch (Exception ex)
             {
@@ -555,7 +711,7 @@ namespace BizMate.Application.UserCases.TechnicianHolding
             try
             {
                 if (request.OrderId == Guid.Empty || request.ProductId == Guid.Empty || request.Quantity <= 0)
-                    return await RollbackAsync("Du lieu dung hang muon khong hop le.", ct);
+                    return await RollbackAsync("Dữ liệu dùng hàng mượn không hợp lệ.", ct);
 
                 var storeId = _userSession.StoreId;
                 var userId = CurrentUserId(_userSession);
@@ -563,20 +719,23 @@ namespace BizMate.Application.UserCases.TechnicianHolding
 
                 var order = await _repo.GetOrderWithDetailsAsync(request.OrderId, storeId, ct);
                 if (order is null)
-                    return await RollbackAsync("Khong tim thay don hang trong store hien tai.", ct);
+                    return await RollbackAsync("Không tìm thấy đơn hàng trong store hiện tại.", ct);
+
+                if (order.Status?.Code is "COMPLETED" or "CANCELLED")
+                    return await RollbackAsync("\u0110\u01a1n h\u00e0ng \u0111\u00e3 ho\u00e0n th\u00e0nh ho\u1eb7c \u0111\u00e3 h\u1ee7y, kh\u00f4ng th\u1ec3 ghi nh\u1eadn d\u00f9ng h\u00e0ng m\u01b0\u1ee3n.", ct);
 
                 var productHoldings = await _repo.GetHoldingsByProductAsync(storeId, request.ProductId, ct);
                 var technicianId = ResolveTechnicianId(order, request.TechnicianId, productHoldings);
                 if (!technicianId.HasValue)
-                    return await RollbackAsync("Can chon ky thuat dung hang muon cho don co nhieu ky thuat.", ct);
+                    return await RollbackAsync("Cần chọn kỹ thuật dùng hàng mượn cho đơn có nhiều kỹ thuật.", ct);
 
                 var detail = order.Details.FirstOrDefault(x => x.ProductId == request.ProductId && !x.IsDeleted);
                 if (detail is null)
-                    return await RollbackAsync("San pham khong thuoc don hang.", ct);
+                    return await RollbackAsync("Sản phẩm không thuộc đơn hàng.", ct);
 
                 var remainingBorrowed = detail.BorrowedQuantity - detail.UsedBorrowedQuantity;
                 if (remainingBorrowed < request.Quantity)
-                    return await RollbackAsync("So luong dung vuot qua so luong da muon con lai cua don.", ct);
+                    return await RollbackAsync("Số lượng dùng vượt quá số lượng đã mượn còn lại của đơn.", ct);
 
                 var holding = await _repo.GetHoldingAsync(storeId, technicianId.Value, request.ProductId, ct);
                 if (holding is null || holding.Quantity < request.Quantity)
@@ -607,7 +766,7 @@ namespace BizMate.Application.UserCases.TechnicianHolding
 
                 await _uow.SaveChangesAsync(ct);
                 await _uow.CommitAsync(ct);
-                return new BorrowingMutationResponse(true, "Da chuyen hang muon thanh hang ban.");
+                return new BorrowingMutationResponse(true, "Đã chuyển hàng mượn thành hàng bán.");
             }
             catch (Exception ex)
             {
@@ -700,7 +859,7 @@ namespace BizMate.Application.UserCases.TechnicianHolding
                             LastBorrowedAt = x.LastBorrowedAt,
                             IsOverdue = isOverdue,
                             ReminderMessage = isOverdue
-                                ? $"Ky thuat {x.Technician.Name} con giu {x.Quantity} {x.Product.Name}, vui long tra hang cuoi ngay."
+                                ? $"Kỹ thuật {x.Technician.Name} còn giữ {x.Quantity} {x.Product.Name}, vui lòng trả hàng cuối ngày."
                                 : null
                         };
                     }).ToList();

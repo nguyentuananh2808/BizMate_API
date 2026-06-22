@@ -19,8 +19,14 @@ namespace BizMate.Application.Common.Extensions
 
         public async Task SendOtpEmailAsync(string toEmail, string otpCode, DateTime expiredAt)
         {
-            var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
-            var expiredAtVN = TimeZoneInfo.ConvertTimeFromUtc(expiredAt, vietnamTimeZone);
+            var expiredAtVN = ToVietnamTime(expiredAt);
+            var smtpHost = GetRequiredConfig("Smtp:Host");
+            var smtpUsername = GetRequiredConfig("Smtp:Username");
+            var smtpPassword = GetRequiredConfig("Smtp:Password");
+            var smtpFromEmail = GetRequiredConfig("Smtp:FromEmail");
+
+            if (!int.TryParse(_config["Smtp:Port"], out var smtpPort))
+                throw new InvalidOperationException("Cau hinh SMTP Port khong hop le.");
 
             var subject = "Mã xác thực OTP";
 
@@ -96,19 +102,19 @@ namespace BizMate.Application.Common.Extensions
                 </html>
                 """;
 
-            using var smtpClient = new SmtpClient(_config["Smtp:Host"])
+            using var smtpClient = new SmtpClient(smtpHost)
             {
-                Port = int.Parse(_config["Smtp:Port"]),
-                Credentials = new NetworkCredential(
-                    _config["Smtp:Username"],
-                    _config["Smtp:Password"]
-                ),
-                EnableSsl = true
+                Port = smtpPort,
+                EnableSsl = true,
+                DeliveryMethod = SmtpDeliveryMethod.Network,
+                UseDefaultCredentials = false,
+                Credentials = new NetworkCredential(smtpUsername, smtpPassword),
+                Timeout = 15000
             };
 
             var mailMessage = new MailMessage
             {
-                From = new MailAddress(_config["Smtp:FromEmail"]),
+                From = new MailAddress(smtpFromEmail),
                 Subject = subject,
                 Body = body,
                 IsBodyHtml = true
@@ -126,6 +132,39 @@ namespace BizMate.Application.Common.Extensions
                 _logger.LogError(ex, "Lỗi khi gửi email OTP.");
                 throw new InvalidOperationException("Không thể gửi email xác thực OTP. Vui lòng thử lại sau.");
             }
+        }
+
+        private string GetRequiredConfig(string key)
+        {
+            var value = _config[key];
+            if (string.IsNullOrWhiteSpace(value))
+                throw new InvalidOperationException($"Thieu cau hinh {key}.");
+
+            return value;
+        }
+
+        private static DateTime ToVietnamTime(DateTime utcDateTime)
+        {
+            var utc = utcDateTime.Kind == DateTimeKind.Utc
+                ? utcDateTime
+                : DateTime.SpecifyKind(utcDateTime, DateTimeKind.Utc);
+
+            foreach (var timeZoneId in new[] { "Asia/Ho_Chi_Minh", "SE Asia Standard Time" })
+            {
+                try
+                {
+                    var timeZone = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+                    return TimeZoneInfo.ConvertTimeFromUtc(utc, timeZone);
+                }
+                catch (TimeZoneNotFoundException)
+                {
+                }
+                catch (InvalidTimeZoneException)
+                {
+                }
+            }
+
+            return utc.AddHours(7);
         }
     }
 }

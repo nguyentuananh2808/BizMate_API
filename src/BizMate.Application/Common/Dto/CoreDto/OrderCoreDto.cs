@@ -24,7 +24,7 @@ namespace BizMate.Application.Common.Dto.CoreDto
         public string? TechnicianName { get; set; }
         public List<Guid> TechnicianIds { get; set; } = [];
         public ICollection<OrderTechnicianDto> Technicians { get; set; } = new List<OrderTechnicianDto>();
-        public DateTime? InstallationDate { get; set; }
+        public DateOnly? InstallationDate { get; set; }
         public DateTime? TechnicianExportedAt { get; set; }
 
         // Trạng thái đơn hàng

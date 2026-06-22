@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace BizMate.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class initDb : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -375,6 +375,37 @@ namespace BizMate.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Technicians",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Phone = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
+                    ZaloPhone = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    UpdatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    RowVersion = table.Column<Guid>(type: "uuid", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    StoreId = table.Column<Guid>(type: "uuid", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    Code = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Technicians", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Technicians_Stores_StoreId",
+                        column: x => x.StoreId,
+                        principalTable: "Stores",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Users",
                 columns: table => new
                 {
@@ -555,6 +586,46 @@ namespace BizMate.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "UserPermissions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    StoreId = table.Column<Guid>(type: "uuid", nullable: false),
+                    PermissionId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    UpdatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    RowVersion = table.Column<Guid>(type: "uuid", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserPermissions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserPermissions_Permissions_PermissionId",
+                        column: x => x.PermissionId,
+                        principalTable: "Permissions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_UserPermissions_Stores_StoreId",
+                        column: x => x.StoreId,
+                        principalTable: "Stores",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_UserPermissions_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "UserRoles",
                 columns: table => new
                 {
@@ -606,6 +677,9 @@ namespace BizMate.Infrastructure.Migrations
                     CustomerPhone = table.Column<string>(type: "text", nullable: false),
                     DeliveryAddress = table.Column<string>(type: "text", nullable: false),
                     TotalAmount = table.Column<decimal>(type: "numeric", nullable: false),
+                    TechnicianId = table.Column<Guid>(type: "uuid", nullable: true),
+                    InstallationDate = table.Column<DateOnly>(type: "date", nullable: true),
+                    TechnicianExportedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     StatusId = table.Column<Guid>(type: "uuid", nullable: false),
                     Description = table.Column<string>(type: "text", nullable: true),
                     CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -639,6 +713,12 @@ namespace BizMate.Infrastructure.Migrations
                         principalTable: "Stores",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Orders_Technicians_TechnicianId",
+                        column: x => x.TechnicianId,
+                        principalTable: "Technicians",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(
@@ -683,6 +763,51 @@ namespace BizMate.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "HoldingTransactions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    TechnicianId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ProductId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Type = table.Column<int>(type: "integer", nullable: false),
+                    Quantity = table.Column<int>(type: "integer", nullable: false),
+                    ReferenceType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    ReferenceId = table.Column<Guid>(type: "uuid", nullable: true),
+                    Note = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    UpdatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    RowVersion = table.Column<Guid>(type: "uuid", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    StoreId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_HoldingTransactions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_HoldingTransactions_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_HoldingTransactions_Stores_StoreId",
+                        column: x => x.StoreId,
+                        principalTable: "Stores",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_HoldingTransactions_Technicians_TechnicianId",
+                        column: x => x.TechnicianId,
+                        principalTable: "Technicians",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Stocks",
                 columns: table => new
                 {
@@ -718,6 +843,48 @@ namespace BizMate.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "TechnicianHoldings",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    TechnicianId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ProductId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Quantity = table.Column<int>(type: "integer", nullable: false),
+                    LastBorrowedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    UpdatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    RowVersion = table.Column<Guid>(type: "uuid", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    StoreId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TechnicianHoldings", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TechnicianHoldings_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_TechnicianHoldings_Stores_StoreId",
+                        column: x => x.StoreId,
+                        principalTable: "Stores",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_TechnicianHoldings_Technicians_TechnicianId",
+                        column: x => x.TechnicianId,
+                        principalTable: "Technicians",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "OrderDetails",
                 columns: table => new
                 {
@@ -728,6 +895,8 @@ namespace BizMate.Infrastructure.Migrations
                     ProductCode = table.Column<string>(type: "text", nullable: true),
                     Unit = table.Column<int>(type: "integer", nullable: false),
                     Quantity = table.Column<int>(type: "integer", nullable: false),
+                    BorrowedQuantity = table.Column<int>(type: "integer", nullable: false),
+                    UsedBorrowedQuantity = table.Column<int>(type: "integer", nullable: false),
                     UnitPrice = table.Column<decimal>(type: "numeric", nullable: false),
                     Total = table.Column<decimal>(type: "numeric", nullable: false),
                     Description = table.Column<string>(type: "text", nullable: true),
@@ -772,6 +941,33 @@ namespace BizMate.Infrastructure.Migrations
                         principalTable: "Orders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "OrderTechnicians",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    OrderId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TechnicianId = table.Column<Guid>(type: "uuid", nullable: false),
+                    AssignedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OrderTechnicians", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_OrderTechnicians_Orders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "Orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_OrderTechnicians_Technicians_TechnicianId",
+                        column: x => x.TechnicianId,
+                        principalTable: "Technicians",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -901,6 +1097,21 @@ namespace BizMate.Infrastructure.Migrations
                 column: "StoreId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_HoldingTransactions_ProductId",
+                table: "HoldingTransactions",
+                column: "ProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_HoldingTransactions_Store_Tech_Product_Date",
+                table: "HoldingTransactions",
+                columns: new[] { "StoreId", "TechnicianId", "ProductId", "CreatedDate" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_HoldingTransactions_TechnicianId",
+                table: "HoldingTransactions",
+                column: "TechnicianId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ImportReceiptDetails_ImportReceiptId",
                 table: "ImportReceiptDetails",
                 column: "ImportReceiptId");
@@ -941,9 +1152,25 @@ namespace BizMate.Infrastructure.Migrations
                 column: "StoreId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Orders_TechnicianId",
+                table: "Orders",
+                column: "TechnicianId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_OrderStatusHistories_OrderId",
                 table: "OrderStatusHistories",
                 column: "OrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderTechnicians_Order_Technician",
+                table: "OrderTechnicians",
+                columns: new[] { "OrderId", "TechnicianId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderTechnicians_TechnicianId",
+                table: "OrderTechnicians",
+                column: "TechnicianId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Permissions_Name",
@@ -1024,6 +1251,45 @@ namespace BizMate.Infrastructure.Migrations
                 column: "StoreId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_TechnicianHoldings_ProductId",
+                table: "TechnicianHoldings",
+                column: "ProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TechnicianHoldings_Store_Technician_Product",
+                table: "TechnicianHoldings",
+                columns: new[] { "StoreId", "TechnicianId", "ProductId" },
+                unique: true,
+                filter: "\"IsDeleted\" = false");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TechnicianHoldings_TechnicianId",
+                table: "TechnicianHoldings",
+                column: "TechnicianId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Technicians_Store_Phone",
+                table: "Technicians",
+                columns: new[] { "StoreId", "Phone" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserPermissions_PermissionId",
+                table: "UserPermissions",
+                column: "PermissionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserPermissions_StoreId",
+                table: "UserPermissions",
+                column: "StoreId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserPermissions_UserId_StoreId_PermissionId",
+                table: "UserPermissions",
+                columns: new[] { "UserId", "StoreId", "PermissionId" },
+                unique: true,
+                filter: "\"IsDeleted\" = false");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_UserRoles_RoleId",
                 table: "UserRoles",
                 column: "RoleId");
@@ -1064,6 +1330,9 @@ namespace BizMate.Infrastructure.Migrations
                 name: "ExportReceiptDetails");
 
             migrationBuilder.DropTable(
+                name: "HoldingTransactions");
+
+            migrationBuilder.DropTable(
                 name: "InventoryTransactions");
 
             migrationBuilder.DropTable(
@@ -1073,6 +1342,9 @@ namespace BizMate.Infrastructure.Migrations
                 name: "OrderStatusHistories");
 
             migrationBuilder.DropTable(
+                name: "OrderTechnicians");
+
+            migrationBuilder.DropTable(
                 name: "OtpVerifications");
 
             migrationBuilder.DropTable(
@@ -1080,6 +1352,12 @@ namespace BizMate.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "Stocks");
+
+            migrationBuilder.DropTable(
+                name: "TechnicianHoldings");
+
+            migrationBuilder.DropTable(
+                name: "UserPermissions");
 
             migrationBuilder.DropTable(
                 name: "UserRoles");
@@ -1128,6 +1406,9 @@ namespace BizMate.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "Statuses");
+
+            migrationBuilder.DropTable(
+                name: "Technicians");
 
             migrationBuilder.DropTable(
                 name: "DealerLevels");

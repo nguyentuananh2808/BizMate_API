@@ -32,7 +32,7 @@ namespace BizMate.Application.UserCases.User.Queries.UserLogin
 
         public async Task<UserLoginResponse> UserLogin(UserLoginRequest request)
         {
-            var email = request.Email;
+            var email = request.Email.Trim().ToLowerInvariant();
             var password = request.Password;
 
             #region check email exist
@@ -44,6 +44,13 @@ namespace BizMate.Application.UserCases.User.Queries.UserLogin
                 return new UserLoginResponse(success: false, message);
             }
             #endregion
+
+            if (!emailDb.IsActive)
+            {
+                const string message = "Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.";
+                _logger.LogWarning("Tài khoản bị khóa đăng nhập: {Email}", emailDb.Email);
+                return new UserLoginResponse(success: false, message);
+            }
 
             #region Check password
             var isValidPassword = PasswordHasher.Verify(password, emailDb.PasswordHash, emailDb.PasswordSalt);

@@ -29,7 +29,9 @@ public static class InfrastructureDependencyInjection
     {
         // EF Core DbContext
         services.AddDbContext<AppDbContext>(options =>
-            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
+            options.UseNpgsql(
+                configuration.GetConnectionString("DefaultConnection"),
+                npgsqlOptions => npgsqlOptions.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName)));
 
         // ── Repositories hiện có ──────────────────────────────────────────────
         services.AddScoped<IUserRepository, UserRepository>();

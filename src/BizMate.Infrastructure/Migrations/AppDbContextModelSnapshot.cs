@@ -20,6 +20,7 @@ namespace BizMate.Infrastructure.Migrations
                 .HasAnnotation("ProductVersion", "9.0.6")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
+            NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "unaccent");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("BizMate.Domain.Entities.CodeSequence", b =>
@@ -644,8 +645,8 @@ namespace BizMate.Infrastructure.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
-                    b.Property<DateTime?>("InstallationDate")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<DateOnly?>("InstallationDate")
+                        .HasColumnType("date");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");

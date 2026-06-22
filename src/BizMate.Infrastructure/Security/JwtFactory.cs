@@ -42,7 +42,16 @@ namespace BizMate.Infrastructure.Security
                           && !up.Permission.IsDeleted)
                 .Select(up => up.Permission.Name);
 
+            var legacyRolePermissions = _context.Roles
+                .Where(role => role.Name == user.Role && !role.IsDeleted)
+                .SelectMany(role => role.RolePermissions
+                    .Where(rolePermission =>
+                        !rolePermission.IsDeleted &&
+                        !rolePermission.Permission.IsDeleted))
+                .Select(rolePermission => rolePermission.Permission.Name);
+
             var permissions = await rolePermissions
+                .Concat(legacyRolePermissions)
                 .Concat(directPermissions)
                 .Distinct()
                 .ToListAsync();

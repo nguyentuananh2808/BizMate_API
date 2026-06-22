@@ -16,7 +16,7 @@ namespace BizMate.Api.UserCases.Order.GetOrders
 
         public void Handle(GetOrdersResponse response)
         {
-            ContentResult.StatusCode = (int)(response.Success ? HttpStatusCode.OK : HttpStatusCode.Unauthorized);
+            ContentResult.StatusCode = (int)(response.Success ? HttpStatusCode.OK : HttpStatusCode.BadRequest);
             ContentResult.Content = response.Success
                 ? CommonJsonSerializer.SerializeObject(
                     new GetOrdersResponseViewModel(response.Orders, response.TotalCount))

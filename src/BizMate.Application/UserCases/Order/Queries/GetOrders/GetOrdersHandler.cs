@@ -44,7 +44,8 @@ namespace BizMate.Application.UserCases.Order.Queries.GetOrders
                     keyword: request.KeySearch,
                     pageIndex: request.PageIndex,
                     pageSize: request.PageSize,
-                    queryFactory: _queryFactory
+                    queryFactory: _queryFactory,
+                    cancellationToken: cancellationToken
                 );
 
 
@@ -52,8 +53,8 @@ namespace BizMate.Application.UserCases.Order.Queries.GetOrders
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Lỗi khi truy vấn danh sách phiếu nhập.");
-                return new GetOrdersResponse(false, "Không thể tải danh sách phiếu nhập kho. Vui lòng thử lại.");
+                _logger.LogError(ex, "Lỗi khi truy vấn danh sách đơn hàng.");
+                return new GetOrdersResponse(false, "Không thể tải danh sách đơn hàng. Vui lòng thử lại.");
             }
         }
     }

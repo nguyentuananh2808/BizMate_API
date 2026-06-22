@@ -1,4 +1,4 @@
-@BizMate.Api_HostAddress = http://localhost:5051
+@BizMate.Api_HostAddress = http://192.168.1.204:5051
 
 GET {{BizMate.Api_HostAddress}}/weatherforecast/
 Accept: application/json

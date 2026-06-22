@@ -19,7 +19,7 @@
 
         public Guid? TechnicianId { get; set; }
         public Technician? Technician { get; set; }
-        public DateTime? InstallationDate { get; set; }
+        public DateOnly? InstallationDate { get; set; }
         public DateTime? TechnicianExportedAt { get; set; }
 
         // Trạng thái đơn hàng

@@ -1,6 +1,5 @@
 **/bin/
 **/obj/
-**/Migrations/
 .env
 .vscode/
 .idea/

@@ -15,9 +15,12 @@ namespace BizMate.Infrastructure.Persistence.Repositories
 
         public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
         {
+            var normalizedEmail = email.Trim().ToLower();
             return await _context.Users
                 .Include(x => x.Store) 
-                .FirstOrDefaultAsync(u => u.Email == email && !u.IsDeleted, cancellationToken);
+                .FirstOrDefaultAsync(
+                    u => u.Email.ToLower() == normalizedEmail && !u.IsDeleted,
+                    cancellationToken);
         }
 
         public async Task<User?> GetByIdInStoreAsync(

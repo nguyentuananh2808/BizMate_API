@@ -37,7 +37,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserRegister
 
         private async Task<UserRegisterResponse> UserRegister(UserRegisterRequest request, CancellationToken cancellationToken)
         {
-            var email = request.Email.Trim();
+            var email = request.Email.Trim().ToLowerInvariant();
 
             #region Check email exists
             var emailDb = await _userRepository.GetByEmailAsync(email, cancellationToken);
@@ -56,14 +56,15 @@ namespace BizMate.Application.UserCases.User.Commands.UserRegister
             await _otpVerificationRepository.AddOtpAsync(email, otpCode, expiredAt, cancellationToken);
             var tempData = new TempOtpUserData
             {
-                Email = request.Email,
+                Email = email,
                 FullName = request.FullName,
                 StoreName = request.NameStore,
                 Otp = otpCode,
                 Password = request.Password,
+                Purpose = OtpPurpose.Registration,
             };
 
-            await _otpStore.SaveOtpAsync(request.Email, tempData, TimeSpan.FromMinutes(5), cancellationToken);
+            await _otpStore.SaveOtpAsync(email, tempData, TimeSpan.FromMinutes(5), cancellationToken);
 
             try
             {

@@ -13,6 +13,11 @@ namespace BizMate.Infrastructure.Persistence.Repositories
         public async Task<Role?> GetByIdAsync(Guid id, CancellationToken ct = default)
             => await _context.Roles.FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted, ct);
 
+        public async Task<Role?> GetByNameAsync(string name, CancellationToken ct = default)
+            => await _context.Roles.FirstOrDefaultAsync(
+                r => r.Name.ToLower() == name.Trim().ToLower() && !r.IsDeleted,
+                ct);
+
         public async Task<Role?> GetByIdWithPermissionsAsync(Guid id, CancellationToken ct = default)
             => await _context.Roles
                 .Include(r => r.RolePermissions).ThenInclude(rp => rp.Permission)

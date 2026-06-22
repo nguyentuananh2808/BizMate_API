@@ -31,12 +31,18 @@ public class StockRepository : IStockRepository
         await _context.SaveChangesAsync();
     }
 
-    public async Task UpdateAsync(IEnumerable<Stock> stocks, CancellationToken cancellationToken)
+    //public async Task UpdateAsync(IEnumerable<Stock> stocks, CancellationToken cancellationToken)
+    //{
+    //    _context.Stocks.UpdateRange(stocks);
+    //    await _context.SaveChangesAsync(cancellationToken);
+    //}
+    public async Task UpdateAsync(
+    IEnumerable<Stock> stocks,
+    CancellationToken cancellationToken)
     {
         _context.Stocks.UpdateRange(stocks);
         await _context.SaveChangesAsync(cancellationToken);
     }
-
     public async Task DeleteAsync(Guid id)
     {
         var stock = await _context.Stocks.FindAsync(id);

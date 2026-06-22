@@ -1,42 +1,69 @@
-version: '3.8'
-
 services:
   bizmate-api:
     build:
       context: .
       dockerfile: src/BizMate.Api/Dockerfile
+    container_name: bizmate-api
+    restart: always
     ports:
-      - "5000:80"
+      - "5000:8080"
+      - "5051:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=postgres;Database=vuakong;Username=vuakong;Password=vuakongfishing@
+      - ASPNETCORE_URLS=http://+:8080
+      - TZ=Asia/Ho_Chi_Minh
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=atp;Username=atp;Password=atp@
       - ConnectionStrings__Redis=redis:6379
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - atp_network
 
   postgres:
-    image: postgres:16
-    container_name: vuakong-postgres
+    image: postgres:16-alpine
+    container_name: atp-postgres
     restart: always
     environment:
-      POSTGRES_USER: vuakong
-      POSTGRES_PASSWORD: vuakongfishing@
-      POSTGRES_DB: vuakong
+      POSTGRES_USER: atp
+      POSTGRES_PASSWORD: atp@
+      POSTGRES_DB: atp
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U atp -d atp"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - atp_network
 
   redis:
-    image: redis:7
-    container_name: vuakong-redis
+    image: redis:7-alpine
+    container_name: atp-redis
     restart: always
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - atp_network
 
 volumes:
   postgres_data:
+    driver: local
   redis_data:
+    driver: local
+
+networks:
+  atp_network:
+    driver: bridge

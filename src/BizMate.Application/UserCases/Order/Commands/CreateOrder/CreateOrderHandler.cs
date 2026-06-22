@@ -105,9 +105,7 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
                     CustomerType = request.CustomerType,
                     DeliveryAddress = request.DeliveryAddress,
                     TechnicianId = technicianIds.FirstOrDefault() == Guid.Empty ? null : technicianIds.First(),
-                    InstallationDate = request.InstallationDate.HasValue
-                    ? DateTime.SpecifyKind(request.InstallationDate.Value, DateTimeKind.Utc)
-                    : null,
+                    InstallationDate = request.InstallationDate,
                     StatusId = statusId,
                     Description = request.Description,
                     OrderTechnicians = BuildOrderTechnicians(orderId, technicianIds),
@@ -165,10 +163,10 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
                 cancellationToken);
 
             if (technicians.Count != technicianIds.Count)
-                throw new InvalidOperationException("Danh sach ky thuat co nguoi khong ton tai trong store hien tai.");
+                throw new InvalidOperationException("Danh sách kỹ thuật có người không tồn tại trong store hiện tại.");
 
             if (technicians.Any(x => !x.IsActive))
-                throw new InvalidOperationException("Danh sach ky thuat co nguoi dang ngung hoat dong.");
+                throw new InvalidOperationException("Danh sách kỹ thuật có người đang ngừng hoạt động.");
         }
 
         private static List<Guid> NormalizeTechnicianIds(
@@ -194,7 +192,7 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
             void Add(Guid id)
             {
                 if (id == Guid.Empty)
-                    throw new InvalidOperationException("TechnicianId khong hop le.");
+                    throw new InvalidOperationException("TechnicianId không hợp lệ.");
 
                 if (!result.Contains(id))
                     result.Add(id);
@@ -236,7 +234,7 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
 
                 var quantity = detailGroup.Sum(x => x.Quantity);
                 if (stock.Available < quantity)
-                    throw new InvalidOperationException($"Sản phẩm {detailGroup.Key} không dư tồn. Khả dụng {stock.Available}, cần {quantity}.");
+                    throw new InvalidOperationException($"Sản phẩm {detailGroup.Key} không đủ tồn. Khả dụng {stock.Available}, cần {quantity}.");
 
                 stock.Reserved += quantity;
                 stock.UpdatedBy = userId;
@@ -289,7 +287,7 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
             CancellationToken cancellationToken)
         {
             if (details.Count == 0)
-                throw new InvalidOperationException("Don hang phai co it nhat mot dong san pham.");
+                throw new InvalidOperationException("Đơn hàng phải có ít nhất một dòng sản phẩm.");
 
             var allSerials = new List<string>();
             var serialsByProductId = new Dictionary<Guid, List<string>>();
@@ -304,15 +302,15 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
 
                 var duplicates = SerialNumberNormalizer.FindDuplicates(detail.SerialNumbers);
                 if (duplicates.Count > 0)
-                    throw new InvalidOperationException($"SN bi trung trong dong san pham {product.Code}: {string.Join(", ", duplicates)}.");
+                    throw new InvalidOperationException($"SN bị trùng trong dòng sản phẩm {product.Code}: {string.Join(", ", duplicates)}.");
 
                 var serials = SerialNumberNormalizer.Normalize(detail.SerialNumbers);
 
                 if (product.IsSerialTracked && serials.Count != detail.Quantity)
-                    throw new InvalidOperationException($"San pham {product.Code} can dung {detail.Quantity} SN de tao don.");
+                    throw new InvalidOperationException($"Sản phẩm {product.Code} cần đúng {detail.Quantity} SN để tạo đơn.");
 
                 if (!product.IsSerialTracked && serials.Count > 0)
-                    throw new InvalidOperationException($"San pham {product.Code} khong bat quan ly SN.");
+                    throw new InvalidOperationException($"Sản phẩm {product.Code} không bật quản lý SN.");
 
                 allSerials.AddRange(serials);
 
@@ -335,7 +333,7 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
                 .ToList();
 
             if (duplicateAcrossDetails.Count > 0)
-                throw new InvalidOperationException($"SN bi trung trong don hang: {string.Join(", ", duplicateAcrossDetails)}.");
+                throw new InvalidOperationException($"SN bị trùng trong đơn hàng: {string.Join(", ", duplicateAcrossDetails)}.");
 
             var productItems = await _productItemRepository.GetBySerialNumbersAsync(allSerials, cancellationToken);
             var productItemsBySerial = productItems.ToDictionary(x => x.SerialNumber, StringComparer.OrdinalIgnoreCase);
@@ -347,13 +345,13 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
                 foreach (var serial in serials)
                 {
                     if (!productItemsBySerial.TryGetValue(serial, out var item))
-                        throw new InvalidOperationException($"SN {serial} khong ton tai.");
+                        throw new InvalidOperationException($"SN {serial} không tồn tại.");
 
                     if (item.StoreId != storeId)
-                        throw new InvalidOperationException($"SN {serial} khong thuoc cua hang hien tai.");
+                        throw new InvalidOperationException($"SN {serial} không thuộc cửa hàng hiện tại.");
 
                     if (item.ProductId != productId)
-                        throw new InvalidOperationException($"SN {serial} khong thuoc san pham {product.Code}.");
+                        throw new InvalidOperationException($"SN {serial} không thuộc sản phẩm {product.Code}.");
 
                     if (item.Status != ProductItemStatus.InStock)
                         throw new InvalidOperationException(GetUnavailableSerialMessage(item, serial));
@@ -424,11 +422,11 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
             if (item.Status == ProductItemStatus.Reserved)
             {
                 return item.OrderDetailId.HasValue
-                    ? $"SN {serial} da duoc giu cho don hang khac."
-                    : $"SN {serial} dang o trang thai da giu cho.";
+                    ? $"SN {serial} đã được giữ cho đơn hàng khác."
+                    : $"SN {serial} đang ở trạng thái đã giữ chỗ.";
             }
 
-            return $"SN {serial} khong kha dung de xuat. Trang thai hien tai: {item.Status}.";
+            return $"SN {serial} không khả dụng để xuất. Trạng thái hiện tại: {item.Status}.";
         }
     }
 }

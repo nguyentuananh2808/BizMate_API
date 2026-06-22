@@ -126,10 +126,10 @@ namespace BizMate.Application.UserCases.TechnicianHolding
             var zaloPhone = request.ZaloPhone?.Trim();
 
             if (string.IsNullOrWhiteSpace(name))
-                return new TechnicianMutationResponse(false, "Ten ky thuat khong duoc de trong.");
+                return new TechnicianMutationResponse(false, "Tên kỹ thuật không được để trống.");
             if (!string.IsNullOrWhiteSpace(phone)
                 && await _repo.ExistsTechnicianPhoneAsync(_userSession.StoreId, phone, null, ct))
-                return new TechnicianMutationResponse(false, "So dien thoai ky thuat da ton tai.");
+                return new TechnicianMutationResponse(false, "Số điện thoại kỹ thuật đã tồn tại.");
 
             var userId = Guid.TryParse(_userSession.UserId, out var parsedUserId) ? parsedUserId : (Guid?)null;
             var technician = new Technician
@@ -148,7 +148,7 @@ namespace BizMate.Application.UserCases.TechnicianHolding
             _repo.AddTechnician(technician);
             await _uow.SaveChangesAsync(ct);
 
-            return new TechnicianMutationResponse(technician.Id, "Tao ky thuat thanh cong.");
+            return new TechnicianMutationResponse(technician.Id, "Tạo kỹ thuật thành công.");
         }
     }
 
@@ -171,22 +171,22 @@ namespace BizMate.Application.UserCases.TechnicianHolding
         public async Task<TechnicianMutationResponse> Handle(UpdateTechnicianRequest request, CancellationToken ct)
         {
             if (request.Id == Guid.Empty)
-                return new TechnicianMutationResponse(false, "TechnicianId khong hop le.");
+                return new TechnicianMutationResponse(false, "TechnicianId không hợp lệ.");
 
             var name = request.Name?.Trim();
             var phone = request.Phone?.Trim();
             var zaloPhone = request.ZaloPhone?.Trim();
 
             if (string.IsNullOrWhiteSpace(name))
-                return new TechnicianMutationResponse(false, "Ten ky thuat khong duoc de trong.");
+                return new TechnicianMutationResponse(false, "Tên kỹ thuật không được để trống.");
 
             var technician = await _repo.GetTechnicianAsync(request.Id, _userSession.StoreId, ct);
             if (technician is null)
-                return new TechnicianMutationResponse(false, "Khong tim thay ky thuat trong store hien tai.");
+                return new TechnicianMutationResponse(false, "Không tìm thấy kỹ thuật trong store hiện tại.");
 
             if (!string.IsNullOrWhiteSpace(phone)
                 && await _repo.ExistsTechnicianPhoneAsync(_userSession.StoreId, phone, request.Id, ct))
-                return new TechnicianMutationResponse(false, "So dien thoai ky thuat da ton tai.");
+                return new TechnicianMutationResponse(false, "Số điện thoại kỹ thuật đã tồn tại.");
 
             technician.Name = name;
             technician.Phone = phone;
@@ -196,7 +196,7 @@ namespace BizMate.Application.UserCases.TechnicianHolding
             technician.UpdatedBy = Guid.TryParse(_userSession.UserId, out var userId) ? userId : null;
 
             await _uow.SaveChangesAsync(ct);
-            return new TechnicianMutationResponse(technician.Id, "Cap nhat ky thuat thanh cong.");
+            return new TechnicianMutationResponse(technician.Id, "Cập nhật kỹ thuật thành công.");
         }
     }
 }

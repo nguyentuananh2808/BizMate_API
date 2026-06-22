@@ -181,7 +181,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
 
             if (order == null) return null;
 
-            var productIds = order.Details.Select(d => d.ProductId).ToList();
+            var productIds = order.Details.Select(d => d.ProductId).Distinct().ToList();
 
             var stocks = await _context.Stocks
                  .Where(s => s.StoreId == order.StoreId
@@ -193,6 +193,11 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                      Available = s.Quantity - s.Reserved
                  })
                  .ToDictionaryAsync(x => x.ProductId, x => x.Available, cancellationToken);
+
+            var serialTrackedByProduct = await _context.Products
+                .Where(x => productIds.Contains(x.Id) && !x.IsDeleted)
+                .Select(x => new { x.Id, x.IsSerialTracked })
+                .ToDictionaryAsync(x => x.Id, x => x.IsSerialTracked, cancellationToken);
 
             var dto = new OrderCoreDto
             {
@@ -225,6 +230,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                     ProductCode = d.ProductCode,
                     ProductName = d.ProductName,
                     Quantity = d.Quantity,
+                    IsSerialTracked = serialTrackedByProduct.GetValueOrDefault(d.ProductId),
                     Unit = d.Unit,
                     UnitPrice = d.UnitPrice,
                     BorrowedQuantity = d.BorrowedQuantity,
@@ -279,69 +285,87 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             QueryFactory queryFactory,
             CancellationToken cancellationToken)
         {
-            var baseQuery = queryFactory.Query("Orders as r")
-                .LeftJoin("Statuses as s", "r.StatusId", "s.Id")
-                .Where("r.StoreId", storeId)
-                .WhereFalse("r.IsDeleted");
+            var normalizedPageIndex = pageIndex <= 0 ? 1 : pageIndex;
+            var normalizedPageSize = pageSize <= 0 ? 10 : Math.Min(pageSize, 200);
 
-            //  Search linh hoạt: bỏ dấu + lowercase
+            var baseQuery = _context.Orders
+                .AsNoTracking()
+                .Where(x => x.StoreId == storeId && !x.IsDeleted);
+
             if (!string.IsNullOrWhiteSpace(keyword))
             {
-                var keywordLower = keyword.ToLower();
-
-                baseQuery.Where(q =>
-                    q.WhereRaw(@"LOWER(unaccent(r.""Code"")) LIKE unaccent(?)", $"%{keywordLower}%")
-                     .OrWhereRaw(@"LOWER(unaccent(r.""CustomerName"")) LIKE unaccent(?)", $"%{keywordLower}%")
-                     .OrWhereRaw(@"LOWER(unaccent(r.""CustomerPhone"")) LIKE unaccent(?)", $"%{keywordLower}%"));
+                var pattern = $"%{keyword.Trim()}%";
+                baseQuery = baseQuery.Where(x =>
+                    EF.Functions.ILike(x.Code, pattern)
+                    || EF.Functions.ILike(x.CustomerName, pattern)
+                    || EF.Functions.ILike(x.CustomerPhone, pattern));
             }
 
-            // Filter ngày
             if (dateFrom.HasValue)
-                baseQuery.Where("r.OrderDate", ">=", dateFrom.Value);
+            {
+                var fromUtc = NormalizeDateTimeForPostgres(dateFrom.Value);
+                baseQuery = baseQuery.Where(x => x.OrderDate >= fromUtc);
+            }
 
             if (dateTo.HasValue)
-                baseQuery.Where("r.OrderDate", "<=", dateTo.Value);
-
-            //  Filter status
-            if (statusIds != null && statusIds.Any())
-                baseQuery.WhereIn("s.Id", statusIds);
-
-            // Tổng số record
-            var totalCount = await baseQuery.Clone().CountAsync<int>();
-
-            // Lấy danh sách có phân trang
-            var rows = await baseQuery
-                .Select("r.*", "s.Id as Status_Id", "s.Name as Status_Name", "s.Code as Status_Code")
-                .OrderByDesc("r.Code")
-                .Offset((pageIndex - 1) * pageSize)
-                .Limit(pageSize)
-                .GetAsync();
-
-            var results = rows.Select(row => new OrderCoreDto
             {
-                Id = row.Id,
-                StoreId = row.StoreId,
-                Code = row.Code,
-                CustomerName = row.CustomerName,
-                CustomerType = row.CustomerType,
-                CustomerPhone = row.CustomerPhone,
-                CustomerId = row.CustomerId,
-                DeliveryAddress = row.DeliveryAddress,
-                TotalAmount = row.TotalAmount,
-                TechnicianId = row.TechnicianId,
-                InstallationDate = row.InstallationDate,
-                TechnicianExportedAt = row.TechnicianExportedAt,
-                StatusId = row.StatusId,
-                Description = row.Description,
-                StatusName = row.Status_Name,
-                CreatedDate = row.CreatedDate,
-                UpdatedDate = row.UpdateDate
-            }).ToList();
+                var toUtc = NormalizeDateTimeForPostgres(dateTo.Value);
+                baseQuery = baseQuery.Where(x => x.OrderDate <= toUtc);
+            }
+
+            var statusIdList = statusIds?
+                .Where(x => x != Guid.Empty)
+                .Distinct()
+                .ToList();
+
+            if (statusIdList is { Count: > 0 })
+                baseQuery = baseQuery.Where(x => statusIdList.Contains(x.StatusId));
+
+            var totalCount = await baseQuery.CountAsync(cancellationToken);
+
+            var results = await baseQuery
+                .OrderByDescending(x => x.Code)
+                .Skip((normalizedPageIndex - 1) * normalizedPageSize)
+                .Take(normalizedPageSize)
+                .Select(x => new OrderCoreDto
+                {
+                    Id = x.Id,
+                    StoreId = x.StoreId,
+                    Code = x.Code,
+                    OrderDate = x.OrderDate,
+                    CustomerName = x.CustomerName,
+                    CustomerType = x.CustomerType,
+                    CustomerPhone = x.CustomerPhone,
+                    CustomerId = x.CustomerId,
+                    DeliveryAddress = x.DeliveryAddress,
+                    TotalAmount = x.TotalAmount,
+                    TechnicianId = x.TechnicianId,
+                    TechnicianName = x.Technician != null ? x.Technician.Name : null,
+                    InstallationDate = x.InstallationDate,
+                    TechnicianExportedAt = x.TechnicianExportedAt,
+                    StatusId = x.StatusId,
+                    Description = x.Description,
+                    StatusName = x.Status.Name,
+                    CreatedDate = x.CreatedDate,
+                    UpdatedDate = x.UpdatedDate,
+                    RowVersion = x.RowVersion,
+                    IsActive = x.IsActive,
+                    IsDeleted = x.IsDeleted
+                })
+                .ToListAsync(cancellationToken);
 
             await AttachTechniciansAsync(results, cancellationToken);
 
             return (results, totalCount);
         }
+
+        private static DateTime NormalizeDateTimeForPostgres(DateTime value)
+            => value.Kind switch
+            {
+                DateTimeKind.Utc => value,
+                DateTimeKind.Local => value.ToUniversalTime(),
+                _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
+            };
 
 
 
@@ -358,7 +382,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                     .SetProperty(x => x.UpdatedDate, statusOrder.UpdatedDate), cancellationToken);
 
             if (affectedRows == 0)
-                throw new InvalidOperationException("Khong the cap nhat trang thai don hang. Vui long tai lai du lieu.");
+                throw new InvalidOperationException("Không thể cập nhật trạng thái đơn hàng. Vui lòng tải lại dữ liệu.");
         }
 
         public async Task UpdateOrderAsync(

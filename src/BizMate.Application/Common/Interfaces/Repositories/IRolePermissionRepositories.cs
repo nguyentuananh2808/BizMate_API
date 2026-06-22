@@ -5,6 +5,7 @@ namespace BizMate.Application.Common.Interfaces.Repositories
     public interface IRoleRepository
     {
         Task<Role?> GetByIdAsync(Guid id, CancellationToken ct = default);
+        Task<Role?> GetByNameAsync(string name, CancellationToken ct = default);
         Task<Role?> GetByIdWithPermissionsAsync(Guid id, CancellationToken ct = default);
         Task<List<Role>> GetAllWithCountsAsync(CancellationToken ct = default);
         Task<bool> ExistsByNameAsync(string name, CancellationToken ct = default);

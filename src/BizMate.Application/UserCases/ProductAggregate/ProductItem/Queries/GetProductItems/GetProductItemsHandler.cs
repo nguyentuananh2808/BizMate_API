@@ -33,7 +33,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductItem.Queries.Get
                 if (request.Status.HasValue)
                 {
                     if (!Enum.IsDefined(typeof(ProductItemStatus), request.Status.Value))
-                        return new GetProductItemsResponse(false, "Trang thai SN khong hop le.");
+                        return new GetProductItemsResponse(false, "Trạng thái SN không hợp lệ.");
 
                     status = (ProductItemStatus)request.Status.Value;
                 }
@@ -72,8 +72,8 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductItem.Queries.Get
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Loi khi truy van danh sach SN.");
-                return new GetProductItemsResponse(false, "Khong the tai danh sach SN. Vui long thu lai.");
+                _logger.LogError(ex, "Lỗi khi truy vấn danh sách SN.");
+                return new GetProductItemsResponse(false, "Không thể tải danh sách SN. Vui lòng thử lại.");
             }
         }
     }

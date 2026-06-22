@@ -38,6 +38,7 @@ namespace BizMate.Domain.Constants
         public const string Upload           = "upload";
         public const string UserRegister     = "register";
         public const string Verify           = "verify";
+        public const string ForgotPassword   = "forgot-password";
         public const string ResetPassword    = "reset-password";
     }
 }

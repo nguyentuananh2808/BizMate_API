@@ -91,6 +91,9 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
                 if (currentStatus.Code is "CANCELLED" or "COMPLETED")
                     return await RollbackResponseAsync(ValidationMessage.LocalizedStrings.RoleWithoutAuthority, cancellationToken);
 
+                if (updateStatus.Code == "CANCELLED" && order.TechnicianExportedAt.HasValue)
+                    return await RollbackResponseAsync("Đơn hàng đã xuất cho kỹ thuật, không thể hủy trực tiếp. Vui lòng xử lý trả hàng hoặc hoàn tất phần hàng đã sử dụng.", cancellationToken);
+
                 if (updateStatus.Code == "COMPLETED" && currentStatus.Code != "PACKED")
                     return await RollbackResponseAsync("Đơn hàng phải ở trạng thái PACKED trước khi hoàn thành và xuất kho.", cancellationToken);
 
@@ -115,9 +118,13 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
 
                 if (currentStatus.Code == "PACKED" && updateStatus.Code == "COMPLETED")
                 {
-                    await CompleteSerialItemsForOrderAsync(order, request.Details, storeId, userId, cancellationToken);
                     await CreateExportReceipt(order, cancellationToken);
-                    await DeductStockAsync(storeId, order.Details, userId, cancellationToken);
+
+                    if (!order.TechnicianExportedAt.HasValue)
+                    {
+                        await CompleteSerialItemsForOrderAsync(order, request.Details, storeId, userId, cancellationToken);
+                        await DeductStockAsync(storeId, order.Details, userId, cancellationToken);
+                    }
                 }
 
                 var statusOrder = new UpdateOrderStatusDto
@@ -144,7 +151,7 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 await _unitOfWork.CommitAsync(cancellationToken);
 
-                return new UpdateStatusOrderResponse(true, "Cập nhật phiếu nhập kho thành công.");
+                return new UpdateStatusOrderResponse(true, "Cập nhật trạng thái đơn hàng thành công.");
             }
             catch (InvalidOperationException ex)
             {
@@ -155,8 +162,8 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
             catch (Exception ex)
             {
                 await _unitOfWork.RollbackAsync(cancellationToken);
-                _logger.LogError(ex, "Lỗi khi cập nhật trạng thái phiếu nhập kho.");
-                return new UpdateStatusOrderResponse(false, "Không thể cập nhật phiếu nhập kho. Vui lòng thử lại.");
+                _logger.LogError(ex, "Lỗi khi cập nhật trạng thái đơn hàng.");
+                return new UpdateStatusOrderResponse(false, "Không thể cập nhật trạng thái đơn hàng. Vui lòng thử lại.");
             }
         }
 
@@ -234,11 +241,14 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
                 CustomerPhone = order.CustomerPhone,
                 DeliveryAddress = order.DeliveryAddress,
                 Description = order.Description,
-                Details = order.Details.Select(d => new CreateExportReceiptDetail
-                {
-                    ProductId = d.ProductId,
-                    Quantity = d.Quantity
-                }).ToList()
+                Details = order.Details
+                    .Select(d => new CreateExportReceiptDetail
+                    {
+                        ProductId = d.ProductId,
+                        Quantity = d.Quantity + d.UsedBorrowedQuantity
+                    })
+                    .Where(d => d.Quantity > 0)
+                    .ToList()
             };
 
             var response = await _mediator.Send(request, cancellationToken);
@@ -280,7 +290,7 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
                 if (!products[detail.ProductId].IsSerialTracked)
                 {
                     if (serialMap.TryGetValue(detail.Id, out var ignoredSerials) && ignoredSerials.Count > 0)
-                        throw new InvalidOperationException($"San pham {detail.ProductCode} khong bat quan ly SN.");
+                        throw new InvalidOperationException($"Sản phẩm {detail.ProductCode} không bật quản lý SN.");
 
                     continue;
                 }
@@ -295,10 +305,10 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
                 }
 
                 if (existingReservedForDetail.Count > 0)
-                    throw new InvalidOperationException($"Du lieu SN cua san pham {detail.ProductCode} khong khop so luong giu cho.");
+                    throw new InvalidOperationException($"Dữ liệu SN của sản phẩm {detail.ProductCode} không khớp số lượng giữ chỗ.");
 
                 if (!serialMap.TryGetValue(detail.Id, out var serials) || serials.Count != detail.Quantity)
-                    throw new InvalidOperationException($"San pham {detail.ProductCode} can {detail.Quantity} SN.");
+                    throw new InvalidOperationException($"Sản phẩm {detail.ProductCode} cần {detail.Quantity} SN.");
 
                 serialsToReserve[detail.Id] = serials;
             }
@@ -365,7 +375,7 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
                 if (!products[detail.ProductId].IsSerialTracked)
                 {
                     if (serialMap.TryGetValue(detail.Id, out var ignoredSerials) && ignoredSerials.Count > 0)
-                        throw new InvalidOperationException($"San pham {detail.ProductCode} khong bat quan ly SN.");
+                        throw new InvalidOperationException($"Sản phẩm {detail.ProductCode} không bật quản lý SN.");
 
                     continue;
                 }
@@ -383,10 +393,10 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
                 else
                 {
                     if (detailReservedItems.Count > 0)
-                        throw new InvalidOperationException($"Du lieu SN cua san pham {detail.ProductCode} khong khop so luong xuat.");
+                        throw new InvalidOperationException($"Dữ liệu SN của sản phẩm {detail.ProductCode} không khớp số lượng xuất.");
 
                     if (!serialMap.TryGetValue(detail.Id, out var serials) || serials.Count != detail.Quantity)
-                        throw new InvalidOperationException($"San pham {detail.ProductCode} can {detail.Quantity} SN de xuat kho.");
+                        throw new InvalidOperationException($"Sản phẩm {detail.ProductCode} cần {detail.Quantity} SN để xuất kho.");
 
                     selectedItems.AddRange(serials.Select(serial =>
                         GetValidatedItem(requestedItemBySerial, serial, detail, storeId, ProductItemStatus.InStock)));
@@ -460,11 +470,11 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
 
                 var duplicates = SerialNumberNormalizer.FindDuplicates(requestDetail.SerialNumbers);
                 if (duplicates.Count > 0)
-                    throw new InvalidOperationException($"SN bi trung: {string.Join(", ", duplicates)}");
+                    throw new InvalidOperationException($"SN bị trùng: {string.Join(", ", duplicates)}");
 
                 var orderDetail = ResolveOrderDetail(orderDetailsList, requestDetail);
                 if (serialMap.ContainsKey(orderDetail.Id))
-                    throw new InvalidOperationException($"Dong san pham {orderDetail.ProductCode} bi gui SN nhieu lan.");
+                    throw new InvalidOperationException($"Dòng sản phẩm {orderDetail.ProductCode} bị gửi SN nhiều lần.");
 
                 serialMap[orderDetail.Id] = serials;
                 allSerials.AddRange(serials);
@@ -477,7 +487,7 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
                 .ToList();
 
             if (duplicateAcrossDetails.Count > 0)
-                throw new InvalidOperationException($"SN bi trung trong don hang: {string.Join(", ", duplicateAcrossDetails)}");
+                throw new InvalidOperationException($"SN bị trùng trong đơn hàng: {string.Join(", ", duplicateAcrossDetails)}");
 
             return serialMap;
         }
@@ -489,7 +499,7 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
             if (requestDetail.OrderDetailId.HasValue)
             {
                 return orderDetails.FirstOrDefault(x => x.Id == requestDetail.OrderDetailId.Value)
-                    ?? throw new InvalidOperationException($"Order detail {requestDetail.OrderDetailId.Value} khong ton tai.");
+                    ?? throw new InvalidOperationException($"Dòng đơn hàng {requestDetail.OrderDetailId.Value} không tồn tại.");
             }
 
             var matches = orderDetails.Where(x => x.ProductId == requestDetail.ProductId).ToList();
@@ -497,9 +507,9 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
                 return matches[0];
 
             if (matches.Count == 0)
-                throw new InvalidOperationException($"San pham {requestDetail.ProductId} khong co trong don hang.");
+                throw new InvalidOperationException($"Sản phẩm {requestDetail.ProductId} không có trong đơn hàng.");
 
-            throw new InvalidOperationException($"San pham {requestDetail.ProductId} co nhieu dong, can gui OrderDetailId.");
+            throw new InvalidOperationException($"Sản phẩm {requestDetail.ProductId} có nhiều dòng, cần gửi OrderDetailId.");
         }
 
         private static void ValidateRequiredSerials(
@@ -512,13 +522,13 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
                 if (!products[detail.ProductId].IsSerialTracked)
                 {
                     if (serialMap.TryGetValue(detail.Id, out var ignoredSerials) && ignoredSerials.Count > 0)
-                        throw new InvalidOperationException($"San pham {detail.ProductCode} khong bat quan ly SN.");
+                        throw new InvalidOperationException($"Sản phẩm {detail.ProductCode} không bật quản lý SN.");
 
                     continue;
                 }
 
                 if (!serialMap.TryGetValue(detail.Id, out var serials) || serials.Count != detail.Quantity)
-                    throw new InvalidOperationException($"San pham {detail.ProductCode} can {detail.Quantity} SN.");
+                    throw new InvalidOperationException($"Sản phẩm {detail.ProductCode} cần {detail.Quantity} SN.");
             }
         }
 
@@ -533,7 +543,7 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
             foreach (var productId in productIds)
             {
                 if (!productDict.ContainsKey(productId))
-                    throw new InvalidOperationException($"San pham {productId} khong ton tai.");
+                    throw new InvalidOperationException($"Sản phẩm {productId} không tồn tại.");
             }
 
             return productDict;
@@ -547,26 +557,26 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
             ProductItemStatus expectedStatus)
         {
             if (!itemBySerial.TryGetValue(serial, out var item))
-                throw new InvalidOperationException($"SN {serial} khong ton tai.");
+                throw new InvalidOperationException($"SN {serial} không tồn tại.");
 
             if (item.StoreId != storeId)
-                throw new InvalidOperationException($"SN {serial} khong thuoc cua hang hien tai.");
+                throw new InvalidOperationException($"SN {serial} không thuộc cửa hàng hiện tại.");
 
             if (item.ProductId != detail.ProductId)
-                throw new InvalidOperationException($"SN {serial} khong thuoc san pham {detail.ProductCode}.");
+                throw new InvalidOperationException($"SN {serial} không thuộc sản phẩm {detail.ProductCode}.");
 
             if (item.Status != expectedStatus)
             {
                 if (item.Status == ProductItemStatus.Reserved)
                 {
                     var ownerMessage = item.OrderDetailId == detail.Id
-                        ? "SN nay da duoc giu cho dong san pham hien tai."
-                        : "SN nay da duoc giu cho don hang khac.";
+                        ? "SN này đã được giữ cho dòng sản phẩm hiện tại."
+                        : "SN này đã được giữ cho đơn hàng khác.";
 
-                    throw new InvalidOperationException($"SN {serial} khong kha dung. {ownerMessage}");
+                    throw new InvalidOperationException($"SN {serial} không khả dụng. {ownerMessage}");
                 }
 
-                throw new InvalidOperationException($"SN {serial} khong kha dung de xuat. Trang thai hien tai: {item.Status}.");
+                throw new InvalidOperationException($"SN {serial} không khả dụng để xuất. Trạng thái hiện tại: {item.Status}.");
             }
 
             return item;
@@ -578,7 +588,7 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
             IReadOnlyCollection<ProductItem> reservedItems)
         {
             if (requestedSerials.Count != detail.Quantity)
-                throw new InvalidOperationException($"San pham {detail.ProductCode} can dung {detail.Quantity} SN.");
+                throw new InvalidOperationException($"Sản phẩm {detail.ProductCode} cần đúng {detail.Quantity} SN.");
 
             var reservedSerials = reservedItems
                 .Select(x => x.SerialNumber)
@@ -589,7 +599,7 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
                 .ToList();
 
             if (invalidSerials.Count > 0)
-                throw new InvalidOperationException($"SN da giu cua san pham {detail.ProductCode} khong khop: {string.Join(", ", invalidSerials)}.");
+                throw new InvalidOperationException($"SN đã giữ của sản phẩm {detail.ProductCode} không khớp: {string.Join(", ", invalidSerials)}.");
         }
 
         private static InventoryTransaction CreateTransaction(

@@ -1,12 +1,18 @@
-﻿namespace BizMate.Application.UserCases.User.Commands.UserRegister
+namespace BizMate.Application.UserCases.User.Commands.UserRegister
 {
-    public class TempOtpUserData
+    public static class OtpPurpose
     {
-        public string Email { get; set; }
-        public string FullName { get; set; }
-        public string StoreName { get; set; }
-        public string Otp { get; set; }
-        public string Password { get; set; }
+        public const string Registration = "Registration";
+        public const string PasswordReset = "PasswordReset";
     }
 
+    public class TempOtpUserData
+    {
+        public string Email { get; set; } = default!;
+        public string FullName { get; set; } = string.Empty;
+        public string StoreName { get; set; } = string.Empty;
+        public string Otp { get; set; } = default!;
+        public string Password { get; set; } = string.Empty;
+        public string Purpose { get; set; } = OtpPurpose.Registration;
+    }
 }

@@ -18,6 +18,8 @@ namespace BizMate.Application.UserCases.Order.Queries.GetOrders
 
         public GetOrdersResponse(bool success = false, string? message = null) : base(success, message)
         {
+            Orders = Enumerable.Empty<OrderCoreDto>();
+            TotalCount = 0;
         }
     }
 }

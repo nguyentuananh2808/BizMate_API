@@ -5,12 +5,10 @@ using BizMate.Application.Common.Message;
 using BizMate.Application.Common.Requests.Validators;
 using BizMate.Domain.Constants;
 using BizMate.Infrastructure.Persistence;
-using BizMate.Infrastructure.Security;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.IdentityModel.Tokens.Jwt;
@@ -69,27 +67,6 @@ internal class Program
         builder.Services.AddDistributedMemoryCache();
 
         builder.Services.AddInfrastructure(builder.Configuration);
-
-        // Override AppDbContext để bật log EF Core rõ hơn.
-        // Nếu trong AddInfrastructure đã AddDbContext<AppDbContext>,
-        // đoạn này có thể gây đăng ký trùng. Nếu bị lỗi, nên chuyển phần options này vào AddInfrastructure.
-        builder.Services.AddDbContext<AppDbContext>((sp, options) =>
-        {
-            options.UseNpgsql(
-                builder.Configuration.GetConnectionString("DefaultConnection"));
-
-            options.EnableDetailedErrors();
-            options.EnableSensitiveDataLogging();
-
-            options.LogTo(
-                Console.WriteLine,
-                new[]
-                {
-                    DbLoggerCategory.Database.Command.Name,
-                    DbLoggerCategory.Update.Name
-                },
-                LogLevel.Information);
-        });
 
         builder.Services.Configure<JwtOptions>(
             builder.Configuration.GetSection("JwtOptions"));

@@ -25,12 +25,18 @@ namespace BizMate.Application.UserCases.User.Commands.AssignRole
     {
         private readonly IRoleRepository _roleRepo;
         private readonly IUserRoleRepository _userRoleRepo;
+        private readonly IUserRepository _userRepo;
         private readonly IUnitOfWork _uow;
 
-        public AssignRoleHandler(IRoleRepository roleRepo, IUserRoleRepository userRoleRepo, IUnitOfWork uow)
+        public AssignRoleHandler(
+            IRoleRepository roleRepo,
+            IUserRoleRepository userRoleRepo,
+            IUserRepository userRepo,
+            IUnitOfWork uow)
         {
             _roleRepo     = roleRepo;
             _userRoleRepo = userRoleRepo;
+            _userRepo     = userRepo;
             _uow          = uow;
         }
 
@@ -41,6 +47,22 @@ namespace BizMate.Application.UserCases.User.Commands.AssignRole
                 var role = await _roleRepo.GetByIdAsync(request.RoleId, ct);
                 if (role is null)
                     return new AssignRoleResponse(false, "Không tìm thấy vai trò.");
+                if (role.IsSystem &&
+                    string.Equals(role.Name, "Owner", StringComparison.OrdinalIgnoreCase))
+                {
+                    return new AssignRoleResponse(
+                        false,
+                        "Không thể gán vai trò chủ công ty cho nhân viên.");
+                }
+
+                var user = await _userRepo.GetByIdInStoreAsync(
+                    request.UserId,
+                    request.StoreId,
+                    ct);
+                if (user is null)
+                    return new AssignRoleResponse(false, "Không tìm thấy nhân viên trong công ty hiện tại.");
+                if (string.Equals(user.Role, "Owner", StringComparison.OrdinalIgnoreCase))
+                    return new AssignRoleResponse(false, "Không thể thay đổi vai trò tài khoản chủ công ty.");
 
                 var alreadyAssigned = await _userRoleRepo.ExistsAsync(
                     request.UserId, request.RoleId, request.StoreId, ct);

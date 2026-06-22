@@ -23,6 +23,13 @@ RUN dotnet publish -c Release -o /out
 # -------- Runtime stage --------
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 WORKDIR /app
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates tzdata \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV TZ=Asia/Ho_Chi_Minh
+
 COPY --from=build /out ./
 
 ENTRYPOINT ["dotnet", "BizMate.Api.dll"]

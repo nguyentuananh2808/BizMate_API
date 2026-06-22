@@ -46,25 +46,28 @@ namespace BizMate.Infrastructure.Persistence
         #endregion
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            foreach (var entry in ChangeTracker.Entries())
+            NormalizeDateTimesToUtc();
+            return await base.SaveChangesAsync(cancellationToken);
+        }
+
+        private void NormalizeDateTimesToUtc()
+        {
+            foreach (var entry in ChangeTracker.Entries()
+                .Where(x => x.State is EntityState.Added or EntityState.Modified))
             {
                 foreach (var property in entry.Properties)
                 {
-                    if (property.CurrentValue is DateTime dt)
-                    {
-                        Console.WriteLine(
-                            $"[DateTime] {entry.Entity.GetType().Name}.{property.Metadata.Name} = {dt:o} | Kind={dt.Kind}");
+                    if (property.CurrentValue is not DateTime value)
+                        continue;
 
-                        if (dt.Kind == DateTimeKind.Unspecified)
-                        {
-                            throw new Exception(
-                                $"DateTimeKind.Unspecified detected: {entry.Entity.GetType().Name}.{property.Metadata.Name}");
-                        }
-                    }
+                    property.CurrentValue = value.Kind switch
+                    {
+                        DateTimeKind.Utc => value,
+                        DateTimeKind.Local => value.ToUniversalTime(),
+                        _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
+                    };
                 }
             }
-
-            return await base.SaveChangesAsync(cancellationToken);
         }
         #region DbSet — phân quyền (đã thêm trước)
         public DbSet<Permission> Permissions => Set<Permission>();
@@ -82,6 +85,7 @@ namespace BizMate.Infrastructure.Persistence
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+            modelBuilder.HasPostgresExtension("unaccent");
 
             // ── Cấu hình cũ giữ nguyên ───────────────────────────────────────
             modelBuilder.Entity<WarrantyCode>()

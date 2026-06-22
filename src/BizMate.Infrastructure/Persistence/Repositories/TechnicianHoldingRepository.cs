@@ -17,6 +17,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
         {
             return await _context.Orders
                 .Include(x => x.Details)
+                .Include(x => x.Status)
                 .Include(x => x.Technician)
                 .Include(x => x.OrderTechnicians)
                     .ThenInclude(x => x.Technician)
@@ -199,6 +200,72 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                 })
                 .OrderByDescending(x => x.TotalSoldQuantity)
                 .ToListAsync(ct);
+        }
+
+        public async Task<int> DecreaseStockAsync(
+            Guid stockId,
+            int quantity,
+            int reservedToRelease,
+            Guid? userId,
+            DateTime now,
+            CancellationToken ct = default)
+        {
+            var rowVersion = Guid.NewGuid();
+
+            return await _context.Stocks
+                .Where(x => x.Id == stockId
+                    && !x.IsDeleted
+                    && x.Quantity >= quantity
+                    && x.Reserved >= reservedToRelease
+                    && x.Quantity - x.Reserved >= quantity - reservedToRelease)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(x => x.Quantity, x => x.Quantity - quantity)
+                    .SetProperty(x => x.Reserved, x => x.Reserved - reservedToRelease)
+                    .SetProperty(x => x.UpdatedBy, userId)
+                    .SetProperty(x => x.UpdatedDate, now)
+                    .SetProperty(x => x.RowVersion, rowVersion), ct);
+        }
+
+        public async Task<int> IncreaseOrderDetailBorrowedQuantityAsync(
+            Guid orderDetailId,
+            int quantity,
+            Guid? userId,
+            DateTime now,
+            CancellationToken ct = default)
+        {
+            var rowVersion = Guid.NewGuid();
+
+            return await _context.OrderDetails
+                .Where(x => x.Id == orderDetailId && !x.IsDeleted)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(x => x.BorrowedQuantity, x => x.BorrowedQuantity + quantity)
+                    .SetProperty(x => x.UpdatedBy, userId)
+                    .SetProperty(x => x.UpdatedDate, now)
+                    .SetProperty(x => x.RowVersion, rowVersion), ct);
+        }
+
+        public async Task<int> IncreaseHoldingQuantityAsync(
+            Guid holdingId,
+            int quantity,
+            Guid? userId,
+            DateTime now,
+            CancellationToken ct = default)
+        {
+            var rowVersion = Guid.NewGuid();
+
+            return await _context.TechnicianHoldings
+                .Where(x => x.Id == holdingId && !x.IsDeleted)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(x => x.Quantity, x => x.Quantity + quantity)
+                    .SetProperty(x => x.LastBorrowedAt, now)
+                    .SetProperty(x => x.UpdatedBy, userId)
+                    .SetProperty(x => x.UpdatedDate, now)
+                    .SetProperty(x => x.RowVersion, rowVersion), ct);
+        }
+
+        public void AddOrderDetail(OrderDetail detail)
+        {
+            _context.OrderDetails.Add(detail);
         }
 
         public void AddHolding(TechnicianHolding holding)
