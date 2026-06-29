@@ -14,5 +14,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserRegister
         public string Otp { get; set; } = default!;
         public string Password { get; set; } = string.Empty;
         public string Purpose { get; set; } = OtpPurpose.Registration;
+        public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+        public int FailedAttempts { get; set; }
     }
 }

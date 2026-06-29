@@ -5,7 +5,7 @@ using BizMate.Application.Common.Security;
 using BizMate.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace BizMate.Infrastructure.Persistence
+namespace BizMate.Infrastructure.Migrations
 {
     public class AppDbContext : DbContext
     {
@@ -43,6 +43,8 @@ namespace BizMate.Infrastructure.Persistence
         public DbSet<OrderTechnician> OrderTechnicians => Set<OrderTechnician>();
         public DbSet<TechnicianHolding> TechnicianHoldings => Set<TechnicianHolding>();
         public DbSet<HoldingTransaction> HoldingTransactions => Set<HoldingTransaction>();
+        public DbSet<TechnicianBorrowRequest> TechnicianBorrowRequests => Set<TechnicianBorrowRequest>();
+        public DbSet<TechnicianBorrowRequestItem> TechnicianBorrowRequestItems => Set<TechnicianBorrowRequestItem>();
         #endregion
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -125,6 +127,14 @@ namespace BizMate.Infrastructure.Persistence
                 b.Property(x => x.Name).IsRequired().HasMaxLength(200);
                 b.Property(x => x.Phone).HasMaxLength(30);
                 b.Property(x => x.ZaloPhone).HasMaxLength(30);
+                b.HasIndex(x => x.UserId)
+                    .IsUnique()
+                    .HasFilter("\"UserId\" IS NOT NULL")
+                    .HasDatabaseName("IX_Technicians_UserId");
+                b.HasOne(x => x.User)
+                    .WithOne(x => x.Technician)
+                    .HasForeignKey<Technician>(x => x.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
                 b.HasIndex(x => new { x.StoreId, x.Phone })
                     .HasDatabaseName("IX_Technicians_Store_Phone");
             });
@@ -132,10 +142,11 @@ namespace BizMate.Infrastructure.Persistence
             modelBuilder.Entity<TechnicianHolding>(b =>
             {
                 b.HasKey(x => x.Id);
-                b.HasIndex(x => new { x.StoreId, x.TechnicianId, x.ProductId })
+                b.Property(x => x.BorrowType).HasConversion<int>();
+                b.HasIndex(x => new { x.StoreId, x.TechnicianId, x.ProductId, x.BorrowType })
                     .IsUnique()
                     .HasFilter("\"IsDeleted\" = false")
-                    .HasDatabaseName("IX_TechnicianHoldings_Store_Technician_Product");
+                    .HasDatabaseName("IX_TechnicianHoldings_Store_Technician_Product_Type");
                 b.HasOne(x => x.Technician)
                     .WithMany(x => x.Holdings)
                     .HasForeignKey(x => x.TechnicianId)
@@ -150,6 +161,7 @@ namespace BizMate.Infrastructure.Persistence
             {
                 b.HasKey(x => x.Id);
                 b.Property(x => x.Type).HasConversion<int>();
+                b.Property(x => x.BorrowType).HasConversion<int>();
                 b.Property(x => x.ReferenceType).HasMaxLength(50);
                 b.Property(x => x.Note).HasMaxLength(500);
                 b.HasIndex(x => new { x.StoreId, x.TechnicianId, x.ProductId, x.CreatedDate })
@@ -158,6 +170,38 @@ namespace BizMate.Infrastructure.Persistence
                     .WithMany()
                     .HasForeignKey(x => x.TechnicianId)
                     .OnDelete(DeleteBehavior.Restrict);
+                b.HasOne(x => x.Product)
+                    .WithMany()
+                    .HasForeignKey(x => x.ProductId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<TechnicianBorrowRequest>(b =>
+            {
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Code).IsRequired().HasMaxLength(40);
+                b.Property(x => x.BorrowType).HasConversion<int>();
+                b.Property(x => x.RequestStatus).HasConversion<int>();
+                b.Property(x => x.RejectionReason).HasMaxLength(500);
+                b.HasIndex(x => new { x.StoreId, x.RequestStatus, x.NeededDate })
+                    .HasDatabaseName("IX_TechnicianBorrowRequests_Store_Status_Date");
+                b.HasOne(x => x.Technician)
+                    .WithMany()
+                    .HasForeignKey(x => x.TechnicianId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                b.HasMany(x => x.Items)
+                    .WithOne(x => x.TechnicianBorrowRequest)
+                    .HasForeignKey(x => x.TechnicianBorrowRequestId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<TechnicianBorrowRequestItem>(b =>
+            {
+                b.HasKey(x => x.Id);
+                b.Property(x => x.ProductName).IsRequired().HasMaxLength(300);
+                b.Property(x => x.ProductCode).HasMaxLength(80);
+                b.HasIndex(x => new { x.TechnicianBorrowRequestId, x.ProductId })
+                    .HasDatabaseName("IX_TechnicianBorrowRequestItems_Request_Product");
                 b.HasOne(x => x.Product)
                     .WithMany()
                     .HasForeignKey(x => x.ProductId)

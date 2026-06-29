@@ -1,5 +1,6 @@
 ﻿using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Domain.Entities;
+using BizMate.Infrastructure.Migrations;
 using Microsoft.EntityFrameworkCore;
 using SqlKata.Execution;
 

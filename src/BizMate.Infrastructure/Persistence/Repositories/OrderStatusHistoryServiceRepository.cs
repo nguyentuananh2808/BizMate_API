@@ -1,5 +1,6 @@
 ﻿using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Domain.Entities;
+using BizMate.Infrastructure.Migrations;
 
 namespace BizMate.Infrastructure.Persistence.Repositories
 {

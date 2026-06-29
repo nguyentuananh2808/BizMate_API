@@ -9,6 +9,7 @@ using BizMate.Application.Common.Dto.CoreDto;
 using Microsoft.EntityFrameworkCore.Storage;
 using System.Data.Common;
 using System.Text.Json;
+using BizMate.Infrastructure.Migrations;
 
 namespace BizMate.Infrastructure.Persistence.Repositories
 {

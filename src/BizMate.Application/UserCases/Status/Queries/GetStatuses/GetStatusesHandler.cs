@@ -39,7 +39,8 @@ namespace BizMate.Application.UserCases.Status.Queries.GetStatuses
                 var statuses = await _statuseRepository.GetStatusesOfGroup(
                     group: request.Group);
 
-                var mappedStatuses = _mapper.Map<List<StatuseCoreDto>>(statuses);
+                var filteredStatuses = statuses.Where(status => IsVisibleStatus(request.Group, status.Code));
+                var mappedStatuses = _mapper.Map<List<StatuseCoreDto>>(filteredStatuses);
                 return new GetStatusesResponse(mappedStatuses);
             }
             catch (Exception ex)
@@ -48,5 +49,13 @@ namespace BizMate.Application.UserCases.Status.Queries.GetStatuses
                 return new GetStatusesResponse(false, "Không thể tải danh sách trạng thái. Vui lòng thử lại.");
             }
         }
+
+        private static bool IsVisibleStatus(string group, string code)
+            => group switch
+            {
+                "Order" => code is "DRAFT" or "NEW" or "COMPLETED",
+                "ImportReceipt" => code is "NEW",
+                _ => true
+            };
     }
 }

@@ -7,7 +7,7 @@ using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Mappings;
 using BizMate.Application.Common.Security;
 using BizMate.Domain.Constants;
-using BizMate.Infrastructure.Persistence;
+using BizMate.Infrastructure.Migrations;
 using BizMate.Infrastructure.Persistence.Repositories;
 using BizMate.Infrastructure.Security;
 using BizMate.Infrastructure.Services;

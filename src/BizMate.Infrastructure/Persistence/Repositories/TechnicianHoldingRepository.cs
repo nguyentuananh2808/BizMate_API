@@ -1,5 +1,6 @@
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Domain.Entities;
+using BizMate.Infrastructure.Migrations;
 using Microsoft.EntityFrameworkCore;
 
 namespace BizMate.Infrastructure.Persistence.Repositories
@@ -60,6 +61,17 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                     && !x.IsDeleted, ct);
         }
 
+        public async Task<Technician?> GetTechnicianByUserIdAsync(
+            Guid userId,
+            Guid storeId,
+            CancellationToken ct = default)
+        {
+            return await _context.Technicians
+                .FirstOrDefaultAsync(x => x.UserId == userId
+                    && x.StoreId == storeId
+                    && !x.IsDeleted, ct);
+        }
+
         public async Task<List<Technician>> GetTechniciansByIdsAsync(
             Guid storeId,
             IEnumerable<Guid> technicianIds,
@@ -114,6 +126,24 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                 .FirstOrDefaultAsync(x => x.StoreId == storeId
                     && x.TechnicianId == technicianId
                     && x.ProductId == productId
+                    && x.BorrowType == TechnicianBorrowType.Assigned
+                    && !x.IsDeleted, ct);
+        }
+
+        public async Task<TechnicianHolding?> GetHoldingByTypeAsync(
+            Guid storeId,
+            Guid technicianId,
+            Guid productId,
+            TechnicianBorrowType borrowType,
+            CancellationToken ct = default)
+        {
+            return await _context.TechnicianHoldings
+                .Include(x => x.Product)
+                .Include(x => x.Technician)
+                .FirstOrDefaultAsync(x => x.StoreId == storeId
+                    && x.TechnicianId == technicianId
+                    && x.ProductId == productId
+                    && x.BorrowType == borrowType
                     && !x.IsDeleted, ct);
         }
 
@@ -162,11 +192,49 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                 .Include(x => x.Product)
                 .Include(x => x.Technician)
                 .Where(x => x.StoreId == storeId
+                    && x.BorrowType == TechnicianBorrowType.Daily
                     && x.Quantity > 0
                     && x.LastBorrowedAt <= overdueBefore
                     && !x.IsDeleted)
                 .OrderBy(x => x.LastBorrowedAt)
                 .ToListAsync(ct);
+        }
+
+        public async Task<List<TechnicianBorrowRequest>> GetBorrowRequestsAsync(
+            Guid storeId,
+            TechnicianBorrowRequestStatus? status,
+            Guid? technicianId = null,
+            CancellationToken ct = default)
+        {
+            var query = _context.TechnicianBorrowRequests
+                .Include(x => x.Technician)
+                .Include(x => x.Items)
+                    .ThenInclude(x => x.Product)
+                .Where(x => x.StoreId == storeId && !x.IsDeleted);
+
+            if (status.HasValue)
+                query = query.Where(x => x.RequestStatus == status.Value);
+
+            if (technicianId.HasValue)
+                query = query.Where(x => x.TechnicianId == technicianId.Value);
+
+            return await query
+                .OrderByDescending(x => x.CreatedDate)
+                .ToListAsync(ct);
+        }
+
+        public async Task<TechnicianBorrowRequest?> GetBorrowRequestAsync(
+            Guid storeId,
+            Guid requestId,
+            CancellationToken ct = default)
+        {
+            return await _context.TechnicianBorrowRequests
+                .Include(x => x.Technician)
+                .Include(x => x.Items)
+                    .ThenInclude(x => x.Product)
+                .FirstOrDefaultAsync(x => x.StoreId == storeId
+                    && x.Id == requestId
+                    && !x.IsDeleted, ct);
         }
 
         public async Task<List<SalesByProductReportRow>> GetSalesByProductAsync(
@@ -271,6 +339,11 @@ namespace BizMate.Infrastructure.Persistence.Repositories
         public void AddHolding(TechnicianHolding holding)
         {
             _context.TechnicianHoldings.Add(holding);
+        }
+
+        public void AddBorrowRequest(TechnicianBorrowRequest request)
+        {
+            _context.TechnicianBorrowRequests.Add(request);
         }
 
         public void AddTechnician(Technician technician)

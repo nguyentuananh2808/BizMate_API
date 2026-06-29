@@ -1,4 +1,5 @@
 ﻿using BizMate.Application.Common.Interfaces;
+using BizMate.Infrastructure.Migrations;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace BizMate.Infrastructure.Persistence.Repositories

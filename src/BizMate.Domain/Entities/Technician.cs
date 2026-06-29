@@ -2,6 +2,9 @@ namespace BizMate.Domain.Entities
 {
     public class Technician : BaseEntity
     {
+        public Guid? UserId { get; set; }
+        public User? User { get; set; }
+
         public string Name { get; set; } = default!;
         public string? Phone { get; set; }
         public string? ZaloPhone { get; set; }

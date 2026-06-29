@@ -1,6 +1,7 @@
 ﻿using BizMate.Application.Common.Dto.CoreDto;
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.UserCases.Export.Queries.ExportOrders;
+using BizMate.Infrastructure.Migrations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Data;

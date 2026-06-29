@@ -52,6 +52,13 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateStatusImpor
 
             try
             {
+                if (request.CodeStatus == "APPROVED" || request.CodeStatus != "APPROVED")
+                {
+                    return await RollbackResponseAsync(
+                        "Phiếu nhập kho đã được cộng tồn ngay khi tạo mới, không còn bước duyệt nhập kho.",
+                        cancellationToken);
+                }
+
                 var storeId = _userSession.StoreId;
                 var userId = Guid.Parse(_userSession.UserId);
                 var role = _userSession.Role;

@@ -88,35 +88,19 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
                     return new UpdateStatusOrderResponse(true, "Trạng thái đơn hàng không thay đổi.");
                 }
 
-                if (currentStatus.Code is "CANCELLED" or "COMPLETED")
-                    return await RollbackResponseAsync(ValidationMessage.LocalizedStrings.RoleWithoutAuthority, cancellationToken);
+                if (currentStatus.Code == "COMPLETED")
+                    return await RollbackResponseAsync("Đơn hàng đã hoàn thành, chỉ được cập nhật mô tả ở màn hình cập nhật đơn.", cancellationToken);
 
-                if (updateStatus.Code == "CANCELLED" && order.TechnicianExportedAt.HasValue)
-                    return await RollbackResponseAsync("Đơn hàng đã xuất cho kỹ thuật, không thể hủy trực tiếp. Vui lòng xử lý trả hàng hoặc hoàn tất phần hàng đã sử dụng.", cancellationToken);
+                if (updateStatus.Code is not ("NEW" or "COMPLETED"))
+                    return await RollbackResponseAsync("Đơn hàng chỉ còn hỗ trợ trạng thái Nháp, Tạo mới và Hoàn thành.", cancellationToken);
 
-                if (updateStatus.Code == "COMPLETED" && currentStatus.Code != "PACKED")
-                    return await RollbackResponseAsync("Đơn hàng phải ở trạng thái PACKED trước khi hoàn thành và xuất kho.", cancellationToken);
+                if (updateStatus.Code == "NEW" && currentStatus.Code != "DRAFT")
+                    return await RollbackResponseAsync("Chỉ đơn nháp mới được chuyển sang tạo mới.", cancellationToken);
 
-                if (updateStatus.Code == "PACKED")
-                {
-                    await ReserveSerialItemsForOrderAsync(order, request.Details, storeId, userId, cancellationToken);
-                }
+                if (updateStatus.Code == "COMPLETED" && currentStatus.Code != "NEW")
+                    return await RollbackResponseAsync("Đơn hàng phải ở trạng thái Tạo mới trước khi hoàn thành.", cancellationToken);
 
-                if (updateStatus.Code == "CANCELLED")
-                {
-                    await ReleaseSerialItemsAsync(order.Details, userId, cancellationToken);
-                    await ReleaseReservedStockAsync(
-                        storeId,
-                        order.Details.Select(d => new OrderDetail
-                        {
-                            ProductId = d.ProductId,
-                            Quantity = d.Quantity
-                        }),
-                        userId,
-                        cancellationToken);
-                }
-
-                if (currentStatus.Code == "PACKED" && updateStatus.Code == "COMPLETED")
+                if (updateStatus.Code == "COMPLETED")
                 {
                     await CreateExportReceipt(order, cancellationToken);
 
@@ -127,7 +111,7 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
                     }
                 }
 
-                var statusOrder = new UpdateOrderStatusDto
+                var simplifiedStatusOrder = new UpdateOrderStatusDto
                 {
                     Id = request.Id,
                     RowVersion = Guid.NewGuid(),
@@ -137,7 +121,7 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
                     UpdatedDate = DateTime.UtcNow
                 };
 
-                await _orderRepository.UpdateStatusAsync(statusOrder, cancellationToken);
+                await _orderRepository.UpdateStatusAsync(simplifiedStatusOrder, cancellationToken);
 
                 await _orderStatusHistoryRepository.AddOrderStatusHistory(
                     request.Id,

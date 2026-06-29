@@ -67,6 +67,7 @@ namespace BizMate.Api.UserCases.User.UserManagement
                 FullName = body?.FullName ?? string.Empty,
                 Email = body?.Email ?? string.Empty,
                 Password = body?.Password ?? string.Empty,
+                Phone = body?.Phone,
                 RoleId = body?.RoleId ?? Guid.Empty,
                 IsActive = body?.IsActive ?? true
             }, ct);
@@ -91,6 +92,7 @@ namespace BizMate.Api.UserCases.User.UserManagement
                 UserId = userId,
                 FullName = body?.FullName ?? string.Empty,
                 Email = body?.Email ?? string.Empty,
+                Phone = body?.Phone,
                 RoleId = body?.RoleId,
                 IsActive = body?.IsActive ?? false
             }, ct);

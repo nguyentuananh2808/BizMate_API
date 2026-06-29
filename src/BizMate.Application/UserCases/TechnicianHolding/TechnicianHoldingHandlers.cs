@@ -45,6 +45,7 @@ namespace BizMate.Application.UserCases.TechnicianHolding
     public class ReturnTechnicianHoldingItem
     {
         public Guid ProductId { get; set; }
+        public TechnicianBorrowType BorrowType { get; set; } = TechnicianBorrowType.Assigned;
         public int Quantity { get; set; }
     }
 
@@ -54,6 +55,95 @@ namespace BizMate.Application.UserCases.TechnicianHolding
         public Guid? TechnicianId { get; set; }
         public Guid ProductId { get; set; }
         public int Quantity { get; set; }
+    }
+
+    public class CreateTechnicianBorrowRequest : IRequest<BorrowingMutationResponse>
+    {
+        public Guid TechnicianId { get; set; }
+        public TechnicianBorrowType BorrowType { get; set; } = TechnicianBorrowType.Daily;
+        public DateOnly NeededDate { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
+        public string? Description { get; set; }
+        public List<TechnicianBorrowRequestItemInput> Items { get; set; } = new();
+    }
+
+    public class TechnicianBorrowRequestItemInput
+    {
+        public Guid ProductId { get; set; }
+        public int Quantity { get; set; }
+    }
+
+    public class GetTechnicianBorrowRequestsRequest : IRequest<GetTechnicianBorrowRequestsResponse>
+    {
+        public TechnicianBorrowRequestStatus? Status { get; set; }
+        public Guid? TechnicianId { get; set; }
+    }
+
+    public class GetTechnicianBorrowRequestsResponse : BaseResponse
+    {
+        public List<TechnicianBorrowRequestDto> Requests { get; set; } = new();
+
+        public GetTechnicianBorrowRequestsResponse(List<TechnicianBorrowRequestDto> requests)
+            : base(true)
+        {
+            Requests = requests;
+        }
+
+        public GetTechnicianBorrowRequestsResponse(bool success = false, string message = "")
+            : base(success, message) { }
+    }
+
+    public class TechnicianBorrowRequestDto
+    {
+        public Guid Id { get; set; }
+        public string Code { get; set; } = default!;
+        public Guid TechnicianId { get; set; }
+        public string TechnicianName { get; set; } = default!;
+        public string? Phone { get; set; }
+        public TechnicianBorrowType BorrowType { get; set; }
+        public string BorrowTypeName { get; set; } = default!;
+        public TechnicianBorrowRequestStatus RequestStatus { get; set; }
+        public string RequestStatusName { get; set; } = default!;
+        public DateOnly NeededDate { get; set; }
+        public DateTime CreatedDate { get; set; }
+        public DateTime? ApprovedAt { get; set; }
+        public string? Description { get; set; }
+        public string? RejectionReason { get; set; }
+        public int TotalQuantity { get; set; }
+        public List<TechnicianBorrowRequestItemDto> Items { get; set; } = new();
+    }
+
+    public class TechnicianBorrowRequestItemDto
+    {
+        public Guid ProductId { get; set; }
+        public string ProductName { get; set; } = default!;
+        public string? ProductCode { get; set; }
+        public int Quantity { get; set; }
+    }
+
+    public class ApproveTechnicianBorrowRequest : IRequest<BorrowingMutationResponse>
+    {
+        public Guid RequestId { get; set; }
+    }
+
+    public class RejectTechnicianBorrowRequest : IRequest<BorrowingMutationResponse>
+    {
+        public Guid RequestId { get; set; }
+        public string? Reason { get; set; }
+    }
+
+    public class UseTechnicianHoldingRequest : IRequest<BorrowingMutationResponse>
+    {
+        public Guid TechnicianId { get; set; }
+        public Guid ProductId { get; set; }
+        public TechnicianBorrowType BorrowType { get; set; } = TechnicianBorrowType.Assigned;
+        public int Quantity { get; set; }
+        public string? Note { get; set; }
+    }
+
+    public class ReturnTechnicianHoldingByTypeRequest : IRequest<BorrowingMutationResponse>
+    {
+        public Guid TechnicianId { get; set; }
+        public List<ReturnTechnicianHoldingItem> Items { get; set; } = new();
     }
 
     public class GetTechnicianHoldingsRequest : IRequest<GetTechnicianHoldingsResponse>
@@ -92,10 +182,64 @@ namespace BizMate.Application.UserCases.TechnicianHolding
         public Guid ProductId { get; set; }
         public string ProductName { get; set; } = default!;
         public string? ProductCode { get; set; }
+        public TechnicianBorrowType BorrowType { get; set; }
+        public string BorrowTypeName { get; set; } = default!;
         public int Quantity { get; set; }
         public DateTime LastBorrowedAt { get; set; }
         public bool IsOverdue { get; set; }
         public string? ReminderMessage { get; set; }
+    }
+
+    internal static class TechnicianHoldingRules
+    {
+        public static Guid? CurrentUserId(IUserSession session)
+            => Guid.TryParse(session.UserId, out var userId) ? userId : null;
+
+        public static string BorrowTypeName(TechnicianBorrowType borrowType)
+            => borrowType switch
+            {
+                TechnicianBorrowType.Daily => "Mượn trong ngày",
+                TechnicianBorrowType.Assigned or TechnicianBorrowType.Warranty => "Cấp giữ kỹ thuật",
+                _ => "Không xác định"
+            };
+
+        public static string RequestStatusName(TechnicianBorrowRequestStatus status)
+            => status switch
+            {
+                TechnicianBorrowRequestStatus.Pending => "Chờ thủ kho duyệt",
+                TechnicianBorrowRequestStatus.Approved => "Đã duyệt",
+                TechnicianBorrowRequestStatus.Rejected => "Đã từ chối",
+                TechnicianBorrowRequestStatus.Cancelled => "Đã hủy",
+                _ => "Không xác định"
+            };
+
+        public static HoldingTransaction NewHoldingTransaction(
+            Guid storeId,
+            Guid technicianId,
+            Guid productId,
+            TechnicianBorrowType borrowType,
+            HoldingTransactionType type,
+            int quantity,
+            string? referenceType,
+            Guid? referenceId,
+            string? note,
+            Guid? userId,
+            DateTime now)
+            => new()
+            {
+                Id = Guid.NewGuid(),
+                StoreId = storeId,
+                TechnicianId = technicianId,
+                ProductId = productId,
+                BorrowType = borrowType,
+                Type = type,
+                Quantity = quantity,
+                ReferenceType = referenceType,
+                ReferenceId = referenceId,
+                Note = note,
+                CreatedBy = userId,
+                CreatedDate = now
+            };
     }
 
     public class GetSalesByProductReportRequest : IRequest<GetSalesByProductReportResponse>
@@ -569,6 +713,518 @@ namespace BizMate.Application.UserCases.TechnicianHolding
             };
     }
 
+    public class CreateTechnicianBorrowRequestHandler(
+        ITechnicianHoldingRepository repo,
+        IProductRepository productRepository,
+        ICodeGeneratorService codeGeneratorService,
+        IUserSession userSession,
+        IUnitOfWork unitOfWork,
+        ILogger<CreateTechnicianBorrowRequestHandler> logger)
+        : IRequestHandler<CreateTechnicianBorrowRequest, BorrowingMutationResponse>
+    {
+        public async Task<BorrowingMutationResponse> Handle(CreateTechnicianBorrowRequest request, CancellationToken ct)
+        {
+            await unitOfWork.BeginTransactionAsync(ct);
+
+            try
+            {
+                if (request.BorrowType is not (
+                    TechnicianBorrowType.Daily or TechnicianBorrowType.Assigned))
+                    return await RollbackAsync("Loại mượn không hợp lệ.", ct);
+                if (request.TechnicianId == Guid.Empty && CurrentUserId(userSession) is null)
+                    return await RollbackAsync("Vui lòng chọn kỹ thuật viên.", ct);
+                if (request.Items.Count == 0 || request.Items.Any(x => x.ProductId == Guid.Empty || x.Quantity <= 0))
+                    return await RollbackAsync("Danh sách sản phẩm mượn không hợp lệ.", ct);
+                if (request.Items.GroupBy(x => x.ProductId).Any(x => x.Count() > 1))
+                    return await RollbackAsync("Danh sách sản phẩm mượn bị trùng sản phẩm.", ct);
+
+                var storeId = userSession.StoreId;
+                var userId = CurrentUserId(userSession);
+                var currentTechnician = userId.HasValue
+                    ? await repo.GetTechnicianByUserIdAsync(userId.Value, storeId, ct)
+                    : null;
+                var technicianId = currentTechnician?.Id ?? request.TechnicianId;
+                if (technicianId == Guid.Empty)
+                    return await RollbackAsync("Tài khoản chưa được liên kết với hồ sơ kỹ thuật viên.", ct);
+
+                var technician = currentTechnician
+                    ?? await repo.GetTechnicianAsync(technicianId, storeId, ct);
+                if (technician is null || !technician.IsActive)
+                    return await RollbackAsync("Kỹ thuật viên không tồn tại hoặc đang ngừng hoạt động.", ct);
+
+                var productIds = request.Items.Select(x => x.ProductId).ToList();
+                var products = await productRepository.GetByIdsAsync(productIds, ct);
+                var productById = products.ToDictionary(x => x.Id);
+                if (productById.Count != productIds.Count)
+                    return await RollbackAsync("Có sản phẩm mượn không tồn tại.", ct);
+                if (products.Any(x => x.IsSerialTracked))
+                    return await RollbackAsync("Mượn hàng kỹ thuật hiện chưa hỗ trợ sản phẩm quản lý serial.", ct);
+
+                var requestId = Guid.NewGuid();
+                var now = DateTime.UtcNow;
+                var borrowRequest = new TechnicianBorrowRequest
+                {
+                    Id = requestId,
+                    StoreId = storeId,
+                    Code = await codeGeneratorService.GenerateCodeAsync("#MH", 5),
+                    TechnicianId = technicianId,
+                    BorrowType = request.BorrowType,
+                    RequestStatus = TechnicianBorrowRequestStatus.Pending,
+                    NeededDate = request.NeededDate,
+                    Description = request.Description?.Trim(),
+                    CreatedBy = userId,
+                    CreatedDate = now,
+                    UpdatedBy = userId,
+                    UpdatedDate = now,
+                    IsActive = true,
+                    Items = request.Items.Select(item =>
+                    {
+                        var product = productById[item.ProductId];
+                        return new TechnicianBorrowRequestItem
+                        {
+                            Id = Guid.NewGuid(),
+                            TechnicianBorrowRequestId = requestId,
+                            ProductId = item.ProductId,
+                            ProductName = product.Name,
+                            ProductCode = product.Code,
+                            Quantity = item.Quantity,
+                            CreatedBy = userId,
+                            CreatedDate = now,
+                            UpdatedBy = userId,
+                            UpdatedDate = now
+                        };
+                    }).ToList()
+                };
+
+                repo.AddBorrowRequest(borrowRequest);
+                await unitOfWork.SaveChangesAsync(ct);
+                await unitOfWork.CommitAsync(ct);
+                return new BorrowingMutationResponse(true, "Đã gửi đề xuất mượn hàng cho thủ kho duyệt.");
+            }
+            catch (Exception ex)
+            {
+                await unitOfWork.RollbackAsync(ct);
+                logger.LogError(ex, "Lỗi khi tạo đề xuất mượn hàng kỹ thuật.");
+                return new BorrowingMutationResponse(false, "Không thể tạo đề xuất mượn hàng. Vui lòng thử lại.");
+            }
+        }
+
+        private async Task<BorrowingMutationResponse> RollbackAsync(string message, CancellationToken ct)
+        {
+            await unitOfWork.RollbackAsync(ct);
+            return new BorrowingMutationResponse(false, message);
+        }
+
+        private static Guid? CurrentUserId(IUserSession session)
+            => Guid.TryParse(session.UserId, out var userId) ? userId : null;
+    }
+
+    public class GetTechnicianBorrowRequestsHandler(ITechnicianHoldingRepository repo, IUserSession userSession)
+        : IRequestHandler<GetTechnicianBorrowRequestsRequest, GetTechnicianBorrowRequestsResponse>
+    {
+        public async Task<GetTechnicianBorrowRequestsResponse> Handle(GetTechnicianBorrowRequestsRequest request, CancellationToken ct)
+        {
+            var userId = TechnicianHoldingRules.CurrentUserId(userSession);
+            var currentTechnician = userId.HasValue
+                ? await repo.GetTechnicianByUserIdAsync(
+                    userId.Value,
+                    userSession.StoreId,
+                    ct)
+                : null;
+            var technicianId = currentTechnician?.Id ?? request.TechnicianId;
+            var requests = await repo.GetBorrowRequestsAsync(
+                userSession.StoreId,
+                request.Status,
+                technicianId,
+                ct);
+
+            return new GetTechnicianBorrowRequestsResponse(requests.Select(ToDto).ToList());
+        }
+
+        private static TechnicianBorrowRequestDto ToDto(TechnicianBorrowRequest request)
+            => new()
+            {
+                Id = request.Id,
+                Code = request.Code,
+                TechnicianId = request.TechnicianId,
+                TechnicianName = request.Technician.Name,
+                Phone = request.Technician.Phone,
+                BorrowType = request.BorrowType,
+                BorrowTypeName = TechnicianHoldingRules.BorrowTypeName(request.BorrowType),
+                RequestStatus = request.RequestStatus,
+                RequestStatusName = TechnicianHoldingRules.RequestStatusName(request.RequestStatus),
+                NeededDate = request.NeededDate,
+                CreatedDate = request.CreatedDate,
+                ApprovedAt = request.ApprovedAt,
+                Description = request.Description,
+                RejectionReason = request.RejectionReason,
+                TotalQuantity = request.Items.Sum(x => x.Quantity),
+                Items = request.Items.Select(x => new TechnicianBorrowRequestItemDto
+                {
+                    ProductId = x.ProductId,
+                    ProductName = x.ProductName,
+                    ProductCode = x.ProductCode,
+                    Quantity = x.Quantity
+                }).ToList()
+            };
+    }
+
+    public class ApproveTechnicianBorrowRequestHandler(
+        ITechnicianHoldingRepository repo,
+        IUserSession userSession,
+        IUnitOfWork unitOfWork,
+        ILogger<ApproveTechnicianBorrowRequestHandler> logger)
+        : IRequestHandler<ApproveTechnicianBorrowRequest, BorrowingMutationResponse>
+    {
+        public async Task<BorrowingMutationResponse> Handle(ApproveTechnicianBorrowRequest request, CancellationToken ct)
+        {
+            await unitOfWork.BeginTransactionAsync(ct);
+
+            try
+            {
+                if (request.RequestId == Guid.Empty)
+                    return await RollbackAsync("Đề xuất mượn hàng không hợp lệ.", ct);
+
+                var storeId = userSession.StoreId;
+                var userId = TechnicianHoldingRules.CurrentUserId(userSession);
+                var now = DateTime.UtcNow;
+                var borrowRequest = await repo.GetBorrowRequestAsync(storeId, request.RequestId, ct);
+                if (borrowRequest is null)
+                    return await RollbackAsync("Không tìm thấy đề xuất mượn hàng.", ct);
+                if (borrowRequest.RequestStatus != TechnicianBorrowRequestStatus.Pending)
+                    return await RollbackAsync("Chỉ được duyệt đề xuất đang chờ duyệt.", ct);
+                if (!borrowRequest.Technician.IsActive)
+                    return await RollbackAsync("Kỹ thuật viên đang ngừng hoạt động.", ct);
+                if (borrowRequest.Items.Count == 0)
+                    return await RollbackAsync("Đề xuất chưa có sản phẩm.", ct);
+
+                var productIds = borrowRequest.Items.Select(x => x.ProductId).Distinct().ToList();
+                var stocks = await repo.GetStocksAsync(storeId, productIds, ct);
+                var stockByProduct = stocks.ToDictionary(x => x.ProductId);
+
+                foreach (var item in borrowRequest.Items)
+                {
+                    if (!stockByProduct.TryGetValue(item.ProductId, out var stock))
+                        return await RollbackAsync($"Không tìm thấy tồn kho cho sản phẩm {item.ProductCode}.", ct);
+                    if (stock.Product.IsSerialTracked)
+                        return await RollbackAsync($"Mượn hàng kỹ thuật hiện chưa hỗ trợ sản phẩm quản lý serial: {stock.Product.Name}.", ct);
+
+                    if (borrowRequest.BorrowType == TechnicianBorrowType.Daily)
+                    {
+                        if (stock.Available < item.Quantity)
+                            return await RollbackAsync($"Sản phẩm {stock.Product.Name} không đủ tồn khả dụng. Khả dụng {stock.Available}, cần {item.Quantity}.", ct);
+
+                        stock.Reserved += item.Quantity;
+                    }
+                    else
+                    {
+                        if (stock.Available < item.Quantity)
+                            return await RollbackAsync($"Sản phẩm {stock.Product.Name} không đủ tồn khả dụng để cấp cho kỹ thuật. Khả dụng {stock.Available}, cần {item.Quantity}.", ct);
+
+                        stock.Quantity -= item.Quantity;
+                    }
+
+                    stock.UpdatedBy = userId;
+                    stock.UpdatedDate = now;
+                    stock.RowVersion = Guid.NewGuid();
+
+                    var holding = await repo.GetHoldingByTypeAsync(
+                        storeId,
+                        borrowRequest.TechnicianId,
+                        item.ProductId,
+                        borrowRequest.BorrowType,
+                        ct);
+
+                    if (holding is null)
+                    {
+                        repo.AddHolding(new BizMate.Domain.Entities.TechnicianHolding
+                        {
+                            Id = Guid.NewGuid(),
+                            StoreId = storeId,
+                            TechnicianId = borrowRequest.TechnicianId,
+                            ProductId = item.ProductId,
+                            BorrowType = borrowRequest.BorrowType,
+                            Quantity = item.Quantity,
+                            LastBorrowedAt = now,
+                            CreatedBy = userId,
+                            CreatedDate = now,
+                            UpdatedBy = userId,
+                            UpdatedDate = now
+                        });
+                    }
+                    else
+                    {
+                        holding.Quantity += item.Quantity;
+                        holding.LastBorrowedAt = now;
+                        holding.UpdatedBy = userId;
+                        holding.UpdatedDate = now;
+                        holding.RowVersion = Guid.NewGuid();
+                    }
+
+                    repo.AddTransaction(TechnicianHoldingRules.NewHoldingTransaction(
+                        storeId,
+                        borrowRequest.TechnicianId,
+                        item.ProductId,
+                        borrowRequest.BorrowType,
+                        HoldingTransactionType.Borrow,
+                        item.Quantity,
+                        "technician-borrow-request",
+                        borrowRequest.Id,
+                        $"Approved borrow request {borrowRequest.Code}",
+                        userId,
+                        now));
+                }
+
+                borrowRequest.RequestStatus = TechnicianBorrowRequestStatus.Approved;
+                borrowRequest.ApprovedAt = now;
+                borrowRequest.ApprovedBy = userId;
+                borrowRequest.UpdatedBy = userId;
+                borrowRequest.UpdatedDate = now;
+                borrowRequest.RowVersion = Guid.NewGuid();
+
+                await unitOfWork.SaveChangesAsync(ct);
+                await unitOfWork.CommitAsync(ct);
+                return new BorrowingMutationResponse(true, "Đã duyệt và xuất hàng cho kỹ thuật.");
+            }
+            catch (Exception ex)
+            {
+                await unitOfWork.RollbackAsync(ct);
+                logger.LogError(ex, "Lỗi khi duyệt đề xuất mượn hàng kỹ thuật.");
+                return new BorrowingMutationResponse(false, "Không thể duyệt đề xuất mượn hàng. Vui lòng thử lại.");
+            }
+        }
+
+        private async Task<BorrowingMutationResponse> RollbackAsync(string message, CancellationToken ct)
+        {
+            await unitOfWork.RollbackAsync(ct);
+            return new BorrowingMutationResponse(false, message);
+        }
+    }
+
+    public class RejectTechnicianBorrowRequestHandler(
+        ITechnicianHoldingRepository repo,
+        IUserSession userSession,
+        IUnitOfWork unitOfWork,
+        ILogger<RejectTechnicianBorrowRequestHandler> logger)
+        : IRequestHandler<RejectTechnicianBorrowRequest, BorrowingMutationResponse>
+    {
+        public async Task<BorrowingMutationResponse> Handle(RejectTechnicianBorrowRequest request, CancellationToken ct)
+        {
+            await unitOfWork.BeginTransactionAsync(ct);
+
+            try
+            {
+                var borrowRequest = await repo.GetBorrowRequestAsync(userSession.StoreId, request.RequestId, ct);
+                if (borrowRequest is null)
+                    return await RollbackAsync("Không tìm thấy đề xuất mượn hàng.", ct);
+                if (borrowRequest.RequestStatus != TechnicianBorrowRequestStatus.Pending)
+                    return await RollbackAsync("Chỉ được từ chối đề xuất đang chờ duyệt.", ct);
+
+                var userId = TechnicianHoldingRules.CurrentUserId(userSession);
+                borrowRequest.RequestStatus = TechnicianBorrowRequestStatus.Rejected;
+                borrowRequest.RejectionReason = request.Reason?.Trim();
+                borrowRequest.UpdatedBy = userId;
+                borrowRequest.UpdatedDate = DateTime.UtcNow;
+                borrowRequest.RowVersion = Guid.NewGuid();
+
+                await unitOfWork.SaveChangesAsync(ct);
+                await unitOfWork.CommitAsync(ct);
+                return new BorrowingMutationResponse(true, "Đã từ chối đề xuất mượn hàng.");
+            }
+            catch (Exception ex)
+            {
+                await unitOfWork.RollbackAsync(ct);
+                logger.LogError(ex, "Lỗi khi từ chối đề xuất mượn hàng kỹ thuật.");
+                return new BorrowingMutationResponse(false, "Không thể từ chối đề xuất mượn hàng. Vui lòng thử lại.");
+            }
+        }
+
+        private async Task<BorrowingMutationResponse> RollbackAsync(string message, CancellationToken ct)
+        {
+            await unitOfWork.RollbackAsync(ct);
+            return new BorrowingMutationResponse(false, message);
+        }
+    }
+
+    public class UseTechnicianHoldingHandler(
+        ITechnicianHoldingRepository repo,
+        IUserSession userSession,
+        IUnitOfWork unitOfWork,
+        ILogger<UseTechnicianHoldingHandler> logger)
+        : IRequestHandler<UseTechnicianHoldingRequest, BorrowingMutationResponse>
+    {
+        public async Task<BorrowingMutationResponse> Handle(UseTechnicianHoldingRequest request, CancellationToken ct)
+        {
+            await unitOfWork.BeginTransactionAsync(ct);
+
+            try
+            {
+                if (request.TechnicianId == Guid.Empty || request.ProductId == Guid.Empty || request.Quantity <= 0)
+                    return await RollbackAsync("Dữ liệu ghi nhận sử dụng không hợp lệ.", ct);
+                if (!Enum.IsDefined(request.BorrowType))
+                    return await RollbackAsync("Loại mượn không hợp lệ.", ct);
+
+                var storeId = userSession.StoreId;
+                var userId = TechnicianHoldingRules.CurrentUserId(userSession);
+                var now = DateTime.UtcNow;
+                var holding = await repo.GetHoldingByTypeAsync(
+                    storeId,
+                    request.TechnicianId,
+                    request.ProductId,
+                    request.BorrowType,
+                    ct);
+
+                if (holding is null || holding.Quantity < request.Quantity)
+                    return await RollbackAsync("Số lượng sử dụng vượt quá số lượng kỹ thuật đang giữ.", ct);
+
+                var stocks = await repo.GetStocksAsync(storeId, new[] { request.ProductId }, ct);
+                var stock = stocks.FirstOrDefault();
+                if (stock is null)
+                    return await RollbackAsync("Không tìm thấy tồn kho sản phẩm.", ct);
+
+                if (request.BorrowType == TechnicianBorrowType.Daily)
+                {
+                    if (stock.Quantity < request.Quantity || stock.Reserved < request.Quantity)
+                        return await RollbackAsync("Tồn kho đã thay đổi, vui lòng tải lại dữ liệu.", ct);
+
+                    stock.Quantity -= request.Quantity;
+                    stock.Reserved -= request.Quantity;
+                    stock.UpdatedBy = userId;
+                    stock.UpdatedDate = now;
+                    stock.RowVersion = Guid.NewGuid();
+                }
+
+                holding.Quantity -= request.Quantity;
+                holding.UpdatedBy = userId;
+                holding.UpdatedDate = now;
+                holding.RowVersion = Guid.NewGuid();
+
+                repo.AddTransaction(TechnicianHoldingRules.NewHoldingTransaction(
+                    storeId,
+                    request.TechnicianId,
+                    request.ProductId,
+                    request.BorrowType,
+                    HoldingTransactionType.ConvertToSale,
+                    request.Quantity,
+                    "technician-holding",
+                    null,
+                    string.IsNullOrWhiteSpace(request.Note) ? "Technician used borrowed item" : request.Note.Trim(),
+                    userId,
+                    now));
+
+                await unitOfWork.SaveChangesAsync(ct);
+                await unitOfWork.CommitAsync(ct);
+                return new BorrowingMutationResponse(true, "Đã ghi nhận kỹ thuật sử dụng hàng mượn.");
+            }
+            catch (Exception ex)
+            {
+                await unitOfWork.RollbackAsync(ct);
+                logger.LogError(ex, "Lỗi khi ghi nhận sử dụng hàng kỹ thuật.");
+                return new BorrowingMutationResponse(false, "Không thể ghi nhận sử dụng hàng mượn. Vui lòng thử lại.");
+            }
+        }
+
+        private async Task<BorrowingMutationResponse> RollbackAsync(string message, CancellationToken ct)
+        {
+            await unitOfWork.RollbackAsync(ct);
+            return new BorrowingMutationResponse(false, message);
+        }
+    }
+
+    public class ReturnTechnicianHoldingByTypeHandler(
+        ITechnicianHoldingRepository repo,
+        IUserSession userSession,
+        IUnitOfWork unitOfWork,
+        ILogger<ReturnTechnicianHoldingByTypeHandler> logger)
+        : IRequestHandler<ReturnTechnicianHoldingByTypeRequest, BorrowingMutationResponse>
+    {
+        public async Task<BorrowingMutationResponse> Handle(ReturnTechnicianHoldingByTypeRequest request, CancellationToken ct)
+        {
+            await unitOfWork.BeginTransactionAsync(ct);
+
+            try
+            {
+                if (request.TechnicianId == Guid.Empty)
+                    return await RollbackAsync("Kỹ thuật viên không hợp lệ.", ct);
+                if (request.Items.Count == 0
+                    || request.Items.Any(x => x.ProductId == Guid.Empty || x.Quantity <= 0 || !Enum.IsDefined(x.BorrowType)))
+                    return await RollbackAsync("Dữ liệu trả hàng không hợp lệ.", ct);
+                if (request.Items.GroupBy(x => new { x.ProductId, x.BorrowType }).Any(x => x.Count() > 1))
+                    return await RollbackAsync("Payload trả hàng bị trùng sản phẩm và loại mượn.", ct);
+
+                var storeId = userSession.StoreId;
+                var userId = TechnicianHoldingRules.CurrentUserId(userSession);
+                var now = DateTime.UtcNow;
+
+                var technician = await repo.GetTechnicianAsync(request.TechnicianId, storeId, ct);
+                if (technician is null)
+                    return await RollbackAsync("Không tìm thấy kỹ thuật viên trong store hiện tại.", ct);
+
+                var productIds = request.Items.Select(x => x.ProductId).Distinct().ToList();
+                var stocks = await repo.GetStocksAsync(storeId, productIds, ct);
+                var stockByProduct = stocks.ToDictionary(x => x.ProductId);
+
+                foreach (var item in request.Items)
+                {
+                    var holding = await repo.GetHoldingByTypeAsync(storeId, technician.Id, item.ProductId, item.BorrowType, ct);
+                    if (holding is null || holding.Quantity < item.Quantity)
+                        return await RollbackAsync("Số lượng trả vượt quá số lượng kỹ thuật đang giữ.", ct);
+                    if (!stockByProduct.TryGetValue(item.ProductId, out var stock))
+                        return await RollbackAsync("Không tìm thấy tồn kho để nhập lại hàng trả.", ct);
+
+                    holding.Quantity -= item.Quantity;
+                    holding.UpdatedBy = userId;
+                    holding.UpdatedDate = now;
+                    holding.RowVersion = Guid.NewGuid();
+
+                    if (item.BorrowType == TechnicianBorrowType.Daily)
+                    {
+                        stock.Reserved -= item.Quantity;
+                        if (stock.Reserved < 0)
+                            return await RollbackAsync("Tồn kho giữ chỗ đã thay đổi, vui lòng tải lại dữ liệu.", ct);
+                    }
+                    else
+                    {
+                        stock.Quantity += item.Quantity;
+                    }
+
+                    stock.UpdatedBy = userId;
+                    stock.UpdatedDate = now;
+                    stock.RowVersion = Guid.NewGuid();
+
+                    repo.AddTransaction(TechnicianHoldingRules.NewHoldingTransaction(
+                        storeId,
+                        technician.Id,
+                        item.ProductId,
+                        item.BorrowType,
+                        HoldingTransactionType.Return,
+                        item.Quantity,
+                        "return",
+                        null,
+                        "Returned by technician",
+                        userId,
+                        now));
+                }
+
+                await unitOfWork.SaveChangesAsync(ct);
+                await unitOfWork.CommitAsync(ct);
+                return new BorrowingMutationResponse(true, "Trả hàng thành công.");
+            }
+            catch (Exception ex)
+            {
+                await unitOfWork.RollbackAsync(ct);
+                logger.LogError(ex, "Lỗi khi trả hàng kỹ thuật.");
+                return new BorrowingMutationResponse(false, "Không thể trả hàng. Vui lòng thử lại.");
+            }
+        }
+
+        private async Task<BorrowingMutationResponse> RollbackAsync(string message, CancellationToken ct)
+        {
+            await unitOfWork.RollbackAsync(ct);
+            return new BorrowingMutationResponse(false, message);
+        }
+    }
+
     public class ReturnTechnicianHoldingHandler
         : IRequestHandler<ReturnTechnicianHoldingRequest, BorrowingMutationResponse>
     {
@@ -834,7 +1490,15 @@ namespace BizMate.Application.UserCases.TechnicianHolding
 
         public async Task<GetTechnicianHoldingsResponse> Handle(GetTechnicianHoldingsRequest request, CancellationToken ct)
         {
-            var holdings = await _repo.GetHoldingsAsync(_userSession.StoreId, request.TechnicianId, ct);
+            var userId = TechnicianHoldingRules.CurrentUserId(_userSession);
+            var currentTechnician = userId.HasValue
+                ? await _repo.GetTechnicianByUserIdAsync(
+                    userId.Value,
+                    _userSession.StoreId,
+                    ct)
+                : null;
+            var technicianId = currentTechnician?.Id ?? request.TechnicianId;
+            var holdings = await _repo.GetHoldingsAsync(_userSession.StoreId, technicianId, ct);
             return new GetTechnicianHoldingsResponse(ToGroups(holdings, DateTime.UtcNow.AddHours(-24)));
         }
 
@@ -849,12 +1513,16 @@ namespace BizMate.Application.UserCases.TechnicianHolding
                     var first = g.First();
                     var items = g.Select(x =>
                     {
-                        var isOverdue = x.Quantity > 0 && x.LastBorrowedAt <= overdueBefore;
+                        var isOverdue = x.BorrowType == TechnicianBorrowType.Daily
+                            && x.Quantity > 0
+                            && x.LastBorrowedAt <= overdueBefore;
                         return new TechnicianHoldingItemDto
                         {
                             ProductId = x.ProductId,
                             ProductName = x.Product.Name,
                             ProductCode = x.Product.Code,
+                            BorrowType = x.BorrowType,
+                            BorrowTypeName = TechnicianHoldingRules.BorrowTypeName(x.BorrowType),
                             Quantity = x.Quantity,
                             LastBorrowedAt = x.LastBorrowedAt,
                             IsOverdue = isOverdue,

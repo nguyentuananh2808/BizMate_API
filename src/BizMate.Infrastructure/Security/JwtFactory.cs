@@ -1,6 +1,6 @@
 using BizMate.Application.Common.Security;
 using BizMate.Domain.Entities;
-using BizMate.Infrastructure.Persistence;
+using BizMate.Infrastructure.Migrations;
 using BizMate.Public.Dto.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;

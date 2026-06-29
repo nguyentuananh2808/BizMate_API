@@ -1,7 +1,7 @@
 ﻿using BizMate.Application.Common.Dto.UserAggregate;
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Domain.Entities;
-using BizMate.Infrastructure.Persistence;
+using BizMate.Infrastructure.Migrations;
 using Microsoft.EntityFrameworkCore;
 using SqlKata.Execution;
 

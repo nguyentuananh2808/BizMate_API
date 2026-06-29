@@ -17,6 +17,8 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.CreateImportRecei
         private readonly IUserSession _userSession;
         private readonly IProductRepository _productRepository;
         private readonly IProductItemRepository _productItemRepository;
+        private readonly IStockRepository _stockRepository;
+        private readonly IInventoryTransactionRepository _inventoryTransactionRepository;
         private readonly IStatusRepository _statusRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<CreateImportReceiptHandler> _logger;
@@ -28,12 +30,16 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.CreateImportRecei
             IProductItemRepository productItemRepository,
             ICodeGeneratorService codeGeneratorService,
             IUserSession userSession,
+            IStockRepository stockRepository,
+            IInventoryTransactionRepository inventoryTransactionRepository,
             IUnitOfWork unitOfWork,
             IImportReceiptRepository ImportReceiptRepository,
             ILogger<CreateImportReceiptHandler> logger)
         {
             _productRepository = productRepository;
             _productItemRepository = productItemRepository;
+            _stockRepository = stockRepository;
+            _inventoryTransactionRepository = inventoryTransactionRepository;
             _statusRepository = statusRepository;
             _codeGeneratorService = codeGeneratorService;
             _userSession = userSession;
@@ -107,16 +113,19 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.CreateImportRecei
                     }).ToList()
                 };
 
-                var productItems = BuildPendingProductItems(newImportReceipt, request.Details, productDict, storeId, parsedUserId);
+                var productItems = BuildInStockProductItems(newImportReceipt, request.Details, productDict, storeId, parsedUserId);
+                var transactions = BuildImportTransactions(productItems, parsedUserId, receiptCode);
 
                 await _ImportReceiptRepository.AddAsync(newImportReceipt, cancellationToken);
+                await ImportStockAsync(newImportReceipt.Details, storeId, parsedUserId, cancellationToken);
 
                 if (productItems.Count > 0)
                 {
                     await _productItemRepository.AddRangeAsync(productItems, cancellationToken);
-                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+                    await _inventoryTransactionRepository.AddRangeAsync(transactions, cancellationToken);
                 }
 
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
                 await _unitOfWork.CommitAsync(cancellationToken);
                 #endregion
 
@@ -185,7 +194,52 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.CreateImportRecei
             return null;
         }
 
-        private static List<ProductItem> BuildPendingProductItems(
+        private async Task ImportStockAsync(
+            IEnumerable<ImportReceiptDetail> receiptDetails,
+            Guid storeId,
+            Guid userId,
+            CancellationToken cancellationToken)
+        {
+            var details = receiptDetails.ToList();
+            var productIds = details.Select(d => d.ProductId).Distinct().ToList();
+            var existingStocks = await _stockRepository.GetByStoreAndProductAsync(storeId, productIds);
+            var stockByProductId = existingStocks.ToDictionary(s => s.ProductId);
+            var stocksToUpdate = new List<Stock>();
+
+            foreach (var detailGroup in details.GroupBy(x => x.ProductId))
+            {
+                var quantity = detailGroup.Sum(x => x.Quantity);
+                if (stockByProductId.TryGetValue(detailGroup.Key, out var stock))
+                {
+                    stock.Quantity += quantity;
+                    stock.UpdatedBy = userId;
+                    stock.UpdatedDate = DateTime.UtcNow;
+                    stock.RowVersion = Guid.NewGuid();
+                    stocksToUpdate.Add(stock);
+                    continue;
+                }
+
+                var newStock = new Stock
+                {
+                    Id = Guid.NewGuid(),
+                    StoreId = storeId,
+                    ProductId = detailGroup.Key,
+                    Quantity = quantity,
+                    CreatedBy = userId,
+                    CreatedDate = DateTime.UtcNow,
+                    UpdatedBy = userId,
+                    UpdatedDate = DateTime.UtcNow
+                };
+
+                await _stockRepository.AddAsync(newStock);
+                stockByProductId[detailGroup.Key] = newStock;
+            }
+
+            if (stocksToUpdate.Count > 0)
+                await _stockRepository.UpdateAsync(stocksToUpdate, cancellationToken);
+        }
+
+        private static List<ProductItem> BuildInStockProductItems(
             _ImportReceipt receipt,
             IEnumerable<CreateImportReceiptDetail> requestDetails,
             IReadOnlyDictionary<Guid, Product> productDict,
@@ -213,7 +267,7 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.CreateImportRecei
                     StoreId = storeId,
                     ProductId = detailRequest.ProductId,
                     SerialNumber = serial,
-                    Status = ProductItemStatus.PendingImport,
+                    Status = ProductItemStatus.InStock,
                     ImportReceiptDetailId = receiptDetail.Id,
                     CreatedBy = userId,
                     CreatedDate = DateTime.UtcNow,
@@ -223,6 +277,25 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.CreateImportRecei
             }
 
             return items;
+        }
+
+        private static List<InventoryTransaction> BuildImportTransactions(
+            IEnumerable<ProductItem> productItems,
+            Guid userId,
+            string receiptCode)
+        {
+            var now = DateTime.UtcNow;
+            return productItems.Select(item => new InventoryTransaction
+            {
+                Id = Guid.NewGuid(),
+                ProductItemId = item.Id,
+                Type = InventoryTransactionType.Import,
+                FromStatus = null,
+                ToStatus = ProductItemStatus.InStock,
+                Note = $"Import receipt {receiptCode}",
+                CreatedBy = userId,
+                CreatedDate = now
+            }).ToList();
         }
     }
 }

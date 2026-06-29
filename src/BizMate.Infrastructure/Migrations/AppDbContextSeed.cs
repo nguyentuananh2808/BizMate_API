@@ -2,7 +2,7 @@
 using BizMate.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace BizMate.Infrastructure.Persistence
+namespace BizMate.Infrastructure.Migrations
 {
     public static class AppDbContextSeed
     {
@@ -37,13 +37,9 @@ namespace BizMate.Infrastructure.Persistence
             {
                 new Status { Id = Guid.NewGuid(), Name = "Nháp", Code = "DRAFT", Group = "Order", IsActive = false },
                 new Status { Id = Guid.NewGuid(), Name = "Tạo mới", Code = "NEW", Group = "Order", IsActive = false },
-                new Status { Id = Guid.NewGuid(), Name = "Đang lắp đặt", Code = "PACKING", Group = "Order", IsActive = false },
-                new Status { Id = Guid.NewGuid(), Name = "Đã lắp đặt", Code = "PACKED", Group = "Order", IsActive = false },
-                new Status { Id = Guid.NewGuid(), Name = "Hủy", Code = "CANCELLED", Group = "Order", IsActive = false },
                 new Status { Id = Guid.NewGuid(), Name = "Hoàn thành", Code = "COMPLETED", Group = "Order", IsActive = false },
 
                 new Status { Id = Guid.NewGuid(), Name = "Tạo mới", Code = "NEW", Group = "ImportReceipt", IsActive = false },
-                new Status { Id = Guid.NewGuid(), Name = "Đã duyệt", Code = "APPROVED", Group = "ImportReceipt", IsActive = false },
 
                 new Status { Id = Guid.NewGuid(), Name = "Còn bảo hành", Code = "AVAILABLE", Group = "Warranty", IsActive = false },
                 new Status { Id = Guid.NewGuid(), Name = "Đã hết lượt bảo hành", Code = "USED_UP", Group = "Warranty", IsActive = false },
@@ -93,6 +89,7 @@ namespace BizMate.Infrastructure.Persistence
         private static readonly Guid ManagerRoleId = Guid.Parse("00000000-0000-0000-0000-000000000002");
         private static readonly Guid StaffRoleId = Guid.Parse("00000000-0000-0000-0000-000000000003");
         private static readonly Guid WarehouseRoleId = Guid.Parse("00000000-0000-0000-0000-000000000004");
+        private static readonly Guid TechnicianRoleId = Guid.Parse("00000000-0000-0000-0000-000000000005");
 
         private static async Task SeedRolesAsync(AppDbContext context)
         {
@@ -102,6 +99,7 @@ namespace BizMate.Infrastructure.Persistence
                 new Role { Id = ManagerRoleId, Name = "Manager", DisplayName = "Quản lý", IsSystem = false, CreatedDate = DateTime.UtcNow },
                 new Role { Id = StaffRoleId, Name = "Staff", DisplayName = "Nhân viên bán hàng", IsSystem = false, CreatedDate = DateTime.UtcNow },
                 new Role { Id = WarehouseRoleId, Name = "Warehouse", DisplayName = "Thủ kho", IsSystem = false, CreatedDate = DateTime.UtcNow },
+                new Role { Id = TechnicianRoleId, Name = "Technician", DisplayName = "Kỹ thuật viên", IsSystem = true, CreatedDate = DateTime.UtcNow },
             };
 
             var existingIds = await context.Roles.Select(r => r.Id).ToListAsync();
@@ -167,6 +165,12 @@ namespace BizMate.Infrastructure.Persistence
                 GetId(PermissionConstants.ExportReceipt.Edit),
                 GetId(PermissionConstants.ExportReceipt.Cancel),
                 GetId(PermissionConstants.Product.View),
+            });
+
+            await AddRolePerms(context, TechnicianRoleId, new[]
+            {
+                GetId(PermissionConstants.Product.View),
+                GetId(PermissionConstants.Stock.View),
             });
         }
 

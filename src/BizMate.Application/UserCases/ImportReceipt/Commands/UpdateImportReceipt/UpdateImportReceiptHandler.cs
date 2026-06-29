@@ -60,7 +60,7 @@ namespace BizMate.Application.UserCases.ImportReceipt.Commands.UpdateImportRecei
                 }
                 #endregion
 
-                if (importReceipt.Status?.Code == "APPROVED")
+                if (importReceipt.Status?.Code is "NEW" or "APPROVED")
                     return await UpdateDescriptionOnlyAsync(request, Guid.Parse(userId), _userSession.StoreId, cancellationToken);
 
                 #region Update via Stored Procedure

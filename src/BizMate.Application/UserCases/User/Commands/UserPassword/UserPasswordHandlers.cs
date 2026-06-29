@@ -26,6 +26,19 @@ namespace BizMate.Application.UserCases.User.Commands.UserPassword
             if (user is null)
                 return new ForgotPasswordResponse(false, "Email không tồn tại trong hệ thống.");
 
+            var existingOtp = await otpStore.GetOtpAsync(email);
+            if (existingOtp is not null &&
+                string.Equals(
+                    existingOtp.Purpose,
+                    OtpPurpose.PasswordReset,
+                    StringComparison.Ordinal) &&
+                existingOtp.CreatedAtUtc > DateTime.UtcNow.AddSeconds(-60))
+            {
+                return new ForgotPasswordResponse(
+                    false,
+                    "Vui lòng đợi 60 giây trước khi yêu cầu gửi lại OTP.");
+            }
+
             var otpCode = OtpGenerator.Generate(6);
             var expiredAt = DateTime.UtcNow.AddMinutes(5);
             var otpData = new TempOtpUserData
@@ -33,7 +46,8 @@ namespace BizMate.Application.UserCases.User.Commands.UserPassword
                 Email = email,
                 FullName = user.FullName,
                 Otp = otpCode,
-                Purpose = OtpPurpose.PasswordReset
+                Purpose = OtpPurpose.PasswordReset,
+                CreatedAtUtc = DateTime.UtcNow
             };
 
             await otpVerificationRepository.AddOtpAsync(
@@ -82,12 +96,46 @@ namespace BizMate.Application.UserCases.User.Commands.UserPassword
             var otpData = await otpStore.GetOtpAsync(email);
 
             if (otpData is null ||
-                !string.Equals(otpData.Purpose, OtpPurpose.PasswordReset, StringComparison.Ordinal) ||
-                !string.Equals(otpData.Otp, inputOtp, StringComparison.Ordinal))
+                !string.Equals(otpData.Purpose, OtpPurpose.PasswordReset, StringComparison.Ordinal))
             {
                 return new ResetPasswordResponse(
                     false,
                     "OTP không hợp lệ hoặc đã hết hạn.");
+            }
+
+            if (otpData.FailedAttempts >= 5)
+            {
+                await otpStore.RemoveOtpAsync(email);
+                return new ResetPasswordResponse(
+                    false,
+                    "OTP đã bị khóa do nhập sai quá nhiều lần. Vui lòng yêu cầu mã mới.");
+            }
+
+            if (!string.Equals(otpData.Otp, inputOtp, StringComparison.Ordinal))
+            {
+                otpData.FailedAttempts++;
+                if (otpData.FailedAttempts >= 5)
+                {
+                    await otpStore.RemoveOtpAsync(email);
+                    return new ResetPasswordResponse(
+                        false,
+                        "OTP đã bị khóa do nhập sai quá 5 lần. Vui lòng yêu cầu mã mới.");
+                }
+
+                var remainingLifetime =
+                    TimeSpan.FromMinutes(5) - (DateTime.UtcNow - otpData.CreatedAtUtc);
+                if (remainingLifetime > TimeSpan.Zero)
+                {
+                    await otpStore.SaveOtpAsync(
+                        email,
+                        otpData,
+                        remainingLifetime,
+                        cancellationToken);
+                }
+
+                return new ResetPasswordResponse(
+                    false,
+                    $"OTP không hợp lệ. Bạn còn {5 - otpData.FailedAttempts} lần thử.");
             }
 
             var persistedOtp = await otpVerificationRepository.GetValidOtpAsync(email, inputOtp);

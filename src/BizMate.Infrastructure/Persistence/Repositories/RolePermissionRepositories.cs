@@ -1,5 +1,6 @@
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Domain.Entities;
+using BizMate.Infrastructure.Migrations;
 using Microsoft.EntityFrameworkCore;
 
 namespace BizMate.Infrastructure.Persistence.Repositories
@@ -102,7 +103,26 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                 ur => ur.UserId == userId && ur.RoleId == roleId && ur.StoreId == storeId && !ur.IsDeleted, ct);
 
         public async Task AddAsync(UserRole userRole, CancellationToken ct = default)
-            => await _context.UserRoles.AddAsync(userRole, ct);
+        {
+            var existing = await _context.UserRoles.FirstOrDefaultAsync(
+                item =>
+                    item.UserId == userRole.UserId &&
+                    item.RoleId == userRole.RoleId &&
+                    item.StoreId == userRole.StoreId,
+                ct);
+
+            if (existing is null)
+            {
+                await _context.UserRoles.AddAsync(userRole, ct);
+                return;
+            }
+
+            existing.IsDeleted = false;
+            existing.DeletedAt = null;
+            existing.UpdatedDate = DateTime.UtcNow;
+            existing.UpdatedBy = userRole.CreatedBy ?? userRole.UpdatedBy;
+            _context.UserRoles.Update(existing);
+        }
 
         public Task DeleteAsync(UserRole userRole, CancellationToken ct = default)
         {

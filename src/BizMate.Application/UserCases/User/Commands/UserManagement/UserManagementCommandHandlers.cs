@@ -25,6 +25,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserManagement
         public string FullName { get; set; } = default!;
         public string Email { get; set; } = default!;
         public string Password { get; set; } = default!;
+        public string? Phone { get; set; }
         public Guid RoleId { get; set; }
         public bool IsActive { get; set; } = true;
     }
@@ -34,6 +35,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserManagement
         public Guid UserId { get; set; }
         public string FullName { get; set; } = default!;
         public string Email { get; set; } = default!;
+        public string? Phone { get; set; }
         public Guid? RoleId { get; set; }
         public bool IsActive { get; set; }
     }
@@ -85,6 +87,9 @@ namespace BizMate.Application.UserCases.User.Commands.UserManagement
             role.IsSystem &&
             string.Equals(role.Name, "Owner", StringComparison.OrdinalIgnoreCase);
 
+        public static bool IsTechnicianRole(Role role) =>
+            string.Equals(role.Name, "Technician", StringComparison.OrdinalIgnoreCase);
+
         [GeneratedRegex("[A-Z]")]
         private static partial Regex UppercaseRegex();
 
@@ -102,6 +107,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserManagement
         IUserRepository userRepository,
         IRoleRepository roleRepository,
         IUserRoleRepository userRoleRepository,
+        ITechnicianHoldingRepository technicianRepository,
         IUserSession userSession,
         ICodeGeneratorService codeGeneratorService,
         IUnitOfWork unitOfWork)
@@ -167,6 +173,23 @@ namespace BizMate.Application.UserCases.User.Commands.UserManagement
                     CreatedDate = DateTime.UtcNow
                 }, cancellationToken);
 
+                if (UserAccountRules.IsTechnicianRole(role))
+                {
+                    technicianRepository.AddTechnician(new Technician
+                    {
+                        Id = Guid.NewGuid(),
+                        Code = await codeGeneratorService.GenerateCodeAsync("#KT", 5),
+                        UserId = user.Id,
+                        Name = user.FullName,
+                        Phone = request.Phone?.Trim(),
+                        ZaloPhone = request.Phone?.Trim(),
+                        StoreId = userSession.StoreId,
+                        IsActive = user.IsActive,
+                        CreatedBy = creatorId,
+                        CreatedDate = DateTime.UtcNow
+                    });
+                }
+
                 await unitOfWork.SaveChangesAsync(cancellationToken);
                 await unitOfWork.CommitAsync(cancellationToken);
                 return new UserMutationResponse(user.Id, "Tạo tài khoản nhân viên thành công.");
@@ -185,7 +208,9 @@ namespace BizMate.Application.UserCases.User.Commands.UserManagement
         IUserRepository userRepository,
         IRoleRepository roleRepository,
         IUserRoleRepository userRoleRepository,
+        ITechnicianHoldingRepository technicianRepository,
         IUserSession userSession,
+        ICodeGeneratorService codeGeneratorService,
         IUnitOfWork unitOfWork)
         : IRequestHandler<UpdateStoreUserRequest, UserMutationResponse>
     {
@@ -268,6 +293,49 @@ namespace BizMate.Application.UserCases.User.Commands.UserManagement
                     user.Role = selectedRole.Name;
                 }
 
+                var linkedTechnician = await technicianRepository.GetTechnicianByUserIdAsync(
+                    user.Id,
+                    userSession.StoreId,
+                    cancellationToken);
+                var shouldBeTechnician = selectedRole is not null
+                    ? UserAccountRules.IsTechnicianRole(selectedRole)
+                    : string.Equals(user.Role, "Technician", StringComparison.OrdinalIgnoreCase);
+
+                if (shouldBeTechnician)
+                {
+                    if (linkedTechnician is null)
+                    {
+                        technicianRepository.AddTechnician(new Technician
+                        {
+                            Id = Guid.NewGuid(),
+                            Code = await codeGeneratorService.GenerateCodeAsync("#KT", 5),
+                            UserId = user.Id,
+                            Name = user.FullName,
+                            Phone = request.Phone?.Trim(),
+                            ZaloPhone = request.Phone?.Trim(),
+                            StoreId = userSession.StoreId,
+                            IsActive = user.IsActive,
+                            CreatedBy = Guid.TryParse(userSession.UserId, out var creatorId)
+                                ? creatorId
+                                : null,
+                            CreatedDate = DateTime.UtcNow
+                        });
+                    }
+                    else
+                    {
+                        linkedTechnician.Name = user.FullName;
+                        linkedTechnician.Phone = request.Phone?.Trim() ?? linkedTechnician.Phone;
+                        linkedTechnician.ZaloPhone = request.Phone?.Trim() ?? linkedTechnician.ZaloPhone;
+                        linkedTechnician.IsActive = user.IsActive;
+                        linkedTechnician.UpdatedDate = DateTime.UtcNow;
+                    }
+                }
+                else if (linkedTechnician is not null)
+                {
+                    linkedTechnician.IsActive = false;
+                    linkedTechnician.UpdatedDate = DateTime.UtcNow;
+                }
+
                 await userRepository.UpdateAsync(user, cancellationToken);
                 await unitOfWork.SaveChangesAsync(cancellationToken);
                 await unitOfWork.CommitAsync(cancellationToken);
@@ -287,6 +355,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserManagement
         IUserRepository userRepository,
         IUserRoleRepository userRoleRepository,
         IUserPermissionRepository userPermissionRepository,
+        ITechnicianHoldingRepository technicianRepository,
         IUserSession userSession,
         IUnitOfWork unitOfWork)
         : IRequestHandler<DeleteStoreUserRequest, UserMutationResponse>
@@ -330,6 +399,17 @@ namespace BizMate.Application.UserCases.User.Commands.UserManagement
                     cancellationToken);
                 if (userPermissions.Count > 0)
                     await userPermissionRepository.DeleteRangeAsync(userPermissions, cancellationToken);
+
+                var linkedTechnician = await technicianRepository.GetTechnicianByUserIdAsync(
+                    user.Id,
+                    userSession.StoreId,
+                    cancellationToken);
+                if (linkedTechnician is not null)
+                {
+                    linkedTechnician.IsActive = false;
+                    linkedTechnician.IsDeleted = true;
+                    linkedTechnician.UpdatedDate = DateTime.UtcNow;
+                }
 
                 await userRepository.DeleteAsync(user, cancellationToken);
                 await unitOfWork.SaveChangesAsync(cancellationToken);

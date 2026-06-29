@@ -78,7 +78,7 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
             if (order.RowVersion != request.RowVersion)
                 return new UpdateOrderResponse(false, "Dữ liệu đã thay đổi, vui lòng tải lại.");
 
-            if (currentStatus.Code is "PACKED" or "COMPLETED" or "CANCELLED")
+            if (currentStatus.Code is "COMPLETED")
                 return await UpdateDescriptionOnlyAsync(request, userId, storeId, cancellationToken);
 
             if (order.TechnicianExportedAt.HasValue)

@@ -4,7 +4,7 @@ using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Message;
 using BizMate.Application.Common.Requests.Validators;
 using BizMate.Domain.Constants;
-using BizMate.Infrastructure.Persistence;
+using BizMate.Infrastructure.Migrations;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Text;
 
 internal class Program
@@ -131,7 +132,7 @@ internal class Program
             options.AddPolicy("AllowAngular", policy =>
             {
                 policy
-                    .AllowAnyOrigin()
+                    .SetIsOriginAllowed(IsAllowedAngularOrigin)
                     .AllowAnyHeader()
                     .AllowAnyMethod();
             });
@@ -154,11 +155,40 @@ internal class Program
         });
 
         app.UseCors("AllowAngular");
-        app.UseHttpsRedirection();
+
+        // Tạm thời comment khi test HTTP local
+        // app.UseHttpsRedirection();
+
         app.UseAuthentication();
         app.UseAuthorization();
+
         app.MapControllers();
 
         app.Run();
+    }
+
+    private static bool IsAllowedAngularOrigin(string origin)
+    {
+        if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri)
+            || uri.Port != 4200
+            || uri.Scheme is not ("http" or "https"))
+        {
+            return false;
+        }
+
+        if (uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (!IPAddress.TryParse(uri.Host, out var address))
+            return false;
+
+        if (IPAddress.IsLoopback(address))
+            return true;
+
+        var bytes = address.GetAddressBytes();
+        return address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork
+            && (bytes[0] == 10
+                || (bytes[0] == 172 && bytes[1] is >= 16 and <= 31)
+                || (bytes[0] == 192 && bytes[1] == 168));
     }
 }

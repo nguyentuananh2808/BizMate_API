@@ -9,6 +9,7 @@ namespace BizMate.Domain.Entities
         public Product Product { get; set; } = default!;
 
         public HoldingTransactionType Type { get; set; }
+        public TechnicianBorrowType BorrowType { get; set; } = TechnicianBorrowType.Assigned;
         public int Quantity { get; set; }
 
         public string? ReferenceType { get; set; }
