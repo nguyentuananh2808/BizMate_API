@@ -59,7 +59,6 @@ namespace BizMate.Application.UserCases.TechnicianHolding
 
     public class CreateTechnicianBorrowRequest : IRequest<BorrowingMutationResponse>
     {
-        public Guid TechnicianId { get; set; }
         public TechnicianBorrowType BorrowType { get; set; } = TechnicianBorrowType.Daily;
         public DateOnly NeededDate { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
         public string? Description { get; set; }
@@ -199,7 +198,7 @@ namespace BizMate.Application.UserCases.TechnicianHolding
             => borrowType switch
             {
                 TechnicianBorrowType.Daily => "Mượn trong ngày",
-                TechnicianBorrowType.Assigned or TechnicianBorrowType.Warranty => "Cấp giữ kỹ thuật",
+                TechnicianBorrowType.Assigned => "Cấp giữ kỹ thuật",
                 _ => "Không xác định"
             };
 
@@ -731,8 +730,6 @@ namespace BizMate.Application.UserCases.TechnicianHolding
                 if (request.BorrowType is not (
                     TechnicianBorrowType.Daily or TechnicianBorrowType.Assigned))
                     return await RollbackAsync("Loại mượn không hợp lệ.", ct);
-                if (request.TechnicianId == Guid.Empty && CurrentUserId(userSession) is null)
-                    return await RollbackAsync("Vui lòng chọn kỹ thuật viên.", ct);
                 if (request.Items.Count == 0 || request.Items.Any(x => x.ProductId == Guid.Empty || x.Quantity <= 0))
                     return await RollbackAsync("Danh sách sản phẩm mượn không hợp lệ.", ct);
                 if (request.Items.GroupBy(x => x.ProductId).Any(x => x.Count() > 1))
@@ -743,13 +740,10 @@ namespace BizMate.Application.UserCases.TechnicianHolding
                 var currentTechnician = userId.HasValue
                     ? await repo.GetTechnicianByUserIdAsync(userId.Value, storeId, ct)
                     : null;
-                var technicianId = currentTechnician?.Id ?? request.TechnicianId;
-                if (technicianId == Guid.Empty)
+                if (currentTechnician is null)
                     return await RollbackAsync("Tài khoản chưa được liên kết với hồ sơ kỹ thuật viên.", ct);
 
-                var technician = currentTechnician
-                    ?? await repo.GetTechnicianAsync(technicianId, storeId, ct);
-                if (technician is null || !technician.IsActive)
+                if (!currentTechnician.IsActive)
                     return await RollbackAsync("Kỹ thuật viên không tồn tại hoặc đang ngừng hoạt động.", ct);
 
                 var productIds = request.Items.Select(x => x.ProductId).ToList();
@@ -767,7 +761,7 @@ namespace BizMate.Application.UserCases.TechnicianHolding
                     Id = requestId,
                     StoreId = storeId,
                     Code = await codeGeneratorService.GenerateCodeAsync("#MH", 5),
-                    TechnicianId = technicianId,
+                    TechnicianId = currentTechnician.Id,
                     BorrowType = request.BorrowType,
                     RequestStatus = TechnicianBorrowRequestStatus.Pending,
                     NeededDate = request.NeededDate,

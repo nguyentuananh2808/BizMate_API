@@ -27,6 +27,7 @@ namespace BizMate.Application.UserCases.User.Commands.UserManagement
         public string Password { get; set; } = default!;
         public string? Phone { get; set; }
         public Guid RoleId { get; set; }
+        public List<Guid> PermissionIds { get; set; } = [];
         public bool IsActive { get; set; } = true;
     }
 
@@ -107,6 +108,8 @@ namespace BizMate.Application.UserCases.User.Commands.UserManagement
         IUserRepository userRepository,
         IRoleRepository roleRepository,
         IUserRoleRepository userRoleRepository,
+        IPermissionRepository permissionRepository,
+        IUserPermissionRepository userPermissionRepository,
         ITechnicianHoldingRepository technicianRepository,
         IUserSession userSession,
         ICodeGeneratorService codeGeneratorService,
@@ -140,6 +143,19 @@ namespace BizMate.Application.UserCases.User.Commands.UserManagement
             if (UserAccountRules.IsOwnerRole(role))
                 return new UserMutationResponse(false, "Không thể tạo thêm tài khoản chủ công ty.");
 
+            var permissionIds = request.PermissionIds
+                .Where(id => id != Guid.Empty)
+                .Distinct()
+                .ToList();
+            if (permissionIds.Count > 0)
+            {
+                var permissions = await permissionRepository.GetByIdsAsync(
+                    permissionIds,
+                    cancellationToken);
+                if (permissions.Count != permissionIds.Count)
+                    return new UserMutationResponse(false, "Danh sách quyền bổ sung không hợp lệ.");
+            }
+
             var creatorId = Guid.TryParse(userSession.UserId, out var parsedCreatorId)
                 ? parsedCreatorId
                 : (Guid?)null;
@@ -172,6 +188,21 @@ namespace BizMate.Application.UserCases.User.Commands.UserManagement
                     CreatedBy = creatorId,
                     CreatedDate = DateTime.UtcNow
                 }, cancellationToken);
+
+                if (permissionIds.Count > 0)
+                {
+                    await userPermissionRepository.AddRangeAsync(
+                        permissionIds.Select(permissionId => new UserPermission
+                        {
+                            Id = Guid.NewGuid(),
+                            UserId = user.Id,
+                            StoreId = userSession.StoreId,
+                            PermissionId = permissionId,
+                            CreatedBy = creatorId,
+                            CreatedDate = DateTime.UtcNow
+                        }),
+                        cancellationToken);
+                }
 
                 if (UserAccountRules.IsTechnicianRole(role))
                 {

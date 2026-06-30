@@ -26,18 +26,24 @@ namespace BizMate.Application.UserCases.User.Commands.AssignRole
         private readonly IRoleRepository _roleRepo;
         private readonly IUserRoleRepository _userRoleRepo;
         private readonly IUserRepository _userRepo;
+        private readonly ITechnicianHoldingRepository _technicianRepo;
+        private readonly ICodeGeneratorService _codeGeneratorService;
         private readonly IUnitOfWork _uow;
 
         public AssignRoleHandler(
             IRoleRepository roleRepo,
             IUserRoleRepository userRoleRepo,
             IUserRepository userRepo,
+            ITechnicianHoldingRepository technicianRepo,
+            ICodeGeneratorService codeGeneratorService,
             IUnitOfWork uow)
         {
-            _roleRepo     = roleRepo;
-            _userRoleRepo = userRoleRepo;
-            _userRepo     = userRepo;
-            _uow          = uow;
+            _roleRepo            = roleRepo;
+            _userRoleRepo        = userRoleRepo;
+            _userRepo            = userRepo;
+            _technicianRepo      = technicianRepo;
+            _codeGeneratorService = codeGeneratorService;
+            _uow                 = uow;
         }
 
         public async Task<AssignRoleResponse> Handle(AssignRoleRequest request, CancellationToken ct)
@@ -79,6 +85,39 @@ namespace BizMate.Application.UserCases.User.Commands.AssignRole
                 };
 
                 await _userRoleRepo.AddAsync(userRole, ct);
+
+                if (string.Equals(
+                    role.Name,
+                    "Technician",
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    var technician = await _technicianRepo.GetTechnicianByUserIdAsync(
+                        user.Id,
+                        request.StoreId,
+                        ct);
+
+                    if (technician is null)
+                    {
+                        _technicianRepo.AddTechnician(new Technician
+                        {
+                            Id = Guid.NewGuid(),
+                            Code = await _codeGeneratorService.GenerateCodeAsync("#KT", 5),
+                            UserId = user.Id,
+                            Name = user.FullName,
+                            StoreId = request.StoreId,
+                            IsActive = user.IsActive,
+                            CreatedDate = DateTime.UtcNow
+                        });
+                    }
+                    else
+                    {
+                        technician.Name = user.FullName;
+                        technician.IsActive = user.IsActive;
+                        technician.UpdatedDate = DateTime.UtcNow;
+                        technician.RowVersion = Guid.NewGuid();
+                    }
+                }
+
                 await _uow.SaveChangesAsync(ct);
 
                 return new AssignRoleResponse(true, $"Đã gán vai trò '{role.DisplayName}' thành công.");

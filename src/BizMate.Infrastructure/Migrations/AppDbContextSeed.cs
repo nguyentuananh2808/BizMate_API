@@ -70,7 +70,7 @@ namespace BizMate.Infrastructure.Migrations
                 .Where(p => !existing.Contains(p.Name))
                 .Select(p => new Permission
                 {
-                    Id = Guid.NewGuid(), // có thể thay bằng deterministic nếu cần
+                    Id = Guid.NewGuid(), 
                     Name = p.Name,
                     DisplayName = p.DisplayName,
                     Group = p.Group,

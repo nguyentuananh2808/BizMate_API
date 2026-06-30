@@ -69,6 +69,7 @@ namespace BizMate.Api.UserCases.User.UserManagement
                 Password = body?.Password ?? string.Empty,
                 Phone = body?.Phone,
                 RoleId = body?.RoleId ?? Guid.Empty,
+                PermissionIds = body?.PermissionIds ?? [],
                 IsActive = body?.IsActive ?? true
             }, ct);
 

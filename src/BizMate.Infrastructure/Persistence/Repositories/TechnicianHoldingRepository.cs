@@ -88,21 +88,6 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                 .ToListAsync(ct);
         }
 
-        public async Task<bool> ExistsTechnicianPhoneAsync(
-            Guid storeId,
-            string phone,
-            Guid? excludeId = null,
-            CancellationToken ct = default)
-        {
-            var normalized = phone.Trim().ToLower();
-            return await _context.Technicians.AnyAsync(x =>
-                x.StoreId == storeId
-                && !x.IsDeleted
-                && x.Phone != null
-                && x.Phone.ToLower() == normalized
-                && (!excludeId.HasValue || x.Id != excludeId.Value), ct);
-        }
-
         public async Task<List<Stock>> GetStocksAsync(Guid storeId, IEnumerable<Guid> productIds, CancellationToken ct = default)
         {
             var ids = productIds.Distinct().ToList();

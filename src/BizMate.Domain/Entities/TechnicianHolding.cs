@@ -17,8 +17,6 @@ namespace BizMate.Domain.Entities
     public enum TechnicianBorrowType
     {
         Daily = 1,
-        Assigned = 2,
-        Backpack = Assigned,
-        Warranty = 3
+        Assigned = 2
     }
 }

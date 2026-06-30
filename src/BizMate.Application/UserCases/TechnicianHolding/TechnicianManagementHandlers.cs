@@ -1,4 +1,3 @@
-using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Responses;
 using BizMate.Application.Common.Security;
@@ -36,36 +35,6 @@ namespace BizMate.Application.UserCases.TechnicianHolding
         public bool IsActive { get; set; }
     }
 
-    public class CreateTechnicianRequest : IRequest<TechnicianMutationResponse>
-    {
-        public string Name { get; set; } = default!;
-        public string? Phone { get; set; }
-        public string? ZaloPhone { get; set; }
-        public bool IsActive { get; set; } = true;
-    }
-
-    public class UpdateTechnicianRequest : IRequest<TechnicianMutationResponse>
-    {
-        public Guid Id { get; set; }
-        public string Name { get; set; } = default!;
-        public string? Phone { get; set; }
-        public string? ZaloPhone { get; set; }
-        public bool IsActive { get; set; } = true;
-    }
-
-    public class TechnicianMutationResponse : BaseResponse
-    {
-        public Guid? TechnicianId { get; set; }
-
-        public TechnicianMutationResponse(Guid technicianId, string message) : base(true, message)
-        {
-            TechnicianId = technicianId;
-        }
-
-        public TechnicianMutationResponse(bool success = false, string message = "")
-            : base(success, message) { }
-    }
-
     public class GetTechniciansHandler : IRequestHandler<GetTechniciansRequest, GetTechniciansResponse>
     {
         private readonly ITechnicianHoldingRepository _repo;
@@ -100,103 +69,4 @@ namespace BizMate.Application.UserCases.TechnicianHolding
             };
     }
 
-    public class CreateTechnicianHandler : IRequestHandler<CreateTechnicianRequest, TechnicianMutationResponse>
-    {
-        private readonly ITechnicianHoldingRepository _repo;
-        private readonly IUserSession _userSession;
-        private readonly ICodeGeneratorService _codeGenerator;
-        private readonly IUnitOfWork _uow;
-
-        public CreateTechnicianHandler(
-            ITechnicianHoldingRepository repo,
-            IUserSession userSession,
-            ICodeGeneratorService codeGenerator,
-            IUnitOfWork uow)
-        {
-            _repo = repo;
-            _userSession = userSession;
-            _codeGenerator = codeGenerator;
-            _uow = uow;
-        }
-
-        public async Task<TechnicianMutationResponse> Handle(CreateTechnicianRequest request, CancellationToken ct)
-        {
-            var name = request.Name?.Trim();
-            var phone = request.Phone?.Trim();
-            var zaloPhone = request.ZaloPhone?.Trim();
-
-            if (string.IsNullOrWhiteSpace(name))
-                return new TechnicianMutationResponse(false, "Tên kỹ thuật không được để trống.");
-            if (!string.IsNullOrWhiteSpace(phone)
-                && await _repo.ExistsTechnicianPhoneAsync(_userSession.StoreId, phone, null, ct))
-                return new TechnicianMutationResponse(false, "Số điện thoại kỹ thuật đã tồn tại.");
-
-            var userId = Guid.TryParse(_userSession.UserId, out var parsedUserId) ? parsedUserId : (Guid?)null;
-            var technician = new Technician
-            {
-                Id = Guid.NewGuid(),
-                StoreId = _userSession.StoreId,
-                Code = await _codeGenerator.GenerateCodeAsync("#KT", 5),
-                Name = name,
-                Phone = phone,
-                ZaloPhone = zaloPhone,
-                IsActive = request.IsActive,
-                CreatedBy = userId,
-                CreatedDate = DateTime.UtcNow
-            };
-
-            _repo.AddTechnician(technician);
-            await _uow.SaveChangesAsync(ct);
-
-            return new TechnicianMutationResponse(technician.Id, "Tạo kỹ thuật thành công.");
-        }
-    }
-
-    public class UpdateTechnicianHandler : IRequestHandler<UpdateTechnicianRequest, TechnicianMutationResponse>
-    {
-        private readonly ITechnicianHoldingRepository _repo;
-        private readonly IUserSession _userSession;
-        private readonly IUnitOfWork _uow;
-
-        public UpdateTechnicianHandler(
-            ITechnicianHoldingRepository repo,
-            IUserSession userSession,
-            IUnitOfWork uow)
-        {
-            _repo = repo;
-            _userSession = userSession;
-            _uow = uow;
-        }
-
-        public async Task<TechnicianMutationResponse> Handle(UpdateTechnicianRequest request, CancellationToken ct)
-        {
-            if (request.Id == Guid.Empty)
-                return new TechnicianMutationResponse(false, "TechnicianId không hợp lệ.");
-
-            var name = request.Name?.Trim();
-            var phone = request.Phone?.Trim();
-            var zaloPhone = request.ZaloPhone?.Trim();
-
-            if (string.IsNullOrWhiteSpace(name))
-                return new TechnicianMutationResponse(false, "Tên kỹ thuật không được để trống.");
-
-            var technician = await _repo.GetTechnicianAsync(request.Id, _userSession.StoreId, ct);
-            if (technician is null)
-                return new TechnicianMutationResponse(false, "Không tìm thấy kỹ thuật trong store hiện tại.");
-
-            if (!string.IsNullOrWhiteSpace(phone)
-                && await _repo.ExistsTechnicianPhoneAsync(_userSession.StoreId, phone, request.Id, ct))
-                return new TechnicianMutationResponse(false, "Số điện thoại kỹ thuật đã tồn tại.");
-
-            technician.Name = name;
-            technician.Phone = phone;
-            technician.ZaloPhone = zaloPhone;
-            technician.IsActive = request.IsActive;
-            technician.UpdatedDate = DateTime.UtcNow;
-            technician.UpdatedBy = Guid.TryParse(_userSession.UserId, out var userId) ? userId : null;
-
-            await _uow.SaveChangesAsync(ct);
-            return new TechnicianMutationResponse(technician.Id, "Cập nhật kỹ thuật thành công.");
-        }
-    }
 }

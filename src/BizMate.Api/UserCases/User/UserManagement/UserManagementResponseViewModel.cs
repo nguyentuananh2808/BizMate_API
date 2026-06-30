@@ -35,6 +35,7 @@ namespace BizMate.Api.UserCases.User.UserManagement
         public string Password { get; set; } = default!;
         public string? Phone { get; set; }
         public Guid RoleId { get; set; }
+        public List<Guid> PermissionIds { get; set; } = [];
         public bool IsActive { get; set; } = true;
     }
 

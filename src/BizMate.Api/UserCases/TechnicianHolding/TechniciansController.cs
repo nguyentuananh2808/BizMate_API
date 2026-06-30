@@ -19,7 +19,7 @@ namespace BizMate.Api.UserCases.TechnicianHolding
         }
 
         [HttpGet]
-        [HasPermission(PermissionConstants.User.View)]
+        [HasPermission(PermissionConstants.Stock.View)]
         public async Task<IActionResult> GetTechnicians(
             [FromQuery] string? keyword,
             [FromQuery] bool includeInactive,
@@ -34,40 +34,6 @@ namespace BizMate.Api.UserCases.TechnicianHolding
             return ToJson(response);
         }
 
-        [HttpPost]
-        [HasPermission(PermissionConstants.User.Create)]
-        public async Task<IActionResult> CreateTechnician([FromBody] TechnicianBody? body, CancellationToken ct)
-        {
-            var response = await _mediator.Send(new CreateTechnicianRequest
-            {
-                Name = body?.Name ?? string.Empty,
-                Phone = body?.Phone,
-                ZaloPhone = body?.ZaloPhone,
-                IsActive = body?.IsActive ?? true
-            }, ct);
-
-            return ToJson(response);
-        }
-
-        [HttpPut("{technicianId:guid}")]
-        [HasPermission(PermissionConstants.User.Edit)]
-        public async Task<IActionResult> UpdateTechnician(
-            Guid technicianId,
-            [FromBody] TechnicianBody? body,
-            CancellationToken ct)
-        {
-            var response = await _mediator.Send(new UpdateTechnicianRequest
-            {
-                Id = technicianId,
-                Name = body?.Name ?? string.Empty,
-                Phone = body?.Phone,
-                ZaloPhone = body?.ZaloPhone,
-                IsActive = body?.IsActive ?? true
-            }, ct);
-
-            return ToJson(response);
-        }
-
         private static IActionResult ToJson(BaseResponse response)
             => new JsonContentResult
             {
@@ -76,11 +42,4 @@ namespace BizMate.Api.UserCases.TechnicianHolding
             };
     }
 
-    public class TechnicianBody
-    {
-        public string Name { get; set; } = default!;
-        public string? Phone { get; set; }
-        public string? ZaloPhone { get; set; }
-        public bool IsActive { get; set; } = true;
-    }
 }

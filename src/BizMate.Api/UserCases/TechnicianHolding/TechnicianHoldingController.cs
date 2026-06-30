@@ -79,7 +79,6 @@ namespace BizMate.Api.UserCases.TechnicianHolding
         {
             var response = await _mediator.Send(new CreateTechnicianBorrowRequest
             {
-                TechnicianId = body?.TechnicianId ?? Guid.Empty,
                 BorrowType = body?.BorrowType ?? TechnicianBorrowType.Daily,
                 NeededDate = body?.NeededDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
                 Description = body?.Description,
@@ -160,7 +159,6 @@ namespace BizMate.Api.UserCases.TechnicianHolding
 
     public class CreateTechnicianBorrowBody
     {
-        public Guid TechnicianId { get; set; }
         public TechnicianBorrowType BorrowType { get; set; } = TechnicianBorrowType.Daily;
         public DateOnly NeededDate { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
         public string? Description { get; set; }
