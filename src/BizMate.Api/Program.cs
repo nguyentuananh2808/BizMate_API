@@ -156,8 +156,6 @@ internal class Program
 
         app.UseCors("AllowAngular");
 
-        // Tạm thời comment khi test HTTP local
-        // app.UseHttpsRedirection();
 
         app.UseAuthentication();
         app.UseAuthorization();

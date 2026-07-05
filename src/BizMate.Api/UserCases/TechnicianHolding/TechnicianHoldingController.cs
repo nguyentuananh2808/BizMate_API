@@ -73,12 +73,30 @@ namespace BizMate.Api.UserCases.TechnicianHolding
             return ToJson(response);
         }
 
+        [HttpGet("borrow-employees")]
+        [HasPermission(PermissionConstants.Stock.View)]
+        public async Task<IActionResult> GetBorrowEmployees(
+            [FromQuery] string? keyword,
+            [FromQuery] bool includeInactive,
+            CancellationToken ct)
+        {
+            var response = await _mediator.Send(new GetBorrowableEmployeesRequest
+            {
+                Keyword = keyword,
+                IncludeInactive = includeInactive
+            }, ct);
+
+            return ToJson(response);
+        }
+
         [HttpPost("requests")]
         [HasPermission(PermissionConstants.Stock.View)]
         public async Task<IActionResult> CreateBorrowRequest([FromBody] CreateTechnicianBorrowBody? body, CancellationToken ct)
         {
             var response = await _mediator.Send(new CreateTechnicianBorrowRequest
             {
+                TechnicianId = body?.TechnicianId,
+                EmployeeUserId = body?.EmployeeUserId,
                 BorrowType = body?.BorrowType ?? TechnicianBorrowType.Daily,
                 NeededDate = body?.NeededDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
                 Description = body?.Description,
@@ -159,6 +177,8 @@ namespace BizMate.Api.UserCases.TechnicianHolding
 
     public class CreateTechnicianBorrowBody
     {
+        public Guid? TechnicianId { get; set; }
+        public Guid? EmployeeUserId { get; set; }
         public TechnicianBorrowType BorrowType { get; set; } = TechnicianBorrowType.Daily;
         public DateOnly NeededDate { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
         public string? Description { get; set; }

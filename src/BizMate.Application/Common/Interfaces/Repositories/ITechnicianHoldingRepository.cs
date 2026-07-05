@@ -8,6 +8,7 @@ namespace BizMate.Application.Common.Interfaces.Repositories
         Task<List<Technician>> SearchTechniciansAsync(Guid storeId, string? keyword, bool includeInactive = false, CancellationToken ct = default);
         Task<Technician?> GetTechnicianAsync(Guid technicianId, Guid storeId, CancellationToken ct = default);
         Task<Technician?> GetTechnicianByUserIdAsync(Guid userId, Guid storeId, CancellationToken ct = default);
+        Task<List<Technician>> GetTechniciansByUserIdsAsync(Guid storeId, IEnumerable<Guid> userIds, CancellationToken ct = default);
         Task<List<Technician>> GetTechniciansByIdsAsync(Guid storeId, IEnumerable<Guid> technicianIds, CancellationToken ct = default);
         Task<List<Stock>> GetStocksAsync(Guid storeId, IEnumerable<Guid> productIds, CancellationToken ct = default);
         Task<TechnicianHolding?> GetHoldingAsync(Guid storeId, Guid technicianId, Guid productId, CancellationToken ct = default);

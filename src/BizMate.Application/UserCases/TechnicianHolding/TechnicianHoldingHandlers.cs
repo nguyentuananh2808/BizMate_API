@@ -59,6 +59,8 @@ namespace BizMate.Application.UserCases.TechnicianHolding
 
     public class CreateTechnicianBorrowRequest : IRequest<BorrowingMutationResponse>
     {
+        public Guid? TechnicianId { get; set; }
+        public Guid? EmployeeUserId { get; set; }
         public TechnicianBorrowType BorrowType { get; set; } = TechnicianBorrowType.Daily;
         public DateOnly NeededDate { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
         public string? Description { get; set; }
@@ -714,6 +716,7 @@ namespace BizMate.Application.UserCases.TechnicianHolding
 
     public class CreateTechnicianBorrowRequestHandler(
         ITechnicianHoldingRepository repo,
+        IUserRepository userRepository,
         IProductRepository productRepository,
         ICodeGeneratorService codeGeneratorService,
         IUserSession userSession,
@@ -737,14 +740,15 @@ namespace BizMate.Application.UserCases.TechnicianHolding
 
                 var storeId = userSession.StoreId;
                 var userId = CurrentUserId(userSession);
-                var currentTechnician = userId.HasValue
-                    ? await repo.GetTechnicianByUserIdAsync(userId.Value, storeId, ct)
-                    : null;
-                if (currentTechnician is null)
-                    return await RollbackAsync("Tài khoản chưa được liên kết với hồ sơ kỹ thuật viên.", ct);
+                var targetTechnician = await ResolveBorrowReceiverAsync(
+                    request,
+                    storeId,
+                    userId,
+                    ct);
+                if (targetTechnician.Response is not null)
+                    return targetTechnician.Response;
 
-                if (!currentTechnician.IsActive)
-                    return await RollbackAsync("Kỹ thuật viên không tồn tại hoặc đang ngừng hoạt động.", ct);
+                var currentTechnician = targetTechnician.Technician!;
 
                 var productIds = request.Items.Select(x => x.ProductId).ToList();
                 var products = await productRepository.GetByIdsAsync(productIds, ct);
@@ -793,7 +797,7 @@ namespace BizMate.Application.UserCases.TechnicianHolding
                 repo.AddBorrowRequest(borrowRequest);
                 await unitOfWork.SaveChangesAsync(ct);
                 await unitOfWork.CommitAsync(ct);
-                return new BorrowingMutationResponse(true, "Đã gửi đề xuất mượn hàng cho thủ kho duyệt.");
+                return new BorrowingMutationResponse(true, "Đã tạo phiếu mượn hàng và đưa vào danh sách chờ duyệt.");
             }
             catch (Exception ex)
             {
@@ -809,6 +813,90 @@ namespace BizMate.Application.UserCases.TechnicianHolding
             return new BorrowingMutationResponse(false, message);
         }
 
+        private async Task<(Technician? Technician, BorrowingMutationResponse? Response)> ResolveBorrowReceiverAsync(
+            CreateTechnicianBorrowRequest request,
+            Guid storeId,
+            Guid? currentUserId,
+            CancellationToken ct)
+        {
+            var isTechnicianActor = string.Equals(
+                userSession.Role,
+                "Technician",
+                StringComparison.OrdinalIgnoreCase);
+
+            if (isTechnicianActor)
+            {
+                var currentTechnician = currentUserId.HasValue
+                    ? await repo.GetTechnicianByUserIdAsync(currentUserId.Value, storeId, ct)
+                    : null;
+
+                if (currentTechnician is null)
+                    return (null, await RollbackAsync("Tài khoản chưa được liên kết với hồ sơ kỹ thuật viên.", ct));
+                if (!currentTechnician.IsActive)
+                    return (null, await RollbackAsync("Kỹ thuật viên không tồn tại hoặc đang ngừng hoạt động.", ct));
+
+                return (currentTechnician, null);
+            }
+
+            if (request.TechnicianId.HasValue && request.TechnicianId.Value != Guid.Empty)
+            {
+                var technician = await repo.GetTechnicianAsync(
+                    request.TechnicianId.Value,
+                    storeId,
+                    ct);
+                if (technician is null)
+                    return (null, await RollbackAsync("Không tìm thấy nhân viên nhận hàng trong công ty hiện tại.", ct));
+                if (!technician.IsActive)
+                    return (null, await RollbackAsync("Nhân viên nhận hàng đang ngừng hoạt động.", ct));
+
+                return (technician, null);
+            }
+
+            if (!request.EmployeeUserId.HasValue || request.EmployeeUserId.Value == Guid.Empty)
+                return (null, await RollbackAsync("Vui lòng chọn nhân viên nhận hàng.", ct));
+
+            var employee = await userRepository.GetByIdInStoreAsync(
+                request.EmployeeUserId.Value,
+                storeId,
+                ct);
+            if (employee is null)
+                return (null, await RollbackAsync("Không tìm thấy nhân viên trong công ty hiện tại.", ct));
+            if (!employee.IsActive)
+                return (null, await RollbackAsync("Nhân viên nhận hàng đang bị khóa.", ct));
+
+            var linkedTechnician = await repo.GetTechnicianByUserIdAsync(
+                employee.Id,
+                storeId,
+                ct);
+            if (linkedTechnician is not null)
+            {
+                linkedTechnician.Name = employee.FullName;
+                linkedTechnician.IsActive = true;
+                linkedTechnician.UpdatedBy = currentUserId;
+                linkedTechnician.UpdatedDate = DateTime.UtcNow;
+                linkedTechnician.RowVersion = Guid.NewGuid();
+                return (linkedTechnician, null);
+            }
+
+            var now = DateTime.UtcNow;
+            var newTechnician = new Technician
+            {
+                Id = Guid.NewGuid(),
+                Code = await codeGeneratorService.GenerateCodeAsync("#KT", 5),
+                UserId = employee.Id,
+                Name = employee.FullName,
+                StoreId = storeId,
+                IsActive = true,
+                CreatedBy = currentUserId,
+                CreatedDate = now,
+                UpdatedBy = currentUserId,
+                UpdatedDate = now
+            };
+
+            repo.AddTechnician(newTechnician);
+            return (newTechnician, null);
+        }
+
         private static Guid? CurrentUserId(IUserSession session)
             => Guid.TryParse(session.UserId, out var userId) ? userId : null;
     }
@@ -818,14 +906,24 @@ namespace BizMate.Application.UserCases.TechnicianHolding
     {
         public async Task<GetTechnicianBorrowRequestsResponse> Handle(GetTechnicianBorrowRequestsRequest request, CancellationToken ct)
         {
-            var userId = TechnicianHoldingRules.CurrentUserId(userSession);
-            var currentTechnician = userId.HasValue
-                ? await repo.GetTechnicianByUserIdAsync(
-                    userId.Value,
-                    userSession.StoreId,
-                    ct)
-                : null;
-            var technicianId = currentTechnician?.Id ?? request.TechnicianId;
+            var technicianId = request.TechnicianId;
+            var isTechnicianActor = string.Equals(
+                userSession.Role,
+                "Technician",
+                StringComparison.OrdinalIgnoreCase);
+
+            if (isTechnicianActor)
+            {
+                var userId = TechnicianHoldingRules.CurrentUserId(userSession);
+                var currentTechnician = userId.HasValue
+                    ? await repo.GetTechnicianByUserIdAsync(
+                        userId.Value,
+                        userSession.StoreId,
+                        ct)
+                    : null;
+                technicianId = currentTechnician?.Id ?? Guid.Empty;
+            }
+
             var requests = await repo.GetBorrowRequestsAsync(
                 userSession.StoreId,
                 request.Status,
@@ -1484,14 +1582,24 @@ namespace BizMate.Application.UserCases.TechnicianHolding
 
         public async Task<GetTechnicianHoldingsResponse> Handle(GetTechnicianHoldingsRequest request, CancellationToken ct)
         {
-            var userId = TechnicianHoldingRules.CurrentUserId(_userSession);
-            var currentTechnician = userId.HasValue
-                ? await _repo.GetTechnicianByUserIdAsync(
-                    userId.Value,
-                    _userSession.StoreId,
-                    ct)
-                : null;
-            var technicianId = currentTechnician?.Id ?? request.TechnicianId;
+            var technicianId = request.TechnicianId;
+            var isTechnicianActor = string.Equals(
+                _userSession.Role,
+                "Technician",
+                StringComparison.OrdinalIgnoreCase);
+
+            if (isTechnicianActor)
+            {
+                var userId = TechnicianHoldingRules.CurrentUserId(_userSession);
+                var currentTechnician = userId.HasValue
+                    ? await _repo.GetTechnicianByUserIdAsync(
+                        userId.Value,
+                        _userSession.StoreId,
+                        ct)
+                    : null;
+                technicianId = currentTechnician?.Id ?? Guid.Empty;
+            }
+
             var holdings = await _repo.GetHoldingsAsync(_userSession.StoreId, technicianId, ct);
             return new GetTechnicianHoldingsResponse(ToGroups(holdings, DateTime.UtcNow.AddHours(-24)));
         }

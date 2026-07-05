@@ -72,6 +72,27 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                     && !x.IsDeleted, ct);
         }
 
+        public async Task<List<Technician>> GetTechniciansByUserIdsAsync(
+            Guid storeId,
+            IEnumerable<Guid> userIds,
+            CancellationToken ct = default)
+        {
+            var ids = userIds
+                .Where(x => x != Guid.Empty)
+                .Distinct()
+                .ToList();
+
+            if (ids.Count == 0)
+                return new List<Technician>();
+
+            return await _context.Technicians
+                .Where(x => x.StoreId == storeId
+                    && x.UserId.HasValue
+                    && ids.Contains(x.UserId.Value)
+                    && !x.IsDeleted)
+                .ToListAsync(ct);
+        }
+
         public async Task<List<Technician>> GetTechniciansByIdsAsync(
             Guid storeId,
             IEnumerable<Guid> technicianIds,

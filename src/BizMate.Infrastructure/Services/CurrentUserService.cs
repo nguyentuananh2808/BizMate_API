@@ -23,7 +23,8 @@ namespace BizMate.Infrastructure.Services
             _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Email)?.Value;
 
         public string? Role =>
-            _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Role)?.Value;
+            _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Role)?.Value
+            ?? _httpContextAccessor.HttpContext?.User?.FindFirst("role")?.Value;
 
         public Guid StoreId =>
             Guid.TryParse(_httpContextAccessor.HttpContext?.User?.FindFirst("store_id")?.Value, out var storeId)
