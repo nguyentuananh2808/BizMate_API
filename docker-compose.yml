@@ -1,15 +1,25 @@
 services:
+ bizmate-web:
+  build:
+    context: ../BizMate.FE
+    dockerfile: Dockerfile
+  container_name: bizmate-web
+  restart: always
+  ports:
+    - "81:80"
+  depends_on:
+    - bizmate-api
+  networks:
+    - atp_network
+
   bizmate-api:
     build:
       context: .
       dockerfile: src/BizMate.Api/Dockerfile
     container_name: bizmate-api
     restart: always
-    ports:
-      - "5000:8080"
-      - "5051:8080"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080
       - TZ=Asia/Ho_Chi_Minh
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=atp;Username=atp;Password=atp@
@@ -30,8 +40,6 @@ services:
       POSTGRES_USER: atp
       POSTGRES_PASSWORD: atp@
       POSTGRES_DB: atp
-    ports:
-      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -46,8 +54,6 @@ services:
     image: redis:7-alpine
     container_name: atp-redis
     restart: always
-    ports:
-      - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -60,8 +66,10 @@ services:
 
 volumes:
   postgres_data:
+    name: bizmate_postgres_data
     driver: local
   redis_data:
+    name: bizmate_redis_data
     driver: local
 
 networks:
