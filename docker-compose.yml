@@ -1,16 +1,16 @@
 services:
- bizmate-web:
-  build:
-    context: ../BizMate.FE
-    dockerfile: Dockerfile
-  container_name: bizmate-web
-  restart: always
-  ports:
-    - "81:80"
-  depends_on:
-    - bizmate-api
-  networks:
-    - atp_network
+  bizmate-web:
+    build:
+      context: ../BizMate.FE
+      dockerfile: Dockerfile
+    container_name: bizmate-web
+    restart: always
+    ports:
+      - "81:80"
+    depends_on:
+      - bizmate-api
+    networks:
+      - atp_network
 
   bizmate-api:
     build:
