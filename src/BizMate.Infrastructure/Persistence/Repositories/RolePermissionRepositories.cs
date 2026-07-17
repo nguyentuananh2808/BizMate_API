@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BizMate.Infrastructure.Persistence.Repositories
 {
-    // ── RoleRepository ────────────────────────────────────────────────────────
     public class RoleRepository : IRoleRepository
     {
         private readonly AppDbContext _context;
@@ -55,7 +54,6 @@ namespace BizMate.Infrastructure.Persistence.Repositories
         }
     }
 
-    // ── PermissionRepository ──────────────────────────────────────────────────
     public class PermissionRepository : IPermissionRepository
     {
         private readonly AppDbContext _context;
@@ -73,7 +71,6 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                 .ToListAsync(ct);
     }
 
-    // ── UserRoleRepository ────────────────────────────────────────────────────
     public class UserRoleRepository : IUserRoleRepository
     {
         private readonly AppDbContext _context;

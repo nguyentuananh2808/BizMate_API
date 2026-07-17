@@ -5,9 +5,6 @@ using BizMate.Domain.Entities;
 using FluentValidation;
 using MediatR;
 
-// ══════════════════════════════════════════════════════════════════════════════
-// CREATE ROLE
-// ══════════════════════════════════════════════════════════════════════════════
 namespace BizMate.Application.UserCases.RoleAggregate.Role.Commands.CreateRole
 {
     public class CreateRoleRequest : IRequest<CreateRoleResponse>
@@ -21,7 +18,8 @@ namespace BizMate.Application.UserCases.RoleAggregate.Role.Commands.CreateRole
     {
         public Guid RoleId { get; set; }
         public CreateRoleResponse(Guid roleId) : base(true) => RoleId = roleId;
-        public CreateRoleResponse(bool success = false, string? message = null) : base(success, message) { }
+        public CreateRoleResponse(bool success = false, string? message = null)
+            : base(success, message) { }
     }
 
     public class CreateRoleRequestValidator : AbstractValidator<CreateRoleRequest>
@@ -40,13 +38,19 @@ namespace BizMate.Application.UserCases.RoleAggregate.Role.Commands.CreateRole
         private readonly IPermissionRepository _permRepo;
         private readonly IUnitOfWork _uow;
 
-        public CreateRoleHandler(IRoleRepository roleRepo, IPermissionRepository permRepo, IUnitOfWork uow)
+        public CreateRoleHandler(
+            IRoleRepository roleRepo,
+            IPermissionRepository permRepo,
+            IUnitOfWork uow)
         {
             _roleRepo = roleRepo;
             _permRepo = permRepo;
-            _uow      = uow;
+            _uow = uow;
         }
 
+        /// <summary>
+        /// Creates a custom role and assigns the selected permissions to it.
+        /// </summary>
         public async Task<CreateRoleResponse> Handle(CreateRoleRequest request, CancellationToken ct)
         {
             try
@@ -56,20 +60,20 @@ namespace BizMate.Application.UserCases.RoleAggregate.Role.Commands.CreateRole
 
                 var permissions = await _permRepo.GetByIdsAsync(request.PermissionIds, ct);
                 if (permissions.Count != request.PermissionIds.Count)
-                    return new CreateRoleResponse(false, "Một số permission không tồn tại.");
+                    return new CreateRoleResponse(false, "Một số quyền không tồn tại.");
 
-                var role = new Domain.Entities.Role
+                var role = new BizMate.Domain.Entities.Role
                 {
-                    Id          = Guid.NewGuid(),
-                    Name        = request.Name,
+                    Id = Guid.NewGuid(),
+                    Name = request.Name,
                     DisplayName = request.DisplayName,
-                    IsSystem    = false,
+                    IsSystem = false,
                     CreatedDate = DateTime.UtcNow,
                     RolePermissions = permissions.Select(p => new RolePermission
                     {
-                        Id           = Guid.NewGuid(),
+                        Id = Guid.NewGuid(),
                         PermissionId = p.Id,
-                        CreatedDate  = DateTime.UtcNow,
+                        CreatedDate = DateTime.UtcNow
                     }).ToList()
                 };
 
@@ -78,17 +82,14 @@ namespace BizMate.Application.UserCases.RoleAggregate.Role.Commands.CreateRole
 
                 return new CreateRoleResponse(role.Id);
             }
-            catch (Exception ex)
+            catch
             {
-                return new CreateRoleResponse(false, ex.Message);
+                return new CreateRoleResponse(false, "Không thể tạo vai trò. Vui lòng thử lại.");
             }
         }
     }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// UPDATE ROLE
-// ══════════════════════════════════════════════════════════════════════════════
 namespace BizMate.Application.UserCases.RoleAggregate.Role.Commands.UpdateRole
 {
     public class UpdateRoleRequest : IRequest<UpdateRoleResponse>
@@ -100,7 +101,8 @@ namespace BizMate.Application.UserCases.RoleAggregate.Role.Commands.UpdateRole
 
     public class UpdateRoleResponse : BaseResponse
     {
-        public UpdateRoleResponse(bool success = true, string? message = null) : base(success, message) { }
+        public UpdateRoleResponse(bool success = true, string? message = null)
+            : base(success, message) { }
     }
 
     public class UpdateRoleRequestValidator : AbstractValidator<UpdateRoleRequest>
@@ -119,13 +121,19 @@ namespace BizMate.Application.UserCases.RoleAggregate.Role.Commands.UpdateRole
         private readonly IPermissionRepository _permRepo;
         private readonly IUnitOfWork _uow;
 
-        public UpdateRoleHandler(IRoleRepository roleRepo, IPermissionRepository permRepo, IUnitOfWork uow)
+        public UpdateRoleHandler(
+            IRoleRepository roleRepo,
+            IPermissionRepository permRepo,
+            IUnitOfWork uow)
         {
             _roleRepo = roleRepo;
             _permRepo = permRepo;
-            _uow      = uow;
+            _uow = uow;
         }
 
+        /// <summary>
+        /// Updates a custom role display name and replaces its permission list.
+        /// </summary>
         public async Task<UpdateRoleResponse> Handle(UpdateRoleRequest request, CancellationToken ct)
         {
             try
@@ -133,25 +141,26 @@ namespace BizMate.Application.UserCases.RoleAggregate.Role.Commands.UpdateRole
                 var role = await _roleRepo.GetByIdWithPermissionsAsync(request.Id, ct);
                 if (role is null)
                     return new UpdateRoleResponse(false, "Không tìm thấy vai trò.");
+
                 if (role.IsSystem)
                     return new UpdateRoleResponse(false, "Không thể chỉnh sửa vai trò hệ thống.");
 
                 var permissions = await _permRepo.GetByIdsAsync(request.PermissionIds, ct);
                 if (permissions.Count != request.PermissionIds.Count)
-                    return new UpdateRoleResponse(false, "Một số permission không tồn tại.");
+                    return new UpdateRoleResponse(false, "Một số quyền không tồn tại.");
 
-                // Ghi đè toàn bộ danh sách permission
                 role.DisplayName = request.DisplayName;
                 role.UpdatedDate = DateTime.UtcNow;
                 role.RolePermissions.Clear();
-                foreach (var p in permissions)
+
+                foreach (var permission in permissions)
                 {
                     role.RolePermissions.Add(new RolePermission
                     {
-                        Id           = Guid.NewGuid(),
-                        RoleId       = role.Id,
-                        PermissionId = p.Id,
-                        CreatedDate  = DateTime.UtcNow,
+                        Id = Guid.NewGuid(),
+                        RoleId = role.Id,
+                        PermissionId = permission.Id,
+                        CreatedDate = DateTime.UtcNow
                     });
                 }
 
@@ -160,17 +169,14 @@ namespace BizMate.Application.UserCases.RoleAggregate.Role.Commands.UpdateRole
 
                 return new UpdateRoleResponse(true, "Cập nhật vai trò thành công.");
             }
-            catch (Exception ex)
+            catch
             {
-                return new UpdateRoleResponse(false, ex.Message);
+                return new UpdateRoleResponse(false, "Không thể cập nhật vai trò. Vui lòng thử lại.");
             }
         }
     }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// DELETE ROLE
-// ══════════════════════════════════════════════════════════════════════════════
 namespace BizMate.Application.UserCases.RoleAggregate.Role.Commands.DeleteRole
 {
     public class DeleteRoleRequest : IRequest<DeleteRoleResponse>
@@ -181,7 +187,8 @@ namespace BizMate.Application.UserCases.RoleAggregate.Role.Commands.DeleteRole
 
     public class DeleteRoleResponse : BaseResponse
     {
-        public DeleteRoleResponse(bool success = true, string? message = null) : base(success, message) { }
+        public DeleteRoleResponse(bool success = true, string? message = null)
+            : base(success, message) { }
     }
 
     public class DeleteRoleHandler : IRequestHandler<DeleteRoleRequest, DeleteRoleResponse>
@@ -190,13 +197,19 @@ namespace BizMate.Application.UserCases.RoleAggregate.Role.Commands.DeleteRole
         private readonly IUserRoleRepository _userRoleRepo;
         private readonly IUnitOfWork _uow;
 
-        public DeleteRoleHandler(IRoleRepository roleRepo, IUserRoleRepository userRoleRepo, IUnitOfWork uow)
+        public DeleteRoleHandler(
+            IRoleRepository roleRepo,
+            IUserRoleRepository userRoleRepo,
+            IUnitOfWork uow)
         {
-            _roleRepo     = roleRepo;
+            _roleRepo = roleRepo;
             _userRoleRepo = userRoleRepo;
-            _uow          = uow;
+            _uow = uow;
         }
 
+        /// <summary>
+        /// Soft deletes a custom role when it is not assigned to any user.
+        /// </summary>
         public async Task<DeleteRoleResponse> Handle(DeleteRoleRequest request, CancellationToken ct)
         {
             try
@@ -204,22 +217,26 @@ namespace BizMate.Application.UserCases.RoleAggregate.Role.Commands.DeleteRole
                 var role = await _roleRepo.GetByIdAsync(request.Id, ct);
                 if (role is null)
                     return new DeleteRoleResponse(false, "Không tìm thấy vai trò.");
+
                 if (role.IsSystem)
                     return new DeleteRoleResponse(false, "Không thể xóa vai trò hệ thống.");
 
                 var usersWithRole = await _userRoleRepo.GetByRoleIdAsync(request.Id, ct);
                 if (usersWithRole.Any())
-                    return new DeleteRoleResponse(false,
+                {
+                    return new DeleteRoleResponse(
+                        false,
                         $"Không thể xóa vai trò đang được gán cho {usersWithRole.Count} nhân viên.");
+                }
 
                 await _roleRepo.DeleteAsync(role, ct);
                 await _uow.SaveChangesAsync(ct);
 
                 return new DeleteRoleResponse(true, "Xóa vai trò thành công.");
             }
-            catch (Exception ex)
+            catch
             {
-                return new DeleteRoleResponse(false, ex.Message);
+                return new DeleteRoleResponse(false, "Không thể xóa vai trò. Vui lòng thử lại.");
             }
         }
     }

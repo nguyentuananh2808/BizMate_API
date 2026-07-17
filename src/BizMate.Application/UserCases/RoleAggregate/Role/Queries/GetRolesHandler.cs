@@ -4,9 +4,6 @@ using MediatR;
 
 namespace BizMate.Application.UserCases.RoleAggregate.Role.Queries.GetRoles
 {
-    // ══════════════════════════════════════════════════════════════════════════
-    // GET ROLES (danh sách)
-    // ══════════════════════════════════════════════════════════════════════════
     public class GetRolesRequest : IRequest<GetRolesResponse> { }
 
     public class GetRolesResponse : BaseResponse
@@ -22,40 +19,47 @@ namespace BizMate.Application.UserCases.RoleAggregate.Role.Queries.GetRoles
 
     public class RoleListItemDto
     {
-        public Guid   Id              { get; set; }
-        public string Name            { get; set; } = default!;
-        public string DisplayName     { get; set; } = default!;
-        public bool   IsSystem        { get; set; }
-        public int    PermissionCount { get; set; }
-        public int    UserCount       { get; set; }
+        public Guid Id { get; set; }
+        public string Name { get; set; } = default!;
+        public string DisplayName { get; set; } = default!;
+        public bool IsSystem { get; set; }
+        public int PermissionCount { get; set; }
+        public int UserCount { get; set; }
     }
 
     public class GetRolesHandler : IRequestHandler<GetRolesRequest, GetRolesResponse>
     {
         private readonly IRoleRepository _roleRepo;
+
         public GetRolesHandler(IRoleRepository roleRepo) => _roleRepo = roleRepo;
 
+        /// <summary>
+        /// Gets roles with permission and user counts for role assignment screens.
+        /// </summary>
         public async Task<GetRolesResponse> Handle(
-            GetRolesRequest request, CancellationToken cancellationToken)
+            GetRolesRequest request,
+            CancellationToken cancellationToken)
         {
             try
             {
                 var roles = await _roleRepo.GetAllWithCountsAsync(cancellationToken);
                 var dtos = roles.Select(r => new RoleListItemDto
                 {
-                    Id              = r.Id,
-                    Name            = r.Name,
-                    DisplayName     = r.DisplayName,
-                    IsSystem        = r.IsSystem,
+                    Id = r.Id,
+                    Name = r.Name,
+                    DisplayName = r.DisplayName,
+                    IsSystem = r.IsSystem,
                     PermissionCount = r.RolePermissions.Count,
-                    UserCount       = r.UserRoles.Count(ur => !ur.IsDeleted)
+                    UserCount = r.UserRoles.Count(ur => !ur.IsDeleted)
                 }).ToList();
 
                 return new GetRolesResponse(dtos);
             }
-            catch (Exception ex)
+            catch
             {
-                return new GetRolesResponse(false, ex.Message);
+                return new GetRolesResponse(
+                    false,
+                    "Không thể tải danh sách vai trò. Vui lòng thử lại.");
             }
         }
     }
@@ -63,9 +67,6 @@ namespace BizMate.Application.UserCases.RoleAggregate.Role.Queries.GetRoles
 
 namespace BizMate.Application.UserCases.RoleAggregate.Role.Queries.GetRoleDetail
 {
-    // ══════════════════════════════════════════════════════════════════════════
-    // GET ROLE DETAIL (kèm danh sách permission)
-    // ══════════════════════════════════════════════════════════════════════════
     public class GetRoleDetailRequest : IRequest<GetRoleDetailResponse>
     {
         public Guid Id { get; set; }
@@ -83,55 +84,64 @@ namespace BizMate.Application.UserCases.RoleAggregate.Role.Queries.GetRoleDetail
 
     public class RoleDetailDto
     {
-        public Guid   Id          { get; set; }
-        public string Name        { get; set; } = default!;
+        public Guid Id { get; set; }
+        public string Name { get; set; } = default!;
         public string DisplayName { get; set; } = default!;
-        public bool   IsSystem    { get; set; }
+        public bool IsSystem { get; set; }
         public List<RolePermissionItemDto> Permissions { get; set; } = new();
     }
 
     public class RolePermissionItemDto
     {
-        public Guid   PermissionId { get; set; }
-        public string Name         { get; set; } = default!;
-        public string DisplayName  { get; set; } = default!;
-        public string Group        { get; set; } = default!;
+        public Guid PermissionId { get; set; }
+        public string Name { get; set; } = default!;
+        public string DisplayName { get; set; } = default!;
+        public string Group { get; set; } = default!;
     }
 
     public class GetRoleDetailHandler : IRequestHandler<GetRoleDetailRequest, GetRoleDetailResponse>
     {
         private readonly IRoleRepository _roleRepo;
+
         public GetRoleDetailHandler(IRoleRepository roleRepo) => _roleRepo = roleRepo;
 
+        /// <summary>
+        /// Gets a role and its assigned permissions for editing.
+        /// </summary>
         public async Task<GetRoleDetailResponse> Handle(
-            GetRoleDetailRequest request, CancellationToken cancellationToken)
+            GetRoleDetailRequest request,
+            CancellationToken cancellationToken)
         {
             try
             {
-                var role = await _roleRepo.GetByIdWithPermissionsAsync(request.Id, cancellationToken);
+                var role = await _roleRepo.GetByIdWithPermissionsAsync(
+                    request.Id,
+                    cancellationToken);
                 if (role is null)
                     return new GetRoleDetailResponse(false, "Không tìm thấy vai trò.");
 
                 var dto = new RoleDetailDto
                 {
-                    Id          = role.Id,
-                    Name        = role.Name,
+                    Id = role.Id,
+                    Name = role.Name,
                     DisplayName = role.DisplayName,
-                    IsSystem    = role.IsSystem,
+                    IsSystem = role.IsSystem,
                     Permissions = role.RolePermissions.Select(rp => new RolePermissionItemDto
                     {
                         PermissionId = rp.PermissionId,
-                        Name         = rp.Permission.Name,
-                        DisplayName  = rp.Permission.DisplayName,
-                        Group        = rp.Permission.Group
+                        Name = rp.Permission.Name,
+                        DisplayName = rp.Permission.DisplayName,
+                        Group = rp.Permission.Group
                     }).ToList()
                 };
 
                 return new GetRoleDetailResponse(dto);
             }
-            catch (Exception ex)
+            catch
             {
-                return new GetRoleDetailResponse(false, ex.Message);
+                return new GetRoleDetailResponse(
+                    false,
+                    "Không thể tải thông tin vai trò. Vui lòng thử lại.");
             }
         }
     }

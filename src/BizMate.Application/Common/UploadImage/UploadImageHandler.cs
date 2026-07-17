@@ -20,9 +20,9 @@ namespace BizMate.Application.Common.UploadImage
                 var result = await _uploader.UploadImageAsync(request.File);
                 return new UploadImageResponse(result, true, "Tải hình ảnh thành công.");
             }
-            catch (Exception ex)
+            catch
             {
-                return new UploadImageResponse(false, $"Tải hình ảnh thất bại: {ex.Message}");
+                return new UploadImageResponse(false, "Không thể tải hình ảnh. Vui lòng kiểm tra tệp và thử lại.");
             }
         }
 

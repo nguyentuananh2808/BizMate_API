@@ -2,6 +2,7 @@ using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Requests;
 using BizMate.Application.Common.Responses;
 using BizMate.Application.Common.Security;
+using BizMate.Application.Common.Users;
 using MediatR;
 
 namespace BizMate.Application.UserCases.User.Queries.UserManagement
@@ -73,7 +74,7 @@ namespace BizMate.Application.UserCases.User.Queries.UserManagement
                     Code = u.Code,
                     FullName = u.FullName,
                     Email = u.Email,
-                    Role = u.Role,
+                    Role = UserRoleNameResolver.Resolve(u),
                     StoreId = u.StoreId,
                     StoreName = u.Store?.Name ?? string.Empty,
                     IsActive = u.IsActive,
@@ -84,9 +85,9 @@ namespace BizMate.Application.UserCases.User.Queries.UserManagement
 
                 return new GetUsersResponse(dtos, totalCount);
             }
-            catch (Exception ex)
+            catch
             {
-                return new GetUsersResponse(false, ex.Message);
+                return new GetUsersResponse(false, "Không thể tải danh sách nhân viên. Vui lòng thử lại.");
             }
         }
     }

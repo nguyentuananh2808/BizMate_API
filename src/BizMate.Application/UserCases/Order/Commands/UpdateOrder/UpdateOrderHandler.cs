@@ -163,8 +163,10 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateOrder
             catch (InvalidOperationException ex)
             {
                 await _unitOfWork.RollbackAsync(cancellationToken);
-                _logger.LogWarning(ex, ex.Message);
-                return new UpdateOrderResponse(false, ex.Message);
+                _logger.LogWarning(ex, "Không thể cập nhật đơn hàng do dữ liệu nghiệp vụ không hợp lệ.");
+                return new UpdateOrderResponse(
+                    false,
+                    "Không thể cập nhật đơn hàng. Vui lòng kiểm tra sản phẩm, tồn kho và serial rồi thử lại.");
             }
             catch (Exception ex)
             {

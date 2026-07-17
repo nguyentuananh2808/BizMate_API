@@ -11,7 +11,6 @@ using System.Net;
 
 namespace BizMate.Api.UserCases.User.AssignRole
 {
-    // ── ResponseViewModel ─────────────────────────────────────────────────────
     public class AssignRoleResponseViewModel
     {
         public bool   Success { get; set; }
@@ -24,7 +23,6 @@ namespace BizMate.Api.UserCases.User.AssignRole
         }
     }
 
-    // ── Presenter ─────────────────────────────────────────────────────────────
     public class AssignRolePresenter : IOutputPort<AssignRoleResponse>
     {
         public JsonContentResult ContentResult { get; } = new();
@@ -37,7 +35,6 @@ namespace BizMate.Api.UserCases.User.AssignRole
         }
     }
 
-    // ── Controller ────────────────────────────────────────────────────────────
     [Route("v1/user")]
     [ApiController]
     public class AssignRoleController : ControllerBase
@@ -72,7 +69,7 @@ namespace BizMate.Api.UserCases.User.AssignRole
             {
                 UserId  = userId,
                 RoleId  = body.RoleId,
-                StoreId = _userSession.StoreId,  // lấy từ JWT claim "store_id"
+                StoreId = _userSession.StoreId,
             };
 
             var response = await _mediator.Send(request, ct);
@@ -91,7 +88,6 @@ namespace BizMate.Api.UserCases.User.RevokeRole
 {
     using BizMate.Application.UserCases.User.Commands.RevokeRole;
 
-    // ── ResponseViewModel ─────────────────────────────────────────────────────
     public class RevokeRoleResponseViewModel
     {
         public bool   Success { get; set; }
@@ -104,7 +100,6 @@ namespace BizMate.Api.UserCases.User.RevokeRole
         }
     }
 
-    // ── Presenter ─────────────────────────────────────────────────────────────
     public class RevokeRolePresenter : IOutputPort<RevokeRoleResponse>
     {
         public JsonContentResult ContentResult { get; } = new();
@@ -117,7 +112,6 @@ namespace BizMate.Api.UserCases.User.RevokeRole
         }
     }
 
-    // ── Controller ────────────────────────────────────────────────────────────
     [Route("v1/user")]
     [ApiController]
     public class RevokeRoleController : ControllerBase

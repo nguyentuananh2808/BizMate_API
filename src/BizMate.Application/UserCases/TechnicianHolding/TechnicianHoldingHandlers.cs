@@ -1392,10 +1392,10 @@ namespace BizMate.Application.UserCases.TechnicianHolding
                 await _uow.CommitAsync(ct);
                 return new BorrowingMutationResponse(true, "Trả hàng thành công.");
             }
-            catch (Exception ex)
+            catch
             {
                 await _uow.RollbackAsync(ct);
-                return new BorrowingMutationResponse(false, ex.Message);
+                return new BorrowingMutationResponse(false, "Không thể ghi nhận trả hàng. Vui lòng thử lại.");
             }
         }
 
@@ -1516,10 +1516,10 @@ namespace BizMate.Application.UserCases.TechnicianHolding
                 await _uow.CommitAsync(ct);
                 return new BorrowingMutationResponse(true, "Đã chuyển hàng mượn thành hàng bán.");
             }
-            catch (Exception ex)
+            catch
             {
                 await _uow.RollbackAsync(ct);
-                return new BorrowingMutationResponse(false, ex.Message);
+                return new BorrowingMutationResponse(false, "Không thể ghi nhận sử dụng hàng mượn. Vui lòng thử lại.");
             }
         }
 

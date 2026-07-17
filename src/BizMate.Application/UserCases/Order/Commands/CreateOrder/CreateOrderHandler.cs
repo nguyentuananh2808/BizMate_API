@@ -138,8 +138,10 @@ namespace BizMate.Application.UserCases.Order.Commands.CreateOrder
             catch (InvalidOperationException ex)
             {
                 await _unitOfWork.RollbackAsync(cancellationToken);
-                _logger.LogWarning(ex, ex.Message);
-                return new CreateOrderResponse(false, ex.Message);
+                _logger.LogWarning(ex, "Không thể tạo đơn hàng do dữ liệu nghiệp vụ không hợp lệ.");
+                return new CreateOrderResponse(
+                    false,
+                    "Không thể tạo đơn hàng. Vui lòng kiểm tra sản phẩm, tồn kho và serial rồi thử lại.");
             }
             catch (Exception ex)
             {

@@ -1,6 +1,3 @@
-// FILE: src/BizMate.Domain/Entities/Product.cs
-// Thêm field IsSerialTracked vào Product hiện có
-
 namespace BizMate.Domain.Entities
 {
     public class Product : BaseEntity
@@ -18,12 +15,10 @@ namespace BizMate.Domain.Entities
         public decimal? DiscountPercent { get; set; }
 
         /// <summary>
-        /// Bật = quản lý từng đơn vị vật lý qua SerialNumber/MAC.
-        /// Tắt = chỉ quản lý số lượng (hành vi cũ, mặc định).
+        /// Indicates whether inventory is tracked by physical serial number instead of quantity only.
         /// </summary>
         public bool IsSerialTracked { get; set; } = false;
 
-        // Navigation sang ProductItem (chỉ có data khi IsSerialTracked = true)
         public ICollection<ProductItem> ProductItems { get; set; } = new List<ProductItem>();
     }
 }

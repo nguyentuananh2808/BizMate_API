@@ -6,6 +6,7 @@ using BizMate.Application.Common.Interfaces;
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Mappings;
 using BizMate.Application.Common.Security;
+using BizMate.Application.UserCases.InventoryChat;
 using BizMate.Domain.Constants;
 using BizMate.Infrastructure.Migrations;
 using BizMate.Infrastructure.Persistence.Repositories;
@@ -65,6 +66,8 @@ public static class InfrastructureDependencyInjection
         // ── Repositories — Serial tracking (MỚI THÊM) ────────────────────────
         services.AddScoped<IProductItemRepository, ProductItemRepository>();
         services.AddScoped<IInventoryTransactionRepository, InventoryTransactionRepository>();
+        services.AddScoped<IInventoryChatRepository, InventoryChatRepository>();
+        services.AddScoped<IInventoryQuestionParser, InventoryQuestionParser>();
 
         // ── AutoMapper ────────────────────────────────────────────────────────
         services.AddAutoMapper(typeof(UserMappingProfile));

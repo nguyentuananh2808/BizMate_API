@@ -54,8 +54,8 @@ namespace BizMate.Application.UserCases.Export.Queries.ExportOrders
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Lỗi khi truy vấn danh sách phiếu nhập.");
-                return new ExportOrdersResponse(false, "Không thể tải danh sách phiếu nhập kho. Vui lòng thử lại.");
+                _logger.LogError(ex, "Lỗi khi truy vấn danh sách phiếu xuất.");
+                return new ExportOrdersResponse(false, "Không thể tải danh sách phiếu xuất. Vui lòng thử lại.");
             }
         }
     }

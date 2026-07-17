@@ -1,6 +1,7 @@
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Responses;
 using BizMate.Application.Common.Security;
+using BizMate.Application.Common.Users;
 using BizMate.Domain.Entities;
 using MediatR;
 
@@ -146,7 +147,7 @@ namespace BizMate.Application.UserCases.TechnicianHolding
                             Code = user.Code,
                             FullName = user.FullName,
                             Email = user.Email,
-                            Role = user.Role,
+                            Role = UserRoleNameResolver.Resolve(user),
                             IsActive = user.IsActive
                         };
                     })
@@ -154,11 +155,11 @@ namespace BizMate.Application.UserCases.TechnicianHolding
 
                 return new GetBorrowableEmployeesResponse(employees);
             }
-            catch (Exception ex)
+            catch
             {
                 return new GetBorrowableEmployeesResponse(
                     false,
-                    ex.Message);
+                    "Không thể tải danh sách nhân viên có thể mượn hàng. Vui lòng thử lại.");
             }
         }
     }

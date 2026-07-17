@@ -13,7 +13,16 @@ namespace BizMate.Application.Common.Interfaces.Repositories
         Task AddAsync(Product product, CancellationToken cancellationToken = default);
         Task UpdateAsync(Product product, CancellationToken cancellationToken = default);
         Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
-        Task<(List<ProductCoreDto> Products, int TotalCount)> SearchProductsWithPaging(Guid storeId, string? keyword, int pageIndex, int pageSize,bool? isActive, QueryFactory queryFactory);
+        Task<(List<ProductCoreDto> Products, int TotalCount)> SearchProductsWithPaging(
+            Guid storeId,
+            string? keyword,
+            int pageIndex,
+            int pageSize,
+            bool? isActive,
+            Guid? productCategoryId,
+            string? stockFilter,
+            int? lowStockThreshold,
+            QueryFactory queryFactory);
     }
 
 }

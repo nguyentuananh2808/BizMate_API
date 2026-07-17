@@ -1,11 +1,7 @@
-// FILE: src/BizMate.Domain/Constants/ApiNameConstants.cs
-// Thêm ProductItem vào danh sách hiện có
-
 namespace BizMate.Domain.Constants
 {
     public class ApiNameConstants
     {
-        // api name — hiện có
         public const string ApiV1            = "v1/";
         public const string ApiV2            = "v2/";
         public const string Authentication   = "auth";
@@ -25,14 +21,11 @@ namespace BizMate.Domain.Constants
         public const string Order            = "order";
         public const string HandlerFile      = "handler-file";
 
-        // phân quyền
         public const string Role             = "role";
         public const string Permission       = "permission";
-
-        // serial tracking (MỚI)
         public const string ProductItem      = "product-item";
+        public const string InventoryChat    = "inventory-chat";
 
-        // action
         public const string RefreshToken     = "refreshtoken";
         public const string Login            = "login";
         public const string Upload           = "upload";

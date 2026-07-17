@@ -24,8 +24,19 @@ namespace BizMate.Infrastructure.Security
 
         public async Task<AccessToken> GenerateEncodedToken(User user)
         {
-            // 1. Query tất cả permission của user trong store này
-            //    UserRole → Role → RolePermission → Permission.Name
+            var activeRoleName = await _context.UserRoles
+                .Where(ur => ur.UserId == user.Id
+                          && ur.StoreId == user.StoreId
+                          && !ur.IsDeleted
+                          && !ur.Role.IsDeleted)
+                .OrderByDescending(ur => ur.CreatedDate)
+                .Select(ur => ur.Role.Name)
+                .FirstOrDefaultAsync();
+
+            var roleName = string.IsNullOrWhiteSpace(activeRoleName)
+                ? user.Role
+                : activeRoleName;
+
             var rolePermissions = _context.UserRoles
                 .Where(ur => ur.UserId == user.Id
                           && ur.StoreId == user.StoreId
@@ -43,7 +54,7 @@ namespace BizMate.Infrastructure.Security
                 .Select(up => up.Permission.Name);
 
             var legacyRolePermissions = _context.Roles
-                .Where(role => role.Name == user.Role && !role.IsDeleted)
+                .Where(role => role.Name == roleName && !role.IsDeleted)
                 .SelectMany(role => role.RolePermissions
                     .Where(rolePermission =>
                         !rolePermission.IsDeleted &&
@@ -56,7 +67,6 @@ namespace BizMate.Infrastructure.Security
                 .Distinct()
                 .ToListAsync();
 
-            // 2. Base claims (giữ nguyên các claim cũ để không breaking change)
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Email),
@@ -66,17 +76,14 @@ namespace BizMate.Infrastructure.Security
                 new Claim("user_id",    user.Id.ToString()),
                 new Claim("name",       user.FullName),
                 new Claim("email",      user.Email),
-                new Claim("role",       user.Role),         // giữ lại claim cũ
+                new Claim("role",       roleName),
                 new Claim("store_name", user.Store.Name),
                 new Claim("store_id",   user.StoreId.ToString()),
             };
 
-            // 3. Nhúng từng permission vào claims
-            //    FE/middleware check: claims.Where(c => c.Type == "permission")
             foreach (var perm in permissions)
                 claims.Add(new Claim("permission", perm));
 
-            // 4. Ký token
             var jwt = new JwtSecurityToken(
                 issuer:             _jwtOptions.Issuer,
                 audience:           _jwtOptions.Audience,

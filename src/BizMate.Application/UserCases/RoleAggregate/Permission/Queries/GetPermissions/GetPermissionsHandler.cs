@@ -4,10 +4,8 @@ using MediatR;
 
 namespace BizMate.Application.UserCases.RoleAggregate.Permission.Queries.GetPermissions
 {
-    // ── Request ───────────────────────────────────────────────────────────────
     public class GetPermissionsRequest : IRequest<GetPermissionsResponse> { }
 
-    // ── Response ──────────────────────────────────────────────────────────────
     public class GetPermissionsResponse : BaseResponse
     {
         public List<PermissionGroupDto> Groups { get; set; } = new();
@@ -32,7 +30,6 @@ namespace BizMate.Application.UserCases.RoleAggregate.Permission.Queries.GetPerm
         public string DisplayName { get; set; } = default!;
     }
 
-    // ── Handler ───────────────────────────────────────────────────────────────
     public class GetPermissionsHandler : IRequestHandler<GetPermissionsRequest, GetPermissionsResponse>
     {
         private readonly IPermissionRepository _permRepo;
@@ -40,8 +37,12 @@ namespace BizMate.Application.UserCases.RoleAggregate.Permission.Queries.GetPerm
         public GetPermissionsHandler(IPermissionRepository permRepo)
             => _permRepo = permRepo;
 
+        /// <summary>
+        /// Gets all active permissions and groups them for the permission management screen.
+        /// </summary>
         public async Task<GetPermissionsResponse> Handle(
-            GetPermissionsRequest request, CancellationToken cancellationToken)
+            GetPermissionsRequest request,
+            CancellationToken cancellationToken)
         {
             try
             {
@@ -54,17 +55,20 @@ namespace BizMate.Application.UserCases.RoleAggregate.Permission.Queries.GetPerm
                         Group = g.Key,
                         Permissions = g.Select(p => new PermissionItemDto
                         {
-                            Id          = p.Id,
-                            Name        = p.Name,
+                            Id = p.Id,
+                            Name = p.Name,
                             DisplayName = p.DisplayName
                         }).ToList()
-                    }).ToList();
+                    })
+                    .ToList();
 
                 return new GetPermissionsResponse(groups);
             }
-            catch (Exception ex)
+            catch
             {
-                return new GetPermissionsResponse(false, ex.Message);
+                return new GetPermissionsResponse(
+                    false,
+                    "Không thể tải danh sách quyền. Vui lòng thử lại.");
             }
         }
     }

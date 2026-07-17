@@ -49,12 +49,18 @@ namespace BizMate.Application.UserCases.User.Commands.UserPermissions
 
     internal static class UserPermissionCommandGuard
     {
+        /// <summary>
+        /// Removes empty and duplicate permission ids before saving direct permissions.
+        /// </summary>
         public static List<Guid> NormalizePermissionIds(IEnumerable<Guid>? permissionIds)
             => (permissionIds ?? Enumerable.Empty<Guid>())
                 .Where(id => id != Guid.Empty)
                 .Distinct()
                 .ToList();
 
+        /// <summary>
+        /// Detects payloads that include an empty permission id.
+        /// </summary>
         public static bool HasInvalidPermissionId(IEnumerable<Guid>? permissionIds)
             => permissionIds?.Any(id => id == Guid.Empty) == true;
     }
@@ -110,9 +116,9 @@ namespace BizMate.Application.UserCases.User.Commands.UserPermissions
                 var resultIds = currentIds.Union(idsToAdd).OrderBy(id => id).ToList();
                 return new UserPermissionMutationResponse(resultIds, "Thêm quyền cho nhân viên thành công.");
             }
-            catch (Exception ex)
+            catch
             {
-                return new UserPermissionMutationResponse(false, ex.Message);
+                return new UserPermissionMutationResponse(false, "Không thể thêm quyền cho nhân viên. Vui lòng thử lại.");
             }
         }
 
@@ -198,9 +204,9 @@ namespace BizMate.Application.UserCases.User.Commands.UserPermissions
 
                 return new UserPermissionMutationResponse(permissionIds.OrderBy(id => id).ToList(), "Cập nhật quyền nhân viên thành công.");
             }
-            catch (Exception ex)
+            catch
             {
-                return new UserPermissionMutationResponse(false, ex.Message);
+                return new UserPermissionMutationResponse(false, "Không thể cập nhật quyền nhân viên. Vui lòng thử lại.");
             }
         }
 
@@ -271,9 +277,9 @@ namespace BizMate.Application.UserCases.User.Commands.UserPermissions
                     .ToList();
                 return new UserPermissionMutationResponse(resultIds, "Xóa quyền khỏi nhân viên thành công.");
             }
-            catch (Exception ex)
+            catch
             {
-                return new UserPermissionMutationResponse(false, ex.Message);
+                return new UserPermissionMutationResponse(false, "Không thể gỡ quyền khỏi nhân viên. Vui lòng thử lại.");
             }
         }
     }
@@ -312,9 +318,9 @@ namespace BizMate.Application.UserCases.User.Commands.UserPermissions
 
                 return new UserPermissionMutationResponse(new List<Guid>(), "Đã xóa toàn bộ quyền trực tiếp của nhân viên.");
             }
-            catch (Exception ex)
+            catch
             {
-                return new UserPermissionMutationResponse(false, ex.Message);
+                return new UserPermissionMutationResponse(false, "Không thể xóa quyền riêng của nhân viên. Vui lòng thử lại.");
             }
         }
     }

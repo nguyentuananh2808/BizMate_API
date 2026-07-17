@@ -1,4 +1,3 @@
-// FILE: src/BizMate.Application/Common/Interfaces/Repositories/IInventoryTransactionRepository.cs
 using BizMate.Domain.Entities;
 
 namespace BizMate.Application.Common.Interfaces.Repositories
@@ -8,7 +7,9 @@ namespace BizMate.Application.Common.Interfaces.Repositories
         Task AddAsync(InventoryTransaction transaction, CancellationToken ct = default);
         Task AddRangeAsync(IEnumerable<InventoryTransaction> transactions, CancellationToken ct = default);
 
-        /// <summary>Lịch sử giao dịch của 1 ProductItem.</summary>
+        /// <summary>
+        /// Gets inventory movement history for a serial-tracked item.
+        /// </summary>
         Task<List<InventoryTransaction>> GetByProductItemIdAsync(
             Guid productItemId, CancellationToken ct = default);
     }

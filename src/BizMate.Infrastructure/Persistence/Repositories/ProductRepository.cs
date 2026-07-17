@@ -65,8 +65,12 @@ public class ProductRepository : IProductRepository
     int pageIndex,
     int pageSize,
     bool? isActive,
+    Guid? productCategoryId,
+    string? stockFilter,
+    int? lowStockThreshold,
     QueryFactory queryFactory)
     {
+        var availableExpression = @"COALESCE(s.""Quantity"", 0) - COALESCE(s.""Reserved"", 0)";
         var baseQuery = queryFactory.Query("Products as p")
             .LeftJoin("Stocks as s", j => j
                 .On("p.Id", "s.ProductId")
@@ -81,9 +85,26 @@ public class ProductRepository : IProductRepository
             baseQuery.Where("p.IsActive", isActive.Value);
         }
 
+        if (productCategoryId.HasValue)
+        {
+            baseQuery.Where("p.ProductCategoryId", productCategoryId.Value);
+        }
+
+        switch (stockFilter?.Trim().ToLowerInvariant())
+        {
+            case "in-stock":
+                baseQuery.WhereRaw($"{availableExpression} > 0");
+                break;
+            case "low-stock":
+                baseQuery.WhereRaw($"{availableExpression} < ?", lowStockThreshold.GetValueOrDefault(2));
+                break;
+            case "out-of-stock":
+                baseQuery.WhereRaw($"{availableExpression} <= 0");
+                break;
+        }
+
         if (!string.IsNullOrWhiteSpace(keyword))
         {
-            // Chuẩn hóa keyword (bỏ khoảng trắng và dấu "-"), vẫn để nguyên dấu
             var normalizedKeyword = keyword.ToLower()
                 .Replace("-", "")
                 .Replace(" ", "")
@@ -91,27 +112,26 @@ public class ProductRepository : IProductRepository
 
             var kw = $"%{normalizedKeyword}%";
 
-            // Dùng unaccent để bỏ dấu trong DB khi so sánh
             var nameField = @"unaccent(lower(replace(replace(p.""Name"", '-', ''), ' ', '')))";
             var codeField = @"unaccent(lower(replace(replace(p.""Code"", '-', ''), ' ', '')))";
+            var categoryField = @"unaccent(lower(replace(replace(pc.""Name"", '-', ''), ' ', '')))";
 
             baseQuery.Where(q =>
                 q.WhereRaw($"{nameField} LIKE unaccent(?)", kw)
                  .OrWhereRaw($"{codeField} LIKE unaccent(?)", kw)
+                 .OrWhereRaw($"{categoryField} LIKE unaccent(?)", kw)
             );
         }
 
         baseQuery
             .Select("p.*")
             .SelectRaw(@"COALESCE(s.""Quantity"", 0) as Quantity")
-            .SelectRaw(@"COALESCE(s.""Quantity"", 0) - COALESCE(s.""Reserved"", 0) as Available")
+            .SelectRaw($"{availableExpression} as Available")
             .Select("pc.Name as ProductCategoryName");
 
-        // Clone để lấy total count
         var totalQuery = baseQuery.Clone();
         var totalCount = await totalQuery.CountAsync<int>();
 
-        // Sắp xếp theo tên sản phẩm (bỏ dấu, bỏ khoảng trắng, bỏ "-")
         var orderField = @"unaccent(lower(replace(replace(p.""Name"", '-', ''), ' ', '')))";
         baseQuery.OrderByRaw($"{orderField} ASC");
 

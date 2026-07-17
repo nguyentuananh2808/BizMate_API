@@ -1,6 +1,7 @@
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Application.Common.Responses;
 using BizMate.Application.Common.Security;
+using BizMate.Application.Common.Users;
 using MediatR;
 
 namespace BizMate.Application.UserCases.User.Queries.UserManagement
@@ -59,7 +60,7 @@ namespace BizMate.Application.UserCases.User.Queries.UserManagement
                     Code = user.Code,
                     FullName = user.FullName,
                     Email = user.Email,
-                    Role = user.Role,
+                    Role = UserRoleNameResolver.Resolve(user),
                     StoreId = user.StoreId,
                     StoreName = user.Store?.Name ?? string.Empty,
                     IsActive = user.IsActive,
@@ -69,9 +70,9 @@ namespace BizMate.Application.UserCases.User.Queries.UserManagement
                     DirectPermissionCount = user.UserPermissions.Count(up => !up.IsDeleted)
                 });
             }
-            catch (Exception ex)
+            catch
             {
-                return new GetUserDetailResponse(false, ex.Message);
+                return new GetUserDetailResponse(false, "Không thể tải thông tin nhân viên. Vui lòng thử lại.");
             }
         }
     }

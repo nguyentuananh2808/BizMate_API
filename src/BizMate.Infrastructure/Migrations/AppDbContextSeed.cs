@@ -28,9 +28,6 @@ namespace BizMate.Infrastructure.Migrations
             }
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // STATUS
-        // ─────────────────────────────────────────────────────────────
         private static async Task SeedStatusesAsync(AppDbContext context)
         {
             var statuses = new List<Status>
@@ -57,9 +54,6 @@ namespace BizMate.Infrastructure.Migrations
                 await context.Statuses.AddRangeAsync(toAdd);
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // PERMISSION
-        // ─────────────────────────────────────────────────────────────
         private static async Task SeedPermissionsAsync(AppDbContext context)
         {
             var existing = await context.Permissions
@@ -82,9 +76,6 @@ namespace BizMate.Infrastructure.Migrations
                 await context.Permissions.AddRangeAsync(toAdd);
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // ROLE
-        // ─────────────────────────────────────────────────────────────
         private static readonly Guid OwnerRoleId = Guid.Parse("00000000-0000-0000-0000-000000000001");
         private static readonly Guid ManagerRoleId = Guid.Parse("00000000-0000-0000-0000-000000000002");
         private static readonly Guid StaffRoleId = Guid.Parse("00000000-0000-0000-0000-000000000003");
@@ -99,22 +90,32 @@ namespace BizMate.Infrastructure.Migrations
                 new Role { Id = ManagerRoleId, Name = "Manager", DisplayName = "Quản lý", IsSystem = false, CreatedDate = DateTime.UtcNow },
                 new Role { Id = StaffRoleId, Name = "Staff", DisplayName = "Nhân viên bán hàng", IsSystem = false, CreatedDate = DateTime.UtcNow },
                 new Role { Id = WarehouseRoleId, Name = "Warehouse", DisplayName = "Thủ kho", IsSystem = false, CreatedDate = DateTime.UtcNow },
-                new Role { Id = TechnicianRoleId, Name = "Technician", DisplayName = "Kỹ thuật viên", IsSystem = true, CreatedDate = DateTime.UtcNow },
+                new Role { Id = TechnicianRoleId, Name = "Technician", DisplayName = "Kỹ thuật viên", IsSystem = false, CreatedDate = DateTime.UtcNow },
             };
 
-            var existingIds = await context.Roles.Select(r => r.Id).ToListAsync();
+            var existingRoles = await context.Roles.ToListAsync();
+            foreach (var role in roles)
+            {
+                var existingRole = existingRoles.FirstOrDefault(r => r.Id == role.Id);
+                if (existingRole is null)
+                    continue;
+
+                existingRole.Name = role.Name;
+                existingRole.DisplayName = role.DisplayName;
+                existingRole.IsSystem = role.IsSystem;
+                existingRole.IsDeleted = false;
+                existingRole.DeletedAt = null;
+                existingRole.UpdatedDate = DateTime.UtcNow;
+            }
 
             var toAdd = roles
-                .Where(r => !existingIds.Contains(r.Id))
+                .Where(r => existingRoles.All(existing => existing.Id != r.Id))
                 .ToList();
 
             if (toAdd.Any())
                 await context.Roles.AddRangeAsync(toAdd);
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // ROLE PERMISSION
-        // ─────────────────────────────────────────────────────────────
         private static async Task SeedRolePermissionsAsync(AppDbContext context)
         {
             var allPerms = await context.Permissions.ToListAsync();
@@ -127,10 +128,8 @@ namespace BizMate.Infrastructure.Migrations
                 return perm.Id;
             }
 
-            // Owner → tất cả
             await AddRolePerms(context, OwnerRoleId, allPerms.Select(p => p.Id).ToArray());
 
-            // Manager → hạn chế
             await AddRolePerms(context, ManagerRoleId,
                 allPerms.Where(p => p.Name is not (
                     PermissionConstants.User.Delete or
@@ -138,7 +137,6 @@ namespace BizMate.Infrastructure.Migrations
                     PermissionConstants.Role.Create))
                 .Select(p => p.Id).ToArray());
 
-            // Staff
             await AddRolePerms(context, StaffRoleId, new[]
             {
                 GetId(PermissionConstants.Order.View),
@@ -151,7 +149,6 @@ namespace BizMate.Infrastructure.Migrations
                 GetId(PermissionConstants.Customer.Edit),
             });
 
-            // Warehouse
             await AddRolePerms(context, WarehouseRoleId, new[]
             {
                 GetId(PermissionConstants.Stock.View),

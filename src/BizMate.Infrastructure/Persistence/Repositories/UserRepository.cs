@@ -32,6 +32,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             return await _context.Users
                 .Include(x => x.Store)
                 .Include(x => x.UserRoles)
+                    .ThenInclude(x => x.Role)
                 .Include(x => x.UserPermissions)
                 .FirstOrDefaultAsync(
                     u => u.Id == userId && u.StoreId == storeId && !u.IsDeleted,
@@ -59,6 +60,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             var query = _context.Users
                 .Include(u => u.Store)
                 .Include(u => u.UserRoles)
+                    .ThenInclude(u => u.Role)
                 .Include(u => u.UserPermissions)
                 .Where(u => u.StoreId == storeId && !u.IsDeleted);
 

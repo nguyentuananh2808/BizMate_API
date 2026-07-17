@@ -44,6 +44,9 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Queries.Product
                     pageIndex: request.PageIndex,
                     pageSize: request.PageSize,
                     isActive: request.IsActive,
+                    productCategoryId: request.ProductCategoryId,
+                    stockFilter: request.StockFilter,
+                    lowStockThreshold: request.LowStockThreshold,
                     queryFactory: _queryFactory);
 
                 var mappedProducts = _mapper.Map<List<ProductCoreDto>>(products);

@@ -1,5 +1,3 @@
-// FILE: src/BizMate.Infrastructure/Persistence/Repositories/InventoryTransactionRepository.cs
-
 using BizMate.Application.Common.Interfaces.Repositories;
 using BizMate.Domain.Entities;
 using BizMate.Infrastructure.Migrations;

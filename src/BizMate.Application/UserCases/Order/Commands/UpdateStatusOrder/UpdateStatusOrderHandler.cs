@@ -140,8 +140,10 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
             catch (InvalidOperationException ex)
             {
                 await _unitOfWork.RollbackAsync(cancellationToken);
-                _logger.LogWarning(ex, ex.Message);
-                return new UpdateStatusOrderResponse(false, ex.Message);
+                _logger.LogWarning(ex, "Không thể cập nhật trạng thái đơn hàng do dữ liệu nghiệp vụ không hợp lệ.");
+                return new UpdateStatusOrderResponse(
+                    false,
+                    "Không thể cập nhật trạng thái đơn hàng. Vui lòng kiểm tra tồn kho, serial và tải lại dữ liệu rồi thử lại.");
             }
             catch (Exception ex)
             {
@@ -165,9 +167,6 @@ namespace BizMate.Application.UserCases.Order.Commands.UpdateStatusOrder
             {
                 if (!stockDict.TryGetValue(detail.ProductId, out var stock))
                     throw new InvalidOperationException($"Không tìm thấy tồn kho cho sản phẩm {detail.ProductId}");
-
-                //if (stock.Reserved < detail.Quantity)
-                //    throw new InvalidOperationException($"Dữ liệu lệch: Reserved {stock.Reserved} nhỏ hơn cần xuất {detail.Quantity}");
 
                 stock.Quantity -= detail.Quantity;
                 stock.Reserved -= detail.Quantity;

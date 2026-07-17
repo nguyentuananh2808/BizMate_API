@@ -126,12 +126,15 @@ namespace BizMate.Application.UserCases.User.Queries.UserPermissions
 
                 return new GetUserPermissionsResponse(dto);
             }
-            catch (Exception ex)
+            catch
             {
-                return new GetUserPermissionsResponse(false, ex.Message);
+                return new GetUserPermissionsResponse(false, "Không thể tải quyền hiện tại của nhân viên. Vui lòng thử lại.");
             }
         }
 
+        /// <summary>
+        /// Maps a permission entity to the DTO used by the permission screen.
+        /// </summary>
         private static UserPermissionItemDto ToPermissionItem(Permission permission)
             => new()
             {
@@ -141,6 +144,9 @@ namespace BizMate.Application.UserCases.User.Queries.UserPermissions
                 Group = permission.Group
             };
 
+        /// <summary>
+        /// Removes duplicate permission rows and keeps the display order stable.
+        /// </summary>
         private static List<UserPermissionItemDto> DistinctAndSort(IEnumerable<UserPermissionItemDto> permissions)
             => permissions
                 .GroupBy(p => p.PermissionId)

@@ -2,11 +2,11 @@
 {
     public class Role : BaseCoreEntity
     {
-        public string Name { get; set; } = default!;        // "Manager"
-        public string DisplayName { get; set; } = default!; // "Quản lý"
+        public string Name { get; set; } = default!;
+        public string DisplayName { get; set; } = default!;
 
         /// <summary>
-        /// true = role hệ thống (Owner), không cho phép xóa hoặc sửa tên
+        /// Marks protected roles that cannot be renamed or deleted from the UI.
         /// </summary>
         public bool IsSystem { get; set; } = false;
 

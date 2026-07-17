@@ -116,6 +116,9 @@ namespace BizMate.Application.UserCases.User.Commands.UserManagement
         IUnitOfWork unitOfWork)
         : IRequestHandler<CreateStoreUserRequest, UserMutationResponse>
     {
+        /// <summary>
+        /// Creates an employee account in the current store and keeps the legacy role snapshot in sync.
+        /// </summary>
         public async Task<UserMutationResponse> Handle(
             CreateStoreUserRequest request,
             CancellationToken cancellationToken)
@@ -189,6 +192,9 @@ namespace BizMate.Application.UserCases.User.Commands.UserManagement
                     CreatedDate = DateTime.UtcNow
                 }, cancellationToken);
 
+                user.Role = role.Name;
+                await userRepository.UpdateAsync(user, cancellationToken);
+
                 if (permissionIds.Count > 0)
                 {
                     await userPermissionRepository.AddRangeAsync(
@@ -245,6 +251,9 @@ namespace BizMate.Application.UserCases.User.Commands.UserManagement
         IUnitOfWork unitOfWork)
         : IRequestHandler<UpdateStoreUserRequest, UserMutationResponse>
     {
+        /// <summary>
+        /// Updates employee identity, active state, role assignment, and linked technician profile.
+        /// </summary>
         public async Task<UserMutationResponse> Handle(
             UpdateStoreUserRequest request,
             CancellationToken cancellationToken)
@@ -391,6 +400,9 @@ namespace BizMate.Application.UserCases.User.Commands.UserManagement
         IUnitOfWork unitOfWork)
         : IRequestHandler<DeleteStoreUserRequest, UserMutationResponse>
     {
+        /// <summary>
+        /// Soft deletes an employee and removes store-specific role and permission assignments.
+        /// </summary>
         public async Task<UserMutationResponse> Handle(
             DeleteStoreUserRequest request,
             CancellationToken cancellationToken)
