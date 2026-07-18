@@ -16,6 +16,23 @@ namespace BizMate.Application.Common.Interfaces.Repositories
             int limit,
             CancellationToken cancellationToken);
 
+        Task<IReadOnlyList<InventoryChatProductStockDto>> GetReservedStockProductsAsync(
+            Guid storeId,
+            string? keyword,
+            int limit,
+            CancellationToken cancellationToken);
+
+        Task<IReadOnlyList<InventoryChatProductStockDto>> GetSerialTrackedProductsAsync(
+            Guid storeId,
+            string? keyword,
+            int limit,
+            CancellationToken cancellationToken);
+
+        Task<InventoryChatStockSummaryDto> GetStockSummaryAsync(
+            Guid storeId,
+            int lowStockThreshold,
+            CancellationToken cancellationToken);
+
         Task<IReadOnlyList<InventoryChatHoldingDto>> SearchTechnicianHoldingsAsync(
             Guid storeId,
             string? keyword,

@@ -55,7 +55,11 @@ namespace BizMate.Application.UserCases.InventoryChat
         TechnicianHoldings = 5,
         ImportByDate = 6,
         ExportByDate = 7,
-        ProductHistory = 8
+        ProductHistory = 8,
+        StockSummary = 9,
+        OutOfStock = 10,
+        ReservedStock = 11,
+        SerialTrackedProducts = 12
     }
 
     public class InventoryChatProductStockDto
@@ -68,6 +72,17 @@ namespace BizMate.Application.UserCases.InventoryChat
         public int Reserved { get; set; }
         public int Available { get; set; }
         public bool IsSerialTracked { get; set; }
+    }
+
+    public class InventoryChatStockSummaryDto
+    {
+        public int ProductCount { get; set; }
+        public int SerialTrackedCount { get; set; }
+        public int TotalQuantity { get; set; }
+        public int TotalReserved { get; set; }
+        public int TotalAvailable { get; set; }
+        public int LowStockCount { get; set; }
+        public int OutOfStockCount { get; set; }
     }
 
     public class InventoryChatHoldingDto

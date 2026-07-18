@@ -45,6 +45,10 @@ namespace BizMate.Application.UserCases.InventoryChat
                 return parsed.Intent switch
                 {
                     InventoryChatIntent.Help => BuildHelpResponse(),
+                    InventoryChatIntent.StockSummary => await BuildStockSummaryResponse(storeId, cancellationToken),
+                    InventoryChatIntent.OutOfStock => await BuildOutOfStockResponse(storeId, cancellationToken),
+                    InventoryChatIntent.ReservedStock => await BuildReservedStockResponse(storeId, parsed, cancellationToken),
+                    InventoryChatIntent.SerialTrackedProducts => await BuildSerialTrackedResponse(storeId, parsed, cancellationToken),
                     InventoryChatIntent.LowStock => await BuildLowStockResponse(storeId, parsed, cancellationToken),
                     InventoryChatIntent.TechnicianHoldings => await BuildHoldingResponse(storeId, parsed, cancellationToken),
                     InventoryChatIntent.ImportByDate => await BuildReceiptResponse(storeId, parsed, true, cancellationToken),
@@ -65,6 +69,103 @@ namespace BizMate.Application.UserCases.InventoryChat
                     Suggestions = DefaultSuggestions()
                 };
             }
+        }
+
+        private async Task<InventoryChatResponse> BuildStockSummaryResponse(
+            Guid storeId,
+            CancellationToken cancellationToken)
+        {
+            var summary = await _repository.GetStockSummaryAsync(storeId, 2, cancellationToken);
+            return new InventoryChatResponse
+            {
+                Intent = InventoryChatIntent.StockSummary.ToString(),
+                Answer = $"Kho đang có {summary.ProductCount:N0} sản phẩm, tổng tồn {summary.TotalQuantity:N0}, khả dụng {summary.TotalAvailable:N0}, đang giữ {summary.TotalReserved:N0}. Hết khả dụng: {summary.OutOfStockCount:N0}, tồn thấp dưới 2: {summary.LowStockCount:N0}, quản lý serial: {summary.SerialTrackedCount:N0}.",
+                Table = BuildSummaryTable(summary),
+                Suggestions = DefaultSuggestions()
+            };
+        }
+
+        private async Task<InventoryChatResponse> BuildOutOfStockResponse(
+            Guid storeId,
+            CancellationToken cancellationToken)
+        {
+            var products = await _repository.GetLowStockProductsAsync(
+                storeId,
+                1,
+                DefaultLimit,
+                cancellationToken);
+
+            if (products.Count == 0)
+            {
+                return BuildEmptyResponse(
+                    InventoryChatIntent.OutOfStock,
+                    "Hiện không có sản phẩm nào hết tồn khả dụng.",
+                    "Thử hỏi: sản phẩm nào còn tồn dưới 5?");
+            }
+
+            return new InventoryChatResponse
+            {
+                Intent = InventoryChatIntent.OutOfStock.ToString(),
+                Answer = $"Có {products.Count:N0} sản phẩm đang hết tồn khả dụng.",
+                Table = BuildProductTable(products),
+                Suggestions = DefaultSuggestions()
+            };
+        }
+
+        private async Task<InventoryChatResponse> BuildReservedStockResponse(
+            Guid storeId,
+            ParsedInventoryQuestion parsed,
+            CancellationToken cancellationToken)
+        {
+            var products = await _repository.GetReservedStockProductsAsync(
+                storeId,
+                parsed.Keyword,
+                DefaultLimit,
+                cancellationToken);
+
+            if (products.Count == 0)
+            {
+                return BuildEmptyResponse(
+                    InventoryChatIntent.ReservedStock,
+                    "Hiện không tìm thấy sản phẩm nào đang được giữ chỗ phù hợp.",
+                    "Thử hỏi: sản phẩm nào đang bị giữ?");
+            }
+
+            return new InventoryChatResponse
+            {
+                Intent = InventoryChatIntent.ReservedStock.ToString(),
+                Answer = $"Có {products.Count:N0} sản phẩm đang được giữ chỗ, tổng đã giữ {products.Sum(x => x.Reserved):N0}.",
+                Table = BuildProductTable(products),
+                Suggestions = DefaultSuggestions()
+            };
+        }
+
+        private async Task<InventoryChatResponse> BuildSerialTrackedResponse(
+            Guid storeId,
+            ParsedInventoryQuestion parsed,
+            CancellationToken cancellationToken)
+        {
+            var products = await _repository.GetSerialTrackedProductsAsync(
+                storeId,
+                parsed.Keyword,
+                DefaultLimit,
+                cancellationToken);
+
+            if (products.Count == 0)
+            {
+                return BuildEmptyResponse(
+                    InventoryChatIntent.SerialTrackedProducts,
+                    "Không tìm thấy sản phẩm quản lý serial phù hợp.",
+                    "Thử hỏi: sản phẩm nào quản lý serial?");
+            }
+
+            return new InventoryChatResponse
+            {
+                Intent = InventoryChatIntent.SerialTrackedProducts.ToString(),
+                Answer = $"Tìm thấy {products.Count:N0} sản phẩm đang quản lý theo serial.",
+                Table = BuildProductTable(products),
+                Suggestions = DefaultSuggestions()
+            };
         }
 
         private async Task<InventoryChatResponse> BuildProductStockResponse(
@@ -251,6 +352,27 @@ namespace BizMate.Application.UserCases.InventoryChat
                 Suggestions = DefaultSuggestions().Prepend(suggestion).Distinct().ToArray()
             };
 
+        private static InventoryChatTableDto BuildSummaryTable(InventoryChatStockSummaryDto summary)
+            => new()
+            {
+                Title = "Tổng quan kho",
+                Columns = new[]
+                {
+                    Column("metric", "Chỉ số"),
+                    Column("value", "Số lượng")
+                },
+                Rows = new[]
+                {
+                    Row("Tổng sản phẩm", summary.ProductCount),
+                    Row("Tổng tồn kho", summary.TotalQuantity),
+                    Row("Tồn khả dụng", summary.TotalAvailable),
+                    Row("Đang giữ chỗ", summary.TotalReserved),
+                    Row("Hết tồn khả dụng", summary.OutOfStockCount),
+                    Row("Tồn thấp dưới 2", summary.LowStockCount),
+                    Row("Quản lý serial", summary.SerialTrackedCount)
+                }
+            };
+
         private static InventoryChatTableDto BuildProductTable(IReadOnlyList<InventoryChatProductStockDto> rows)
             => new()
             {
@@ -360,9 +482,23 @@ namespace BizMate.Application.UserCases.InventoryChat
         private static InventoryChatColumnDto Column(string key, string label)
             => new() { Key = key, Label = label };
 
+        private static Dictionary<string, string> Row(string metric, int value)
+            => new()
+            {
+                ["metric"] = metric,
+                ["value"] = value.ToString("N0")
+            };
+
         private static string[] DefaultSuggestions()
             => new[]
             {
+                "Tổng quan kho hiện tại",
+                "Sản phẩm nào hết hàng?",
+                "Sản phẩm nào đang bị giữ?",
+                "Sản phẩm nào quản lý serial?",
+                "Tuần trước có xuất kho sản phẩm nào?",
+                "Tháng trước có nhập kho sản phẩm nào?",
+                "7 ngày qua có nhập kho sản phẩm nào?",
                 "camera H5AE còn bao nhiêu?",
                 "sản phẩm nào còn tồn dưới 2?",
                 "kỹ thuật Tuấn Anh đang giữ hàng gì?",

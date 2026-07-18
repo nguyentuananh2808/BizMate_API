@@ -12,7 +12,11 @@ namespace BizMate.Application.UserCases.InventoryChat
                 RegexOptions.Compiled);
 
         private static readonly Regex ThresholdRegex =
-            new(@"(?:duoi|nho hon|it hon|<|<=)\s*(?<value>\d+)",
+            new(@"(?:duoi|duoi muc|nho hon|be hon|it hon|thap hon|<|<=)\s*(?<value>\d+)",
+                RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        private static readonly Regex RecentDaysRegex =
+            new(@"\b(?<value>\d{1,3})\s*(?:ngay|day)\s*(?:qua|gan day|gan nhat)\b",
                 RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         public ParsedInventoryQuestion Parse(string question)
@@ -49,8 +53,21 @@ namespace BizMate.Application.UserCases.InventoryChat
                 return InventoryChatIntent.Help;
             }
 
-            if (ContainsAny(normalized, "ky thuat", "dang giu", "giu hang", "muon hang", "muon"))
+            if (ContainsAny(normalized, "ky thuat", "technician")
+                || (ContainsAny(normalized, "nhan vien") && ContainsAny(normalized, "giu hang", "muon hang", "dang giu")))
                 return InventoryChatIntent.TechnicianHoldings;
+
+            if (ContainsAny(normalized, "tong quan kho", "bao cao kho", "thong ke kho", "tong ton", "tong hang", "tong so san pham", "kho hien tai"))
+                return InventoryChatIntent.StockSummary;
+
+            if (ContainsAny(normalized, "het hang", "het ton", "ton 0", "kha dung 0", "khong con hang", "khong con ton", "am kho"))
+                return InventoryChatIntent.OutOfStock;
+
+            if (ContainsAny(normalized, "giu cho", "da giu", "dang bi giu", "bi giu", "reserved", "hang da giu", "hang dang giu cho"))
+                return InventoryChatIntent.ReservedStock;
+
+            if (ContainsAny(normalized, "serial", "so serial", "imei", "sn", "quan ly sn", "theo sn"))
+                return InventoryChatIntent.SerialTrackedProducts;
 
             if (ContainsAny(normalized, "lich su", "nhap xuat", "giao dich"))
                 return InventoryChatIntent.ProductHistory;
@@ -64,10 +81,10 @@ namespace BizMate.Application.UserCases.InventoryChat
             if (ContainsAny(normalized, "sap het", "ton thap", "duoi", "it hon", "nho hon"))
                 return InventoryChatIntent.LowStock;
 
-            if (ContainsAny(normalized, "ton kho", "kha dung", "con bao nhieu", "so luong con", "con may"))
+            if (ContainsAny(normalized, "ton kho", "kha dung", "con bao nhieu", "so luong con", "con may", "con hang", "co hang khong", "con khong", "bao nhieu cai"))
                 return InventoryChatIntent.CheckStock;
 
-            if (ContainsAny(normalized, "tim", "kiem", "liet ke", "danh sach", "san pham", "hang hoa"))
+            if (ContainsAny(normalized, "tim", "kiem", "tra", "xem", "loc", "liet ke", "danh sach", "san pham", "hang hoa", "ma sp", "ma hang", "camera", "switch", "dau ghi"))
                 return InventoryChatIntent.SearchProduct;
 
             return InventoryChatIntent.SearchProduct;
@@ -91,6 +108,17 @@ namespace BizMate.Application.UserCases.InventoryChat
 
             if (normalized.Contains("hom qua"))
                 return ToUtcRange(today.AddDays(-1), "hôm qua");
+
+            if (ContainsAny(normalized, "hom kia", "2 ngay truoc"))
+                return ToUtcRange(today.AddDays(-2), "hom kia");
+
+            var recentDays = RecentDaysRegex.Match(normalized);
+            if (recentDays.Success && int.TryParse(recentDays.Groups["value"].Value, out var days))
+            {
+                days = Math.Clamp(days, 1, 90);
+                var from = today.AddDays(-(days - 1));
+                return (ToUtc(from), ToUtc(today.AddDays(1)), $"{days} ngay qua");
+            }
 
             var explicitDate = ExplicitDateRegex.Match(normalized);
             if (explicitDate.Success)
@@ -124,11 +152,26 @@ namespace BizMate.Application.UserCases.InventoryChat
                 return (ToUtc(from), ToUtc(to), "tuần này");
             }
 
+            if (normalized.Contains("tuan truoc"))
+            {
+                var diff = ((int)today.DayOfWeek + 6) % 7;
+                var thisWeek = today.AddDays(-diff);
+                var from = thisWeek.AddDays(-7);
+                return (ToUtc(from), ToUtc(thisWeek), "tuan truoc");
+            }
+
             if (normalized.Contains("thang nay"))
             {
                 var from = new DateTime(today.Year, today.Month, 1);
                 var to = from.AddMonths(1);
                 return (ToUtc(from), ToUtc(to), "tháng này");
+            }
+
+            if (normalized.Contains("thang truoc"))
+            {
+                var thisMonth = new DateTime(today.Year, today.Month, 1);
+                var from = thisMonth.AddMonths(-1);
+                return (ToUtc(from), ToUtc(thisMonth), "thang truoc");
             }
 
             return (null, null, null);
@@ -139,14 +182,19 @@ namespace BizMate.Application.UserCases.InventoryChat
             var text = normalized;
             var patterns = new[]
             {
-                @"\b(hom nay|hom qua|tuan nay|thang nay)\b",
+                @"\b(hom nay|hom qua|hom kia|tuan nay|tuan truoc|thang nay|thang truoc)\b",
+                RecentDaysRegex.ToString(),
                 ExplicitDateRegex.ToString(),
-                @"\b(con bao nhieu|so luong con|kha dung|ton kho|trong kho|hang hoa|san pham|sp)\b",
-                @"\b(tim|kiem|liet ke|danh sach|loc|co|khong|nao|bao nhieu|cho toi|giup toi)\b",
+                @"\b(con bao nhieu|so luong con|kha dung|ton kho|trong kho|hang hoa|san pham|sp|con hang|co hang khong|con khong|bao nhieu cai)\b",
+                @"\b(tim|kiem|tra|xem|liet ke|danh sach|loc|co|khong|nao|bao nhieu|cho toi|giup toi|can biet)\b",
                 @"\b(nhap kho|phieu nhap|hang nhap|xuat kho|phieu xuat|hang xuat)\b",
                 @"\b(lich su|nhap xuat|giao dich|theo ngay|ngay)\b",
-                @"\b(ky thuat|dang giu|giu hang|muon hang|muon|cua|cho|hang|gi|dang|giu)\b",
-                @"\b(sap het|ton thap|duoi|nho hon|it hon)\s*\d*\b"
+                @"\b(tong quan kho|bao cao kho|thong ke kho|tong ton|tong hang|tong so san pham|kho hien tai)\b",
+                @"\b(het hang|het ton|ton 0|kha dung 0|khong con hang|khong con ton|am kho)\b",
+                @"\b(giu cho|da giu|dang bi giu|bi giu|reserved|hang da giu|hang dang giu cho)\b",
+                @"\b(serial|so serial|imei|sn|quan ly sn|theo sn)\b",
+                @"\b(ky thuat|dang giu|giu hang|muon hang|muon|cua|cho|hang|gi|dang|giu|bi)\b",
+                @"\b(sap het|ton thap|duoi|duoi muc|nho hon|be hon|it hon|thap hon)\s*\d*\b"
             };
 
             foreach (var pattern in patterns)

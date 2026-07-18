@@ -44,6 +44,52 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                 .ToArray();
         }
 
+        public async Task<IReadOnlyList<InventoryChatProductStockDto>> GetReservedStockProductsAsync(
+            Guid storeId,
+            string? keyword,
+            int limit,
+            CancellationToken cancellationToken)
+        {
+            var rows = await GetProductStockRowsAsync(storeId, cancellationToken);
+            return ApplyKeyword(rows.Where(x => x.Reserved > 0), keyword)
+                .OrderByDescending(x => x.Reserved)
+                .ThenBy(x => x.Name)
+                .Take(limit)
+                .ToArray();
+        }
+
+        public async Task<IReadOnlyList<InventoryChatProductStockDto>> GetSerialTrackedProductsAsync(
+            Guid storeId,
+            string? keyword,
+            int limit,
+            CancellationToken cancellationToken)
+        {
+            var rows = await GetProductStockRowsAsync(storeId, cancellationToken);
+            return ApplyKeyword(rows.Where(x => x.IsSerialTracked), keyword)
+                .OrderByDescending(x => x.Available)
+                .ThenBy(x => x.Name)
+                .Take(limit)
+                .ToArray();
+        }
+
+        public async Task<InventoryChatStockSummaryDto> GetStockSummaryAsync(
+            Guid storeId,
+            int lowStockThreshold,
+            CancellationToken cancellationToken)
+        {
+            var rows = await GetProductStockRowsAsync(storeId, cancellationToken);
+            return new InventoryChatStockSummaryDto
+            {
+                ProductCount = rows.Count,
+                SerialTrackedCount = rows.Count(x => x.IsSerialTracked),
+                TotalQuantity = rows.Sum(x => x.Quantity),
+                TotalReserved = rows.Sum(x => x.Reserved),
+                TotalAvailable = rows.Sum(x => x.Available),
+                LowStockCount = rows.Count(x => x.Available > 0 && x.Available < lowStockThreshold),
+                OutOfStockCount = rows.Count(x => x.Available <= 0)
+            };
+        }
+
         public async Task<IReadOnlyList<InventoryChatHoldingDto>> SearchTechnicianHoldingsAsync(
             Guid storeId,
             string? keyword,
