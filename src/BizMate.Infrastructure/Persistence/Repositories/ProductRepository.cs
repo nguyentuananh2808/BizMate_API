@@ -132,8 +132,7 @@ public class ProductRepository : IProductRepository
         var totalQuery = baseQuery.Clone();
         var totalCount = await totalQuery.CountAsync<int>();
 
-        var orderField = @"unaccent(lower(replace(replace(p.""Name"", '-', ''), ' ', '')))";
-        baseQuery.OrderByRaw($"{orderField} ASC");
+        baseQuery.OrderByRaw(@"p.""CreatedDate"" DESC, p.""Code"" DESC");
 
         var results = await baseQuery
             .Offset((pageIndex - 1) * pageSize)

@@ -325,7 +325,8 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             var totalCount = await baseQuery.CountAsync(cancellationToken);
 
             var results = await baseQuery
-                .OrderByDescending(x => x.Code)
+                .OrderByDescending(x => x.CreatedDate)
+                .ThenByDescending(x => x.Code)
                 .Skip((normalizedPageIndex - 1) * normalizedPageSize)
                 .Take(normalizedPageSize)
                 .Select(x => new OrderCoreDto

@@ -87,24 +87,13 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                     return q;
                 });
 
-                // Ưu tiên Name bắt đầu bằng keyword trước
-                baseQuery.OrderByRaw(@"
-                    CASE 
-                        WHEN LOWER(p.""Name"") LIKE ? THEN 0
-                        ELSE 1
-                    END, p.""Name"" ASC",
-                            keyword.ToLower() + "%"
-                        );
-                }
-                else
-                {
-                    baseQuery.OrderBy("p.Name");
-                }
+            }
 
             var totalQuery = baseQuery.Clone();
             var totalCount = await totalQuery.CountAsync<int>();
 
             var results = await baseQuery
+                .OrderByRaw(@"p.""CreatedDate"" DESC, p.""Code"" DESC")
                 .Offset((pageIndex - 1) * pageSize)
                 .Limit(pageSize)
                 .GetAsync<CustomerCoreDto>();

@@ -37,6 +37,8 @@ namespace BizMate.Infrastructure.Persistence.Repositories
         {
             var result = await _context.ProductCategories
                 .Where(c => !c.IsDeleted && c.StoreId == storeId)
+                .OrderByDescending(c => c.CreatedDate)
+                .ThenByDescending(c => c.Id)
                 .ToListAsync(cancellationToken);
 
             var totalCount = result.Count();

@@ -158,6 +158,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
 
             var rows = await baseQuery
                 .Select("r.*", "s.Id as Status_Id", "s.Name as Status_Name", "s.Code as Status_Code")
+                .OrderByRaw(@"r.""CreatedDate"" DESC, r.""Code"" DESC")
                 .Offset((pageIndex - 1) * pageSize)
                 .Limit(pageSize)
                 .GetAsync();
@@ -175,6 +176,9 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                     IsDraft = row.IsDraft,
                     IsCancelled = row.IsCancelled,
                     Description = row.Description,
+                    CreatedDate = row.CreatedDate,
+                    UpdatedDate = row.UpdatedDate,
+                    RowVersion = row.RowVersion,
                     Status = row.Status_Id != null
                         ? new Status
                         {

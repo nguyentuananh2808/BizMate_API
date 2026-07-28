@@ -86,6 +86,7 @@ public class StockRepository : IStockRepository
 
         var results = await query
             .Select("s.*")
+            .OrderByRaw(@"s.""CreatedDate"" DESC")
             .Offset((pageIndex - 1) * pageSize)
             .Limit(pageSize)
             .GetAsync<Stock>();

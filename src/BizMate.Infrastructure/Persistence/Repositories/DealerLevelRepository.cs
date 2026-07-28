@@ -73,6 +73,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             var totalCount = await totalQuery.CountAsync<int>();
 
             var results = await baseQuery
+                .OrderByRaw(@"d.""CreatedDate"" DESC, d.""Code"" DESC")
                 .Offset((pageIndex - 1) * pageSize)
                 .Limit(pageSize)
                 .GetAsync<DealerLevelCoreDto>();

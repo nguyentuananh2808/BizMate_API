@@ -57,6 +57,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             var totalCount = await baseQuery.Clone().CountAsync<int>();
 
             var rows = await baseQuery
+                .OrderByRaw(@"r.""CreatedDate"" DESC, r.""Code"" DESC")
                 .Offset((pageIndex - 1) * pageSize)
                 .Limit(pageSize)
                 .GetAsync();
@@ -75,6 +76,9 @@ namespace BizMate.Infrastructure.Persistence.Repositories
                     StatusId = row.StatusId,
                     IsDraft = row.IsDraft,
                     IsCancelled = row.IsCancelled,
+                    CreatedDate = row.CreatedDate,
+                    UpdatedDate = row.UpdatedDate,
+                    RowVersion = row.RowVersion,
                 };
                 return receipt;
             }).ToList();
