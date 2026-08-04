@@ -66,6 +66,7 @@ public class ProductRepository : IProductRepository
     int pageSize,
     bool? isActive,
     Guid? productCategoryId,
+    Guid? categoryGroupId,
     string? stockFilter,
     int? lowStockThreshold,
     QueryFactory queryFactory)
@@ -77,6 +78,8 @@ public class ProductRepository : IProductRepository
                 .On("s.StoreId", "p.StoreId"))
             .LeftJoin("ProductCategories as pc", z => z
                 .On("p.ProductCategoryId", "pc.Id"))
+            .LeftJoin("CategoryGroups as cg", z => z
+                .On("pc.CategoryGroupId", "cg.Id"))
             .Where("p.StoreId", storeId)
             .Where("p.IsDeleted", false);
 
@@ -88,6 +91,11 @@ public class ProductRepository : IProductRepository
         if (productCategoryId.HasValue)
         {
             baseQuery.Where("p.ProductCategoryId", productCategoryId.Value);
+        }
+
+        if (categoryGroupId.HasValue)
+        {
+            baseQuery.Where("pc.CategoryGroupId", categoryGroupId.Value);
         }
 
         switch (stockFilter?.Trim().ToLowerInvariant())
@@ -115,11 +123,13 @@ public class ProductRepository : IProductRepository
             var nameField = @"unaccent(lower(replace(replace(p.""Name"", '-', ''), ' ', '')))";
             var codeField = @"unaccent(lower(replace(replace(p.""Code"", '-', ''), ' ', '')))";
             var categoryField = @"unaccent(lower(replace(replace(pc.""Name"", '-', ''), ' ', '')))";
+            var categoryGroupField = @"unaccent(lower(replace(replace(cg.""Name"", '-', ''), ' ', '')))";
 
             baseQuery.Where(q =>
                 q.WhereRaw($"{nameField} LIKE unaccent(?)", kw)
                  .OrWhereRaw($"{codeField} LIKE unaccent(?)", kw)
                  .OrWhereRaw($"{categoryField} LIKE unaccent(?)", kw)
+                 .OrWhereRaw($"{categoryGroupField} LIKE unaccent(?)", kw)
             );
         }
 
@@ -127,7 +137,9 @@ public class ProductRepository : IProductRepository
             .Select("p.*")
             .SelectRaw(@"COALESCE(s.""Quantity"", 0) as Quantity")
             .SelectRaw($"{availableExpression} as Available")
-            .Select("pc.Name as ProductCategoryName");
+            .Select("pc.Name as ProductCategoryName")
+            .Select("pc.CategoryGroupId as CategoryGroupId")
+            .Select("cg.Name as CategoryGroupName");
 
         var totalQuery = baseQuery.Clone();
         var totalCount = await totalQuery.CountAsync<int>();

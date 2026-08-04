@@ -32,6 +32,14 @@
             public const string Delete = "productcategory.delete";
         }
 
+        public static class CategoryGroup
+        {
+            public const string View = "categorygroup.view";
+            public const string Create = "categorygroup.create";
+            public const string Edit = "categorygroup.edit";
+            public const string Delete = "categorygroup.delete";
+        }
+
         public static class Stock
         {
             public const string View = "stock.view";

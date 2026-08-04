@@ -20,6 +20,7 @@ namespace BizMate.Application.Common.Interfaces.Repositories
             int pageSize,
             bool? isActive,
             Guid? productCategoryId,
+            Guid? categoryGroupId,
             string? stockFilter,
             int? lowStockThreshold,
             QueryFactory queryFactory);

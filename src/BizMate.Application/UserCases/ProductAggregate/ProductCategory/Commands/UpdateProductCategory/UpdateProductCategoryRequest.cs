@@ -12,5 +12,6 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductCategory.Command
         public string? Name { get; set; }
         public bool IsActive { get; set; }
         public string? Description { get; set; }
+        public Guid? CategoryGroupId { get; set; }
     }
 }

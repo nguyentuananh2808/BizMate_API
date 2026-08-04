@@ -39,6 +39,8 @@ public static class InfrastructureDependencyInjection
         services.AddScoped<IOtpVerificationRepository, OtpVerificationRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IProductCategoryRepository, ProductCategoryRepository>();
+        services.AddScoped<ICategoryGroupRepository, CategoryGroupRepository>();
+        services.AddScoped<IInventoryOverviewRepository, InventoryOverviewRepository>();
         services.AddScoped<ICodeGeneratorRepository, CodeGeneratorRepository>();
         services.AddScoped<ICodeGeneratorService, CodeGeneratorService>();
         services.AddScoped<IStockRepository, StockRepository>();
@@ -73,6 +75,7 @@ public static class InfrastructureDependencyInjection
         services.AddAutoMapper(typeof(UserMappingProfile));
         services.AddAutoMapper(typeof(ProductMappingProfile));
         services.AddAutoMapper(typeof(ProductCategoryMappingProfile));
+        services.AddAutoMapper(typeof(CategoryGroupMappingProfile));
         services.AddAutoMapper(typeof(ExportReceiptMappingProfile));
         services.AddAutoMapper(typeof(ImportReceiptMappingProfile));
         services.AddAutoMapper(typeof(NotificationMappingProfile));

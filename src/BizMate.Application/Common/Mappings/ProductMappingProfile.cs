@@ -19,6 +19,8 @@ namespace BizMate.Application.Common.Mappings
                 .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion))
                 .ForMember(dest => dest.ProductCategoryId, opt => opt.MapFrom(src => src.ProductCategoryId))
                 .ForMember(dest => dest.ProductCategoryName, opt => opt.MapFrom(src => src.ProductCategory.Name))
+                .ForMember(dest => dest.CategoryGroupId, opt => opt.MapFrom(src => src.ProductCategory.CategoryGroupId))
+                .ForMember(dest => dest.CategoryGroupName, opt => opt.MapFrom(src => src.ProductCategory.CategoryGroup != null ? src.ProductCategory.CategoryGroup.Name : null))
                 .ForMember(dest => dest.SupplierId, opt => opt.MapFrom(src => src.SupplierId))
                 .ForMember(dest => dest.SupplierName, opt => opt.MapFrom(src => src.Supplier.Name))
                 .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))

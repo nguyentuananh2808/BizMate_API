@@ -7,6 +7,7 @@ namespace BizMate.Domain.Constants
         public const string Authentication   = "auth";
         public const string Product          = "product";
         public const string ProductCategory  = "product-category";
+        public const string CategoryGroup    = "category-group";
         public const string Image            = "image";
         public const string InventoryReceipt = "inventory-receipt";
         public const string User             = "user";
@@ -25,6 +26,7 @@ namespace BizMate.Domain.Constants
         public const string Permission       = "permission";
         public const string ProductItem      = "product-item";
         public const string InventoryChat    = "inventory-chat";
+        public const string Inventory        = "inventory";
 
         public const string RefreshToken     = "refreshtoken";
         public const string Login            = "login";

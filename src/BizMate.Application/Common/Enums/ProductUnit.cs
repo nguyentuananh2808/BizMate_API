@@ -21,7 +21,10 @@ namespace BizMate.Application.Common.Enums
         Liter = 5,
 
         [Display(Name = "Cây")]
-        Tree = 6
+        Tree = 6,
+
+        [Display(Name = "Met")]
+        Meter = 7
     }
 
 }

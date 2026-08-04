@@ -5,5 +5,7 @@ namespace BizMate.Application.Common.Dto.CoreDto
     public class ProductCategoryCoreDto : BaseEntity
     {
         public string Name { get; set; } = default!;
+        public Guid? CategoryGroupId { get; set; }
+        public string? CategoryGroupName { get; set; }
     }
 }

@@ -12,7 +12,7 @@
     "https": {
       "commandName": "Project",
       "launchBrowser": false,
-(      "applicationUrl": "https://192.168.1.204:5052;http://192.168.1.204:5051",
+      "applicationUrl": "https://localhost:5052;https://0.0.0.0:5051",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },

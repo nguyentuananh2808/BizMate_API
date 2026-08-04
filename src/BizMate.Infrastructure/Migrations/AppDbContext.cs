@@ -23,6 +23,7 @@ namespace BizMate.Infrastructure.Migrations
         public DbSet<Customer> Customers => Set<Customer>();
         public DbSet<Product> Products => Set<Product>();
         public DbSet<ProductCategory> ProductCategories => Set<ProductCategory>();
+        public DbSet<CategoryGroup> CategoryGroups => Set<CategoryGroup>();
         public DbSet<Supplier> Suppliers => Set<Supplier>();
         public DbSet<Stock> Stocks => Set<Stock>();
         public DbSet<ImportReceipt> ImportReceipts => Set<ImportReceipt>();
@@ -93,6 +94,22 @@ namespace BizMate.Infrastructure.Migrations
             modelBuilder.Entity<WarrantyCode>()
                 .HasIndex(x => x.WarrantyCodeValue)
                 .IsUnique();
+
+            modelBuilder.Entity<CategoryGroup>(b =>
+            {
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Code).IsRequired().HasMaxLength(40);
+                b.Property(x => x.Name).IsRequired().HasMaxLength(200);
+                b.HasIndex(x => new { x.StoreId, x.Name })
+                    .IsUnique()
+                    .HasFilter("\"IsDeleted\" = false")
+                    .HasDatabaseName("IX_CategoryGroups_Store_Name");
+                b.HasMany(x => x.ProductCategories)
+                    .WithOne(x => x.CategoryGroup)
+                    .HasForeignKey(x => x.CategoryGroupId)
+                    .IsRequired(false)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
 
             modelBuilder.Entity<Order>(b =>
             {

@@ -17,9 +17,11 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductCategory.Command
         private readonly ILogger<CreateProductCategoryHandler> _logger;
         private readonly IUserSession _userSession;
         private readonly ICodeGeneratorService _codeGeneratorService;
+        private readonly ICategoryGroupRepository _categoryGroupRepository;
         #region constructor
         public CreateProductCategoryHandler(IMapper mapper, IProductCategoryRepository productCategoryRepository,
-          ILogger<CreateProductCategoryHandler> logger, IUserSession userSession, ICodeGeneratorService codeGeneratorService)
+          ILogger<CreateProductCategoryHandler> logger, IUserSession userSession, ICodeGeneratorService codeGeneratorService,
+          ICategoryGroupRepository categoryGroupRepository)
         {
             _mapper = mapper;
             _productCategoryRepository = productCategoryRepository;
@@ -27,6 +29,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductCategory.Command
             _userSession = userSession;
             _productCategoryRepository = productCategoryRepository;
             _logger = logger;
+            _categoryGroupRepository = categoryGroupRepository;
         }
 
         #endregion
@@ -54,6 +57,16 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductCategory.Command
                     return new CreateProductCategoryResponse(null, false, message);
                 }
                 #endregion
+
+                if (request.CategoryGroupId.HasValue)
+                {
+                    var categoryGroup = await _categoryGroupRepository.GetByIdAsync(storeId, request.CategoryGroupId.Value, cancellationToken);
+                    if (categoryGroup is null)
+                    {
+                        return new CreateProductCategoryResponse(null, false, "Nhóm loại sản phẩm không tồn tại hoặc không thuộc cửa hàng hiện tại.");
+                    }
+                }
+
                 #region create product category
                 string codeProductCategory = await _codeGeneratorService.GenerateCodeAsync("#LSP", 5);
                 var productCategory = new _ProductCategory
@@ -62,6 +75,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductCategory.Command
                     Name = nameProductCategory,
                     Description = description,
                     StoreId = storeId,
+                    CategoryGroupId = request.CategoryGroupId,
                 };
                 await _productCategoryRepository.AddAsync(productCategory, cancellationToken);
                 #endregion

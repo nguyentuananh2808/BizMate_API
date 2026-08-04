@@ -12,6 +12,8 @@ namespace BizMate.Application.Common.Dto.UserAggregate
         public Guid? SupplierId { get; set; }
         public string? SupplierName { get; set; }
         public Guid ProductCategoryId { get; set; }
+        public Guid? CategoryGroupId { get; set; }
+        public string? CategoryGroupName { get; set; }
         public decimal? CostPrice { get; set; } // Giá nhập 
         public decimal? SalePrice { get; set; } // Giá bán
         public string? ProductCategoryName { get; set; }

@@ -45,6 +45,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Queries.Product
                     pageSize: request.PageSize,
                     isActive: request.IsActive,
                     productCategoryId: request.ProductCategoryId,
+                    categoryGroupId: request.CategoryGroupId,
                     stockFilter: request.StockFilter,
                     lowStockThreshold: request.LowStockThreshold,
                     queryFactory: _queryFactory);

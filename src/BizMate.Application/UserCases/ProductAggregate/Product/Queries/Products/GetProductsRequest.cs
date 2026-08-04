@@ -7,6 +7,7 @@ namespace BizMate.Application.UserCases.ProductAggregate.Product.Queries.Product
     {
         public bool? IsActive { get; set; }
         public Guid? ProductCategoryId { get; set; }
+        public Guid? CategoryGroupId { get; set; }
         public string? StockFilter { get; set; }
         public int? LowStockThreshold { get; set; }
     }

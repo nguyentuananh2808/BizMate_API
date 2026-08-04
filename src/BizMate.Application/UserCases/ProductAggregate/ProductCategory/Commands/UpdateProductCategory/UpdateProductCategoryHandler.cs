@@ -14,18 +14,21 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductCategory.Command
         private readonly IUserSession _userSession;
         private readonly ILogger<UpdateProductCategoryHandler> _logger;
         private readonly IMapper _mapper;
+        private readonly ICategoryGroupRepository _categoryGroupRepository;
 
         #region constructor
         public UpdateProductCategoryHandler(
             IUserSession userSession,
             IProductCategoryRepository productCategoryRepository,
             ILogger<UpdateProductCategoryHandler> logger,
-            IMapper mapper)
+            IMapper mapper,
+            ICategoryGroupRepository categoryGroupRepository)
         {
             _userSession = userSession;
             _productCategoryRepository = productCategoryRepository;
             _logger = logger;
             _mapper = mapper;
+            _categoryGroupRepository = categoryGroupRepository;
         }
         #endregion
         public async Task<UpdateProductCategoryResponse> Handle(UpdateProductCategoryRequest request, CancellationToken cancellationToken)
@@ -66,10 +69,20 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductCategory.Command
                 }
                 #endregion
 
+                if (request.CategoryGroupId.HasValue)
+                {
+                    var categoryGroup = await _categoryGroupRepository.GetByIdAsync(storeId, request.CategoryGroupId.Value, cancellationToken);
+                    if (categoryGroup is null)
+                    {
+                        return new UpdateProductCategoryResponse(false, "Nhóm loại sản phẩm không tồn tại hoặc không thuộc cửa hàng hiện tại.");
+                    }
+                }
+
                 #region update data
                 productCategory.Name = name;
                 productCategory.Description = description;
                 productCategory.StoreId = storeId;
+                productCategory.CategoryGroupId = request.CategoryGroupId;
                 productCategory.UpdatedDate = DateTime.UtcNow;
                 productCategory.UpdatedBy = Guid.Parse(userId);
                 productCategory.IsActive = request.IsActive;

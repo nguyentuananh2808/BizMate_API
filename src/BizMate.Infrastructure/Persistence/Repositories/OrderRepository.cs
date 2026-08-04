@@ -305,13 +305,13 @@ namespace BizMate.Infrastructure.Persistence.Repositories
             if (dateFrom.HasValue)
             {
                 var fromUtc = NormalizeDateTimeForPostgres(dateFrom.Value);
-                baseQuery = baseQuery.Where(x => x.OrderDate >= fromUtc);
+                baseQuery = baseQuery.Where(x => x.CreatedDate >= fromUtc);
             }
 
             if (dateTo.HasValue)
             {
                 var toUtc = NormalizeDateTimeForPostgres(dateTo.Value);
-                baseQuery = baseQuery.Where(x => x.OrderDate <= toUtc);
+                baseQuery = baseQuery.Where(x => x.CreatedDate <= toUtc);
             }
 
             var statusIdList = statusIds?

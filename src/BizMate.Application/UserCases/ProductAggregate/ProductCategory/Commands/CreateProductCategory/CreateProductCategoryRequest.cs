@@ -6,10 +6,12 @@ namespace BizMate.Application.UserCases.ProductAggregate.ProductCategory.Command
     {
         public string Name { get; set; } = default!;
         public string? Description { get; set; }
-        public CreateProductCategoryRequest(string name, string? description)
+        public Guid? CategoryGroupId { get; set; }
+        public CreateProductCategoryRequest(string name, string? description, Guid? categoryGroupId = null)
         {
             Name = name;
             Description = description;
+            CategoryGroupId = categoryGroupId;
         }
     }
 }

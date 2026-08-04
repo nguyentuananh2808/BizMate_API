@@ -23,6 +23,62 @@ namespace BizMate.Infrastructure.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "unaccent");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("BizMate.Domain.Entities.CategoryGroup", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("RowVersion")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("StoreId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StoreId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("IX_CategoryGroups_Store_Name")
+                        .HasFilter("\"IsDeleted\" = false");
+
+                    b.ToTable("CategoryGroups");
+                });
+
             modelBuilder.Entity("BizMate.Domain.Entities.CodeSequence", b =>
                 {
                     b.Property<string>("Prefix")
@@ -1017,6 +1073,9 @@ namespace BizMate.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("CategoryGroupId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasColumnType("text");
@@ -1056,6 +1115,8 @@ namespace BizMate.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CategoryGroupId");
 
                     b.HasIndex("StoreId");
 
@@ -1909,6 +1970,17 @@ namespace BizMate.Infrastructure.Migrations
                     b.ToTable("WarrantyCodes");
                 });
 
+            modelBuilder.Entity("BizMate.Domain.Entities.CategoryGroup", b =>
+                {
+                    b.HasOne("BizMate.Domain.Entities.Store", "Store")
+                        .WithMany()
+                        .HasForeignKey("StoreId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Store");
+                });
+
             modelBuilder.Entity("BizMate.Domain.Entities.Customer", b =>
                 {
                     b.HasOne("BizMate.Domain.Entities.DealerLevel", "DealerLevel")
@@ -2158,11 +2230,18 @@ namespace BizMate.Infrastructure.Migrations
 
             modelBuilder.Entity("BizMate.Domain.Entities.ProductCategory", b =>
                 {
+                    b.HasOne("BizMate.Domain.Entities.CategoryGroup", "CategoryGroup")
+                        .WithMany("ProductCategories")
+                        .HasForeignKey("CategoryGroupId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("BizMate.Domain.Entities.Store", "Store")
                         .WithMany()
                         .HasForeignKey("StoreId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("CategoryGroup");
 
                     b.Navigation("Store");
                 });
@@ -2395,6 +2474,11 @@ namespace BizMate.Infrastructure.Migrations
                     b.Navigation("Store");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("BizMate.Domain.Entities.CategoryGroup", b =>
+                {
+                    b.Navigation("ProductCategories");
                 });
 
             modelBuilder.Entity("BizMate.Domain.Entities.DealerLevel", b =>

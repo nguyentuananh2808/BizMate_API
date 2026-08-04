@@ -17,6 +17,8 @@ namespace BizMate.Application.Common.Mappings
                     .ForMember(dest => dest.CreatedDate, opt => opt.MapFrom(src => src.CreatedDate))
                     .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => src.UpdatedDate))
                     .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
+                    .ForMember(dest => dest.CategoryGroupId, opt => opt.MapFrom(src => src.CategoryGroupId))
+                    .ForMember(dest => dest.CategoryGroupName, opt => opt.MapFrom(src => src.CategoryGroup != null ? src.CategoryGroup.Name : null))
                     .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive));
         }
     }

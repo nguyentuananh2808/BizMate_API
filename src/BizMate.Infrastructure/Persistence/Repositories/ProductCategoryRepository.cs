@@ -36,6 +36,7 @@ namespace BizMate.Infrastructure.Persistence.Repositories
         public async Task<(List<ProductCategory>, int TotalCount)> GetAllAsync(Guid storeId, CancellationToken cancellationToken = default)
         {
             var result = await _context.ProductCategories
+                .Include(c => c.CategoryGroup)
                 .Where(c => !c.IsDeleted && c.StoreId == storeId)
                 .OrderByDescending(c => c.CreatedDate)
                 .ThenByDescending(c => c.Id)
@@ -49,8 +50,16 @@ namespace BizMate.Infrastructure.Persistence.Repositories
         public async Task<ProductCategory> GetByIdAsync(Guid storeId, Guid id, CancellationToken cancellationToken)
         {
             return await _context.ProductCategories
+            .Include(p => p.CategoryGroup)
             .Where(p => !p.IsDeleted && p.Id == id && p.StoreId == storeId)
             .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        public async Task<List<ProductCategory>> GetByIdsAsync(Guid storeId, IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken)
+        {
+            return await _context.ProductCategories
+                .Where(p => !p.IsDeleted && p.StoreId == storeId && ids.Contains(p.Id))
+                .ToListAsync(cancellationToken);
         }
 
         public async Task<ProductCategory> GetByNameAsync(Guid storeId, string name, CancellationToken cancellationToken)
